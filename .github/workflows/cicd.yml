@@ -72,7 +72,6 @@ jobs:
       - name: Setup Django
         run: |
           django-admin startproject project .
-          test -f ${CONF_PATH}/urls.py && cp ${CONF_PATH}/urls.py project/
           test -f ${CONF_PATH}/settings.py && cat ${CONF_PATH}/settings.py >> project/settings.py
 
       - name: Run Python Linters
