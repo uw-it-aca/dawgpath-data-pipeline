@@ -24,7 +24,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'django>=2.2,<2.3',
-        'pandas',
+        'pandas==1.1.5',
         'pyodbc==4.0.30'
     ],
     license='',
