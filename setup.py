@@ -24,8 +24,8 @@ setup(
     include_package_data=True,
     install_requires=[
         'django>=2.2,<2.3',
-        'pandas>=1.2.4,<1.3',
-        'pyodbc>=4.0.30,<4.1'
+        'pandas==1.2.4',
+        'pyodbc==4.0.30'
     ],
     license='',
     description='A tool for managing prereq map data',
