@@ -1,7 +1,7 @@
 import os
 import pyodbc
 import pandas
-from django.conf import settings
+from commonconf import settings
 
 DB = "UWSDBDataStore"
 
@@ -32,7 +32,11 @@ def get_course_titles():
 def get_curric_info():
     db_query = """
         SELECT
-            *
+            curric_abbr,
+            curric_name,
+            curric_branch,
+            curric_url,
+            curric_home_url
         FROM sec.sr_curric_code
         WHERE
             curric_last_yr = 9999

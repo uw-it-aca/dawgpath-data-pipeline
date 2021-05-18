@@ -23,9 +23,12 @@ setup(
     author_email="aca-it@uw.edu",
     include_package_data=True,
     install_requires=[
-        'django>=2.2,<2.3',
-        'pandas==1.1.5',
-        'pyodbc==4.0.30'
+        'django~=2.2',
+        'pandas~=1.1.5',
+        'pyodbc==4.0.30',
+        'SQLAlchemy~=1.4.15',
+        'SQLAlchemy-Utils~=0.37.2',
+        'commonconf~=1.1'
     ],
     license='',
     description='A tool for managing prereq map data',
