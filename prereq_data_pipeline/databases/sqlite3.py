@@ -12,8 +12,7 @@ class Sqlite3(Database):
         url += "/%s" % getattr(settings, "DB_FILE", "db.sqlite")
 
     engine = create_engine(url,
-                           echo=True,
-                           future=True)
+                           echo=True)
 
     def __init__(self, is_memory):
         self.is_memory = is_memory

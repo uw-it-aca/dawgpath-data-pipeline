@@ -1,6 +1,5 @@
 from prereq_data_pipeline.dao.edw import get_curric_info
 from prereq_data_pipeline.models.curriculum import Curriculum
-from prereq_data_pipeline.databases.sqlite3 import Sqlite3
 from prereq_data_pipeline.databases.implementation import get_db_implemenation
 
 
