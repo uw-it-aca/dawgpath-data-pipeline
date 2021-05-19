@@ -1,9 +1,6 @@
-from commonconf.backends import use_configparser_backend
-use_configparser_backend("conf/app.conf", "PDP-Settings")
-
-import unittest  # nopep8
-from commonconf import override_settings  # nopep8
-from prereq_data_pipeline.databases.implementation import get_db_implemenation  # nopep8
+import unittest
+from commonconf import override_settings
+from prereq_data_pipeline.databases.implementation import get_db_implemenation
 
 
 class DBTest(unittest.TestCase):

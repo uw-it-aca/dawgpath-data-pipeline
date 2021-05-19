@@ -27,7 +27,8 @@ setup(
         'pyodbc==4.0.30',
         'SQLAlchemy~=1.3.23',
         'SQLAlchemy-Utils~=0.37.2',
-        'commonconf~=1.1'
+        'commonconf~=1.1',
+        'nose2'
     ],
     license='',
     description='A tool for managing prereq map data',
