@@ -17,7 +17,6 @@ def run():
 
 # get curric data
 def _get_currics():
-
     currics = get_curric_info()
     curric_objects = []
     for index, curric in currics.iterrows():

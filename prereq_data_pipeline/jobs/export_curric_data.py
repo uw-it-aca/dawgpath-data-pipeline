@@ -6,7 +6,6 @@ import pandas as pd
 def run(file_path):
     # get currics
     db = get_db_implemenation()
-    db.create_tables()
     session = db.get_session()
     q = session.query(Curriculum)
 
