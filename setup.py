@@ -26,9 +26,10 @@ setup(
         'pandas~=1.1.5',
         'pyodbc==4.0.30',
         'SQLAlchemy~=1.3.23',
-        'SQLAlchemy-Utils~=0.37.2',
         'commonconf~=1.1',
-        'nose2'
+        'nose2',
+        'alembic',
+        'psycopg2'
     ],
     license='',
     description='A tool for managing prereq map data',

@@ -4,18 +4,9 @@ from sqlalchemy_utils.types.choice import ChoiceType
 
 
 class Curriculum(Base):
-    SEATTLE = "0"
-    BOTHELL = "1"
-    TACOMA = "2"
-    CAMPUS_CHOICES = (
-        (SEATTLE, "Seattle"),
-        (BOTHELL, "Bothell"),
-        (TACOMA, "Tacoma")
-    )
-
     abbrev = Column(String())
     name = Column(String())
-    campus = Column(ChoiceType(CAMPUS_CHOICES))
+    campus = Column(Integer())
     url = Column(String())
 
     def __repr__(self):
