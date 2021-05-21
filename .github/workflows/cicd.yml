@@ -54,6 +54,10 @@ jobs:
           pip install -e .
           pip install commonconf nose2 coverage coveralls==2.2.0
 
+      - name: Apply db migrations
+        run: |
+           alembic upgrade head
+
       - name: Run Python Linters
         uses: uw-it-aca/actions/python-linters@main
         with:
