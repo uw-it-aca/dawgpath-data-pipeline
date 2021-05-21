@@ -1,6 +1,5 @@
 from prereq_data_pipeline.models import Base
 from sqlalchemy import Column, Integer, String
-from sqlalchemy_utils.types.choice import ChoiceType
 
 
 class Curriculum(Base):
