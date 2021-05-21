@@ -45,3 +45,7 @@ class TestCurrics(DBTest):
         _delete_currics(self.session)
         saved_currics = self.session.query(Curriculum).all()
         self.assertEqual(len(saved_currics), 0)
+
+    def test_curric_string(self):
+        curric_string = repr(self.mock_currics[0])
+        self.assertEqual(curric_string, "<Curriculum(abbrev='TWRT', name='Tacoma Writing', campus='2', url='www.foobar.com')>")
