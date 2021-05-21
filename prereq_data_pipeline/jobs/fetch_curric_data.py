@@ -5,7 +5,7 @@ from prereq_data_pipeline.databases.implementation import get_db_implemenation
 
 def run():
     db = get_db_implemenation()
-    db.create_tables()
+    # db.create_tables()
     session = db.get_session()
 
     _delete_currics(session)

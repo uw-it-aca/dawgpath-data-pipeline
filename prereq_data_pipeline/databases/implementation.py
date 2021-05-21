@@ -1,5 +1,6 @@
 from commonconf import settings
 from prereq_data_pipeline.databases.sqlite3 import Sqlite3
+from prereq_data_pipeline.databases.postgres import Postgres
 
 
 def get_db_implemenation():
@@ -8,3 +9,5 @@ def get_db_implemenation():
         return Sqlite3(is_memory=False)
     if db_class == 'memory':
         return Sqlite3(is_memory=True)
+    if db_class == 'postgres':
+        return Postgres()

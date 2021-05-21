@@ -54,6 +54,11 @@ jobs:
           pip install -e .
           pip install commonconf nose2 coverage coveralls==2.2.0
 
+      - name: Setup App
+        run: |
+           cp conf/test.conf conf/app.conf
+           alembic upgrade head
+
       - name: Run Python Linters
         uses: uw-it-aca/actions/python-linters@main
         with:

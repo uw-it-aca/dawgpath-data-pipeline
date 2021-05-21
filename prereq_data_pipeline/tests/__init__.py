@@ -8,7 +8,6 @@ class DBTest(unittest.TestCase):
     session = None
 
     def setUp(self):
-        with override_settings(DB_CLASS='memory'):
-            self.db = get_db_implemenation()
-            self.db.create_tables()
-            self.session = self.db.get_session()
+        self.db = get_db_implemenation()
+        # self.db.create_tables()
+        self.session = self.db.get_session()
