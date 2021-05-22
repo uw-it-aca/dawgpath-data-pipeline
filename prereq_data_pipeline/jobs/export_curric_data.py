@@ -1,9 +1,15 @@
 from prereq_data_pipeline.models.curriculum import Curriculum
 from prereq_data_pipeline.databases.implementation import get_db_implemenation
 import pandas as pd
+import os
 
 
 def run(file_path):
+    # create empty file
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    with open(file_path, 'w') as fp:
+        pass
+
     # get currics
     db = get_db_implemenation()
     session = db.get_session()
