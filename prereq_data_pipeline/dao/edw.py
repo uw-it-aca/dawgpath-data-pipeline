@@ -21,7 +21,10 @@ def get_prereqs():
 def get_course_titles():
     db_query = """
         SELECT
-            *
+            department_abbrev,
+            course_number,
+            course_college,
+            long_course_title
         FROM sec.sr_course_titles
         WHERE
             last_eff_yr = 9999
