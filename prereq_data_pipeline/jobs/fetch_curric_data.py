@@ -11,8 +11,6 @@ def run():
     _delete_currics(session)
     currics = _get_currics()
     _save_currics(session, currics)
-    q = session.query(Curriculum)
-    currics = q.all()
 
 
 # get curric data
