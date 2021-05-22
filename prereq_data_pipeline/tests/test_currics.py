@@ -1,11 +1,12 @@
+import os
 from unittest.mock import patch
 from prereq_data_pipeline.jobs.fetch_curric_data import _get_currics, \
     _save_currics, _delete_currics
 import pandas as pd
-from prereq_data_pipeline.databases.implementation import get_db_implemenation
 from prereq_data_pipeline.models.curriculum import Curriculum
-from commonconf import override_settings
 from prereq_data_pipeline.tests import DBTest
+from prereq_data_pipeline.jobs.export_curric_data \
+    import run as export_curric_data
 
 
 class TestCurrics(DBTest):
@@ -27,6 +28,7 @@ class TestCurrics(DBTest):
         mock_df = pd.DataFrame(mock_data, index=['first', 'second'])
         get_curric_info_mock.return_value = mock_df
         self.mock_currics = _get_currics()
+        _delete_currics(self.session)
 
     def test_fetch_currics(self):
         self.assertEqual(len(self.mock_currics), 2)
@@ -51,3 +53,23 @@ class TestCurrics(DBTest):
         expected = "<Curriculum(abbrev='TWRT'," \
                    " name='Tacoma Writing', campus='2', url='www.foobar.com')>"
         self.assertEqual(curric_string, expected)
+
+    def test_curric_export(self):
+        _delete_currics(self.session)
+        _save_currics(self.session, self.mock_currics)
+        curric_path = "test/curric_data.pkl"
+        curric_count = len(self.mock_currics)
+        # Ensure file is deleted
+        try:
+            os.remove(curric_path)
+        except FileNotFoundError:
+            pass
+
+        self.assertFalse(os.path.exists(curric_path))
+        export_curric_data(curric_path)
+        self.assertTrue(os.path.exists(curric_path))
+
+        df = pd.read_pickle(curric_path)
+        self.assertEqual(len(df.index), curric_count)
+        # clean up file
+        os.remove(curric_path)
