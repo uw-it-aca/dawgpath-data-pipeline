@@ -7,4 +7,3 @@ class Course(Base):
     course_number = Column(Integer())
     course_college = Column(Integer())
     long_course_title = Column(String())
-
