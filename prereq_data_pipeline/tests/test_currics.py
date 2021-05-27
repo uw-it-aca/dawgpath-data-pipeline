@@ -50,8 +50,8 @@ class TestCurrics(DBTest):
 
     def test_curric_string(self):
         curric_string = repr(self.mock_currics[0])
-        expected = "<Curriculum(abbrev='TWRT'," \
-                   " name='Tacoma Writing', campus='2', url='www.foobar.com')>"
+        expected = "Curriculum(abbrev=TWRT, name=Tacoma Writing, " \
+                   "campus=2, url=www.foobar.com)"
         self.assertEqual(curric_string, expected)
 
     def test_curric_export(self):

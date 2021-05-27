@@ -50,9 +50,9 @@ class TestCourses(DBTest):
 
     def test_course_string(self):
         course_string = repr(self.mock_courses[0])
-        expected = "<Course(department_abbrev='CSE', course_number='142', " \
-                   "course_college='College of Engineering', " \
-                   "long_course_title='Fundamentals of Programming')>"
+        expected = "Course(department_abbrev=CSE, course_number=142, " \
+                   "course_college=College of Engineering, " \
+                   "long_course_title=Fundamentals of Programming)"
         self.assertEqual(course_string, expected)
 
     def test_course_export(self):
