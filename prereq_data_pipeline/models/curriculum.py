@@ -1,9 +1,9 @@
 from prereq_data_pipeline.models import Base
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, SmallInteger, String
 
 
 class Curriculum(Base):
-    abbrev = Column(String())
-    name = Column(String())
-    campus = Column(Integer())
-    url = Column(String())
+    abbrev = Column(String(length=6))
+    name = Column(String(length=25))
+    campus = Column(SmallInteger())
+    url = Column(String(length=80))

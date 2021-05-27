@@ -6,6 +6,8 @@ import os
 """
 Builds course data pkl files as currently used by prereq map
 """
+
+
 def run(file_path):
     # create empty file
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
