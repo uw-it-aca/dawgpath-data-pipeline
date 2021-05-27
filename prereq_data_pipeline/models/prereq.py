@@ -1,5 +1,6 @@
 from prereq_data_pipeline.models import Base
 from sqlalchemy import Column, String, SmallInteger
+from sqlalchemy.ext.hybrid import hybrid_property
 
 
 class Prereq(Base):
@@ -15,3 +16,5 @@ class Prereq(Base):
     # Course From
     pr_curric_abbr = Column(String(length=6))
     pr_course_no = Column(String(length=3))
+
+
