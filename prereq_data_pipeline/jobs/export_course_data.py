@@ -3,6 +3,10 @@ from prereq_data_pipeline.databases.implementation import get_db_implemenation
 import pandas as pd
 import os
 
+"""
+Builds course data pkl files as currently used by prereq map
+"""
+
 
 def run(file_path):
     # create empty file

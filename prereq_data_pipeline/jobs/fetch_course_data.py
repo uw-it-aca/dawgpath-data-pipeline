@@ -5,7 +5,6 @@ from prereq_data_pipeline.databases.implementation import get_db_implemenation
 
 def run():
     db = get_db_implemenation()
-    # db.create_tables()
     session = db.get_session()
 
     _delete_courses(session)
@@ -23,7 +22,16 @@ def _get_courses():
                 department_abbrev=course['department_abbrev'].strip(),
                 course_number=course['course_number'],
                 course_college=course['course_college'].strip(),
-                long_course_title=course['long_course_title'].strip()
+                long_course_title=course['long_course_title'].strip(),
+                course_branch=course['course_branch'],
+                course_cat_omit=course['course_cat_omit'],
+                diversity_crs=course['diversity_crs'],
+                english_comp=course['english_comp'],
+                indiv_society=course['indiv_society'],
+                natural_world=course['natural_world'],
+                qsr=course['qsr'],
+                vis_lit_perf_arts=course['vis_lit_perf_arts'],
+                writing_crs=course['writing_crs']
             )
         )
     return course_objects

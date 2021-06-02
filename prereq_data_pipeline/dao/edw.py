@@ -24,7 +24,16 @@ def get_course_titles():
             department_abbrev,
             course_number,
             course_college,
-            long_course_title
+            long_course_title,
+            course_branch,
+            course_cat_omit,
+            diversity_crs,
+            english_comp,
+            indiv_society,
+            natural_world,
+            qsr,
+            vis_lit_perf_arts,
+            writing_crs
         FROM sec.sr_course_titles
         WHERE
             last_eff_yr = 9999

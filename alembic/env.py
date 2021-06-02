@@ -4,12 +4,13 @@ use_configparser_backend("conf/app.conf", "PDP-Settings")
 from logging.config import fileConfig # nopep8
 from alembic import context # nopep8
 from prereq_data_pipeline.databases.implementation import get_db_implemenation # nopep8
-from prereq_data_pipeline.models import Base
+from prereq_data_pipeline.models.base import Base
 
 # models must me imported for autogenerate to detect changes
 from prereq_data_pipeline.models.curriculum import Curriculum
 from prereq_data_pipeline.models.course import Course
 from prereq_data_pipeline.models.prereq import Prereq
+from prereq_data_pipeline.models.graph import Graph
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
