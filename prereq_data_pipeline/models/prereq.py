@@ -29,4 +29,3 @@ class Prereq(Base):
         :return: The course id "{pr_curric_abbr} {pr_course_no}"
         '''
         return "%s %s" % (self.pr_curric_abbr, self.pr_course_no)
-

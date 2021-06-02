@@ -9,4 +9,3 @@ class Graph(Base):
     course = relationship("Course", back_populates="graph")
     graph_json = Column(Text())
     create_date = Column(DateTime, default=datetime.datetime.utcnow)
-

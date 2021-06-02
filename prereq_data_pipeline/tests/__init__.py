@@ -9,3 +9,6 @@ class DBTest(unittest.TestCase):
     def setUp(self):
         self.db = get_db_implemenation()
         self.session = self.db.get_session()
+
+    def tearDown(self):
+        self.session.close()
