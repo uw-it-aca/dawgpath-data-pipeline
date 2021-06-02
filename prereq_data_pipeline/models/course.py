@@ -1,4 +1,5 @@
-from prereq_data_pipeline.models import Base
+from prereq_data_pipeline.models.base import Base
+from sqlalchemy.orm import relationship
 from sqlalchemy import Column, SmallInteger, String, Boolean
 
 
@@ -16,3 +17,11 @@ class Course(Base):
     qsr = Column(Boolean())
     vis_lit_perf_arts = Column(Boolean())
     writing_crs = Column(Boolean())
+    graph = relationship("Graph", uselist=False, back_populates="course")
+
+    @property
+    def course_id(self):
+        '''
+        :return: The course id "{department_abbrev} {course_number}"
+        '''
+        return "%s %s" % (self.department_abbrev, self.course_number)

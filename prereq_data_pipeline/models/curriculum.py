@@ -1,4 +1,4 @@
-from prereq_data_pipeline.models import Base
+from prereq_data_pipeline.models.base import Base
 from sqlalchemy import Column, SmallInteger, String
 
 
