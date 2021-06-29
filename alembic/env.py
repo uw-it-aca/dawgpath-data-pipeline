@@ -11,6 +11,7 @@ from prereq_data_pipeline.models.curriculum import Curriculum
 from prereq_data_pipeline.models.course import Course
 from prereq_data_pipeline.models.prereq import Prereq
 from prereq_data_pipeline.models.graph import Graph
+from prereq_data_pipeline.models.registration import Registration
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

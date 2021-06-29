@@ -6,6 +6,24 @@ from commonconf import settings
 DB = "UWSDBDataStore"
 
 
+def get_registrations_since_year(year):
+    # Filtering out duplicate enrollments and withdrawn courses
+    db_query = f"""
+            SELECT
+                system_key,
+                regis_yr,
+                regis_qtr,
+                crs_curric_abbr,
+                crs_number
+            FROM sec.registration_courses
+            WHERE
+                regis_yr >= {year}
+                AND dup_enroll = '' 
+                AND request_status in ('A', 'C', 'R')
+        """
+    return _run_query(DB, db_query)
+
+
 def get_prereqs():
     db_query = """
         SELECT
