@@ -4,6 +4,7 @@ from prereq_data_pipeline.databases.implementation import get_db_implemenation
 
 REGISTRATION_START_YEAR = 2021
 
+
 def run():
     db = get_db_implemenation()
     session = db.get_session()
@@ -28,7 +29,7 @@ def _get_registrations(session):
                     system_key=registration['system_key'],
                     regis_yr=registration['regis_yr'],
                     regis_qtr=registration['regis_qtr'],
-                    crs_curric_abbr=registration['crs_curric_abbr'],
+                    crs_curric_abbr=registration['crs_curric_abbr'].strip(),
                     crs_number=registration['crs_number']
                 )
             )

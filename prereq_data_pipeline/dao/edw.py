@@ -18,7 +18,7 @@ def get_registrations_since_year(year):
             FROM sec.registration_courses
             WHERE
                 regis_yr >= {year}
-                AND dup_enroll = '' 
+                AND dup_enroll = ''
                 AND request_status in ('A', 'C', 'R')
         """
     return _run_query(DB, db_query)

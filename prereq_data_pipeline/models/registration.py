@@ -10,9 +10,8 @@ class Registration(Base):
     crs_number = Column(SmallInteger())
 
     @property
-    def to_course_id(self):
+    def course_id(self):
         '''
         :return: The course id "{crs_curric_abbr} {crs_number}"
         '''
         return "%s %s" % (self.crs_curric_abbr, self.crs_number)
-
