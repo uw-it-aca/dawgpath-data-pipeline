@@ -35,7 +35,7 @@ def run(year, quarter, is_first=False):
         run_subsequent_term(session, registrations, courses)
 
 
-def get_concurrent_courses_from_course(course, registrations):
+def get_concurrent_courses_from_course(registrations, course):
     # get current courses for a given course data
     course_id = course[0] + str(course[1])
     syskeys = get_students_for_course(registrations, course)
@@ -70,7 +70,7 @@ def run_first_term(session, registrations, courses):
     concurrent_course_objs = []
     for course in courses:
         course_id = course[0] + str(course[1])
-        top_counts = get_concurrent_courses_from_course(course, registrations)
+        top_counts = get_concurrent_courses_from_course(registrations, course)
         conc_course = ConcurrentCourses(course_id=course_id,
                                         concurrent_courses=top_counts)
         concurrent_course_objs.append(conc_course)
@@ -81,7 +81,7 @@ def run_first_term(session, registrations, courses):
 def run_subsequent_term(session, registrations, courses):
     for course in courses:
         course_id = course[0] + str(course[1])
-        top_counts = get_concurrent_courses_from_course(course, registrations)
+        top_counts = get_concurrent_courses_from_course(registrations, course)
         try:
             conc_course = session.query(ConcurrentCourses)\
                 .filter(ConcurrentCourses.course_id == course_id)\
