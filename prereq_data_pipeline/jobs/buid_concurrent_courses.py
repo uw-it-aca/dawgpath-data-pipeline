@@ -13,11 +13,35 @@ from sqlalchemy.orm.exc import NoResultFound
 TOP_CONCURRENT_COURSE_COUNT = 100
 
 
-def run(year, quarter, is_first=False):
+def run_for_all_registrations():
+    db = get_db_implemenation()
+    session = db.get_session()
+    _delete_concurrent(session)
+    terms = _get_terms_from_registrations(session)
+
+    first_term = terms.pop()
+    run_for_quarter(first_term[0], first_term[1], True)
+    for term in terms:
+        run_for_quarter(term[0], term[1], False)
+
+
+def _get_terms_from_registrations(session):
+    terms = []
+    # hack because sqlite3 doesn't support DISTINCT ON
+    years = session.query(Registration.regis_yr).distinct()
+    for year in years:
+        year = year[0]
+        quarters = session.query(Registration.regis_qtr)\
+            .filter(Registration.regis_yr == year).distinct()
+        for quarter in quarters:
+            terms.append((year, quarter[0]))
+    return sorted(terms, key=lambda term: (term[0], term[1]))
+
+
+def run_for_quarter(year, quarter, is_first=False):
     db = get_db_implemenation()
     session = db.get_session()
 
-    # _delete_registrations(session)
     query = session.query(Registration) \
         .filter(Registration.regis_yr == year,
                 Registration.regis_qtr == quarter)
@@ -92,4 +116,10 @@ def run_subsequent_term(session, registrations, courses):
         except NoResultFound:
             conc_course = ConcurrentCourses(course_id=course_id,
                                             concurrent_courses=top_counts)
+            session.add(conc_course)
         session.commit()
+
+
+def _delete_concurrent(session):
+    session.query(ConcurrentCourses).delete()
+    session.commit()
