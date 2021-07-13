@@ -8,6 +8,8 @@ class Registration(Base):
     regis_qtr = Column(SmallInteger())
     crs_curric_abbr = Column(String(length=6))
     crs_number = Column(SmallInteger())
+    grade = Column(String(length=2))
+    gpa = Column(SmallInteger())
 
     @property
     def course_id(self):
