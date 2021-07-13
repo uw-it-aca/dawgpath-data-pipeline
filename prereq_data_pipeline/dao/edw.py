@@ -14,7 +14,8 @@ def get_registrations_since_year(year):
                 regis_yr,
                 regis_qtr,
                 crs_curric_abbr,
-                crs_number
+                crs_number,
+                grade
             FROM sec.registration_courses
             WHERE
                 regis_yr >= {year}

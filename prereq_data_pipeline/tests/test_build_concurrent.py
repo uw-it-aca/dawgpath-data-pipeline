@@ -8,6 +8,8 @@ from prereq_data_pipeline.jobs.buid_concurrent_courses import \
     get_concurrent_courses_from_course, get_students_for_course, \
     run_for_quarter, _get_terms_from_registrations, run_for_all_registrations,\
     _delete_concurrent
+from prereq_data_pipeline.tests.shared_mock.registration import \
+    registration_mock_data
 
 
 class TestBuildConcurrent(DBTest):
@@ -18,84 +20,8 @@ class TestBuildConcurrent(DBTest):
            'fetch_registration_data.get_registrations_since_year')
     def setUp(self, get_reg_mock):
         super(TestBuildConcurrent, self).setUp()
-        mock_data = [
-            {"system_key": 61631,
-             "regis_yr": 2021,
-             "regis_qtr": 1,
-             "crs_curric_abbr": "BIOL",
-             "crs_number": 140},
-            {"system_key": 61631,
-             "regis_yr": 2021,
-             "regis_qtr": 1,
-             "crs_curric_abbr": "CHEM",
-             "crs_number": 142},
-            {"system_key": 61631,
-             "regis_yr": 2021,
-             "regis_qtr": 1,
-             "crs_curric_abbr": "MATH",
-             "crs_number": 124},
-            {"system_key": 78453,
-             "regis_yr": 2021,
-             "regis_qtr": 1,
-             "crs_curric_abbr": "BIOL",
-             "crs_number": 140},
-            {"system_key": 78453,
-             "regis_yr": 2021,
-             "regis_qtr": 1,
-             "crs_curric_abbr": "CSE",
-             "crs_number": 142},
-            {"system_key": 78453,
-             "regis_yr": 2021,
-             "regis_qtr": 1,
-             "crs_curric_abbr": "CHEM",
-             "crs_number": 142},
-            {"system_key": 83297,
-             "regis_yr": 2021,
-             "regis_qtr": 1,
-             "crs_curric_abbr": "ENGL",
-             "crs_number": 354},
-            {"system_key": 11631,
-             "regis_yr": 2021,
-             "regis_qtr": 2,
-             "crs_curric_abbr": "CHEM",
-             "crs_number": 142},
-            {"system_key": 11631,
-             "regis_yr": 2021,
-             "regis_qtr": 2,
-             "crs_curric_abbr": "MATH",
-             "crs_number": 124},
-            {"system_key": 28453,
-             "regis_yr": 2021,
-             "regis_qtr": 2,
-             "crs_curric_abbr": "CSE",
-             "crs_number": 142},
-            {"system_key": 28453,
-             "regis_yr": 2021,
-             "regis_qtr": 2,
-             "crs_curric_abbr": "CHEM",
-             "crs_number": 142},
-            {"system_key": 33297,
-             "regis_yr": 2021,
-             "regis_qtr": 2,
-             "crs_curric_abbr": "ENGL",
-             "crs_number": 354},
-            {"system_key": 44297,
-             "regis_yr": 2015,
-             "regis_qtr": 4,
-             "crs_curric_abbr": "ASTRO",
-             "crs_number": 540},
-            {"system_key": 55297,
-             "regis_yr": 2015,
-             "regis_qtr": 1,
-             "crs_curric_abbr": "ASTRO",
-             "crs_number": 540},
-            {"system_key": 55297,
-             "regis_yr": 2015,
-             "regis_qtr": 1,
-             "crs_curric_abbr": "PHYS",
-             "crs_number": 301}
-        ]
-        self.mock_df = pd.DataFrame.from_dict(mock_data, orient='columns')
+        self.mock_df = pd.DataFrame.from_dict(registration_mock_data,
+                                              orient='columns')
         get_reg_mock.return_value = self.mock_df
         self.mock_registrations = _get_registrations()
         _delete_registrations(self.session)

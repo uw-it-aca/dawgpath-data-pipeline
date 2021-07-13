@@ -20,15 +20,19 @@ def _get_registrations():
 
     registration_objects = []
     for index, registration in registrations.iterrows():
-        registration_objects.append(
-            Registration(
+        reg = Registration(
                 system_key=registration['system_key'],
                 regis_yr=registration['regis_yr'],
                 regis_qtr=registration['regis_qtr'],
                 crs_curric_abbr=registration['crs_curric_abbr'].strip(),
-                crs_number=registration['crs_number']
+                crs_number=registration['crs_number'],
+                grade=registration['grade']
             )
-        )
+        try:
+            reg.gpa = int(registration['grade'])
+        except ValueError:
+            pass
+        registration_objects.append(reg)
     return registration_objects
 
 

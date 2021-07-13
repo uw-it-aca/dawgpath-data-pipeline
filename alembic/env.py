@@ -13,6 +13,7 @@ from prereq_data_pipeline.models.prereq import Prereq
 from prereq_data_pipeline.models.graph import Graph
 from prereq_data_pipeline.models.registration import Registration
 from prereq_data_pipeline.models.concurrent_courses import ConcurrentCourses
+from prereq_data_pipeline.models.gpa_distro import GPADistribution
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -73,7 +74,9 @@ def run_migrations_online():
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
+            compare_type=True
         )
 
         with context.begin_transaction():
