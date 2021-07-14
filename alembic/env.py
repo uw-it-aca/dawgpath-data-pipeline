@@ -14,6 +14,7 @@ from prereq_data_pipeline.models.graph import Graph
 from prereq_data_pipeline.models.registration import Registration
 from prereq_data_pipeline.models.concurrent_courses import ConcurrentCourses
 from prereq_data_pipeline.models.gpa_distro import GPADistribution
+from prereq_data_pipeline.models.major import Major
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

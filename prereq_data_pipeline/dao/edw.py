@@ -6,6 +6,15 @@ from commonconf import settings
 DB = "UWSDBDataStore"
 
 
+def get_majors():
+    db_query = f"""
+            SELECT
+                *
+            FROM sec.CM_Programs
+    """
+    return _run_query(DB, db_query)
+
+
 def get_registrations_since_year(year):
     # Filtering out duplicate enrollments and withdrawn courses
     db_query = f"""
