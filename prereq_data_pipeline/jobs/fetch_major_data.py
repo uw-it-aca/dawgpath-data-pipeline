@@ -12,7 +12,7 @@ def run():
     _save_majors(session, majors)
 
 
-# get registration data
+# get major data
 def _get_majors():
     majors = get_majors()
 
@@ -41,7 +41,7 @@ def _save_majors(session, majors):
     session.commit()
 
 
-# delete existing registration data
+# delete existing major data
 def _delete_majors(session):
     q = session.query(Major)
     q.delete()

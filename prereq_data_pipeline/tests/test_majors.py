@@ -11,7 +11,7 @@ class TestMajors(DBTest):
 
     @patch('prereq_data_pipeline.jobs.'
            'fetch_major_data.get_majors')
-    def setUp(self, get_reg_mock):
+    def setUp(self, get_major_mock):
         super(TestMajors, self).setUp()
         mock_data = [
             {"program_verdep_id": "fea9cb9a-677f-4be5-89c5-4ffc095bc9ab",
@@ -78,7 +78,7 @@ class TestMajors(DBTest):
         ]
         mock_df = pd.DataFrame.from_dict(mock_data,
                                          orient='columns')
-        get_reg_mock.return_value = mock_df
+        get_major_mock.return_value = mock_df
         self.mock_majors = _get_majors()
         _delete_majors(self.session)
 

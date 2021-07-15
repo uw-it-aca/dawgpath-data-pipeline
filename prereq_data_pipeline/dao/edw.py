@@ -6,6 +6,23 @@ from commonconf import settings
 DB = "UWSDBDataStore"
 
 
+def get_transcripts_since_year(year):
+    db_query = f"""
+            SELECT
+                system_key,
+                tran_yr,
+                tran_qtr,
+                qtr_grade_points,
+                qtr_graded_attmp,
+                over_qtr_grade_pt,
+                over_qtr_grade_at
+            FROM sec.transcript
+            WHERE
+                tran_yr >= {year}
+    """
+    return _run_query(DB, db_query)
+
+
 def get_majors():
     db_query = f"""
             SELECT
