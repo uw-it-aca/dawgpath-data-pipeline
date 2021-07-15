@@ -6,6 +6,50 @@ from commonconf import settings
 DB = "UWSDBDataStore"
 
 
+def get_regis_majors_since_year(year):
+    db_query = f"""
+            SELECT
+                system_key,
+                regis_yr,
+                regis_qtr,
+                regis_pathway,
+                regis_branch,
+                regis_deg_level,
+                regis_deg_type,
+                regis_major_abbr
+            FROM sec.registration_regis_col_major
+            WHERE
+                regis_yr >= {year}
+    """
+    return _run_query(DB, db_query)
+
+
+def get_transcripts_since_year(year):
+    db_query = f"""
+            SELECT
+                system_key,
+                tran_yr,
+                tran_qtr,
+                qtr_grade_points,
+                qtr_graded_attmp,
+                over_qtr_grade_pt,
+                over_qtr_grade_at
+            FROM sec.transcript
+            WHERE
+                tran_yr >= {year}
+    """
+    return _run_query(DB, db_query)
+
+
+def get_majors():
+    db_query = f"""
+            SELECT
+                *
+            FROM sec.CM_Programs
+    """
+    return _run_query(DB, db_query)
+
+
 def get_registrations_since_year(year):
     # Filtering out duplicate enrollments and withdrawn courses
     db_query = f"""
