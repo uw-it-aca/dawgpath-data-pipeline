@@ -6,6 +6,24 @@ from commonconf import settings
 DB = "UWSDBDataStore"
 
 
+def get_regis_majors_since_year(year):
+    db_query = f"""
+            SELECT
+                system_key,
+                regis_yr,
+                regis_qtr,
+                regis_pathway,
+                regis_branch,
+                regis_deg_level,
+                regis_deg_type,
+                regis_major_abbr
+            FROM sec.registration_regis_col_major
+            WHERE
+                regis_yr >= {year}
+    """
+    return _run_query(DB, db_query)
+
+
 def get_transcripts_since_year(year):
     db_query = f"""
             SELECT

@@ -7,9 +7,9 @@ def run():
     db = get_db_implemenation()
     session = db.get_session()
 
-    # _delete_transcripts(session)
+    _delete_transcripts(session)
     transcripts = _get_transcripts()
-    # _save_transcripts(session, transcripts)
+    _save_transcripts(session, transcripts)
 
 
 # get transcript data
