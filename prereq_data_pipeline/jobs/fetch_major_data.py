@@ -28,7 +28,8 @@ def _get_majors():
             program_school_or_college=major['program_school_or_college'],
             program_dateStartLabel=major['program_dateStartLabel'],
             program_dateEndLabel=major['program_dateEndLabel'],
-            campus_name=major['campus_name']
+            campus_name=major['campus_name'],
+            program_admissionType=major['program_admissionType']
         )
         major_objects.append(major_obj)
     return major_objects
