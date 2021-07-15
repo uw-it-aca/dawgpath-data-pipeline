@@ -7,7 +7,7 @@ def run():
     db = get_db_implemenation()
     session = db.get_session()
 
-    _delete_registrations(session)
+    _delete_majors(session)
     majors = _get_majors()
     _save_majors(session, majors)
 
@@ -41,7 +41,7 @@ def _save_majors(session, majors):
 
 
 # delete existing registration data
-def _delete_registrations(session):
+def _delete_majors(session):
     q = session.query(Major)
     q.delete()
     session.commit()
