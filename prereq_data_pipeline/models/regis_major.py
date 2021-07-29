@@ -6,6 +6,7 @@ class RegisMajor(Base):
     system_key = Column(Integer())
     regis_yr = Column(SmallInteger())
     regis_qtr = Column(SmallInteger())
+    regis_term = Column(SmallInteger())
     regis_pathway = Column(SmallInteger())
     regis_branch = Column(SmallInteger())
     regis_deg_level = Column(SmallInteger())

@@ -24,6 +24,7 @@ class TestMajors(DBTest):
         self.assertEqual(len(self.mock_regis_majors), 5)
         self.assertEqual(self.mock_regis_majors[0].system_key, 41)
         self.assertEqual(self.mock_regis_majors[0].regis_major_abbr, "GEOG  ")
+        self.assertEqual(self.mock_regis_majors[0].regis_term, 20161)
 
     def test_save_regis_majors(self):
         _save_regis_majors(self.session, self.mock_regis_majors)

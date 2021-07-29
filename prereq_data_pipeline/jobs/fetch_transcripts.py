@@ -1,6 +1,7 @@
 from prereq_data_pipeline.dao.edw import get_transcripts_since_year
 from prereq_data_pipeline.models.transcript import Transcript
 from prereq_data_pipeline.databases.implementation import get_db_implemenation
+from prereq_data_pipeline.utilities import get_combined_term
 
 
 def run():
@@ -18,9 +19,8 @@ def _get_transcripts():
 
     transcript_objects = []
     for index, transcript in transcripts.iterrows():
-        # Convert decimal year/qtr into int year+qtr, eg 20204
-        combined_qtr = int(str(int(transcript['tran_yr'])) +
-                           str(int(transcript['tran_qtr'])))
+        combined_qtr = get_combined_term(transcript['tran_yr'],
+                                         transcript['tran_qtr'])
         transcript_obj = Transcript(
             system_key=transcript['system_key'],
             tran_yr=transcript['tran_yr'],
