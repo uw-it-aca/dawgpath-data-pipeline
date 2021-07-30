@@ -1,5 +1,5 @@
 from prereq_data_pipeline.models.base import Base
-from sqlalchemy import Column, String, SmallInteger, PickleType
+from sqlalchemy import Column, String, SmallInteger, PickleType, Boolean
 
 
 class GPADistribution(Base):
@@ -11,3 +11,4 @@ class GPADistribution(Base):
 class MajorDecGPADistribution(Base):
     gpa_distro = Column(PickleType())
     major_program_code = Column(String(length=25))
+    is_2yr = Column(Boolean())

@@ -51,7 +51,7 @@ tran_mock_data = [
     {"system_key": 322.0,
      "tran_yr": 2014.,
      "tran_qtr": 2.0,
-     "qtr_grade_points": 60.0,
+     "qtr_grade_points": 59.0,
      "qtr_graded_attmp": 15.0,
      "over_qtr_grade_pt": 0.0,
      "over_qtr_grade_at": 0.0}
