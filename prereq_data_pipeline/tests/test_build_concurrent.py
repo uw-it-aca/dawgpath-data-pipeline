@@ -68,13 +68,14 @@ class TestBuildConcurrent(DBTest):
 
     def test_get_terms_from_registrations(self):
         terms = _get_terms_from_registrations(self.session)
-        self.assertEqual(terms, [(2015, 1), (2015, 4), (2021, 1), (2021, 2)])
+        self.assertEqual(terms, [(2015, 1), (2015, 4), (2018, 1),
+                                 (2019, 1), (2020, 1), (2021, 1), (2021, 2)])
 
     def test_run_all(self):
         _delete_concurrent(self.session)
         run_for_all_registrations()
         concurrent = self.session.query(ConcurrentCourses).all()
-        self.assertEqual(len(concurrent), 7)
+        self.assertEqual(len(concurrent), 9)
 
         no_conc = self.session.query(ConcurrentCourses) \
             .filter(ConcurrentCourses.course_id == "ENGL354").one()

@@ -37,6 +37,6 @@ class TestBuildConcurrent(DBTest):
     def test_all_courses(self):
         build_distros_for_courses(self.session)
         distros = self.session.query(GPADistribution).all()
-        self.assertEqual(len(distros), 7)
+        self.assertEqual(len(distros), 9)
         self.assertEqual(distros[0].crs_curric_abbr, "BIOL")
         self.assertEqual(distros[0].gpa_distro[21], 1)

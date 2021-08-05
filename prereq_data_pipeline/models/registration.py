@@ -6,6 +6,7 @@ class Registration(Base):
     system_key = Column(Integer())
     regis_yr = Column(SmallInteger())
     regis_qtr = Column(SmallInteger())
+    regis_term = Column(SmallInteger())
     crs_curric_abbr = Column(String(length=6))
     crs_number = Column(SmallInteger())
     grade = Column(String(length=2))
