@@ -9,8 +9,7 @@ from prereq_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
 from prereq_data_pipeline.tests.shared_mock.registration import \
     registration_mock_data
 from prereq_data_pipeline.jobs.build_common_course_major import \
-    _delete_common_courses, get_courses_for_decl, _save_common_course, \
-    build_all_majors
+    BuildCommonCourseMajor
 from prereq_data_pipeline.models.regis_major import RegisMajor
 from prereq_data_pipeline.models.common_course_major import CommonCourseMajor
 
@@ -43,33 +42,33 @@ class TestCommonCourse(DBTest):
         super(TestCommonCourse, self).setUp()
         self._save_regis_majors()
         self._save_registration_data()
-        _delete_common_courses(self.session)
+        BuildCommonCourseMajor()._delete_common_courses()
 
     def test_get_courses_for_decl(self):
         decl = RegisMajor()
         decl.regis_yr = 2020
         decl.regis_qtr = 1
         decl.system_key = 322
-        courses = get_courses_for_decl(self.session, decl)
+        courses = BuildCommonCourseMajor().get_courses_for_decl(decl)
         self.assertEqual(len(courses), 2)
 
     def test_build_all_majors(self):
-        common_courses = build_all_majors(self.session)
+        common_courses = BuildCommonCourseMajor().build_all_majors()
         self.assertEqual(common_courses[0].course_counts, {})
         self.assertEqual(common_courses[1].course_counts, {'PHYS 301': 1,
                                                            'CHEM 142': 2})
 
     def test_save(self):
-        common_courses = build_all_majors(self.session)
-        _save_common_course(self.session, common_courses)
+        common_courses = BuildCommonCourseMajor().build_all_majors()
+        BuildCommonCourseMajor()._bulk_save_objects(common_courses)
         saved = self.session.query(CommonCourseMajor).all()
         self.assertEqual(len(saved), 2)
 
     def test_delete(self):
-        common_courses = build_all_majors(self.session)
-        _save_common_course(self.session, common_courses)
+        common_courses = BuildCommonCourseMajor().build_all_majors()
+        BuildCommonCourseMajor()._bulk_save_objects(common_courses)
         saved = self.session.query(CommonCourseMajor).all()
         self.assertEqual(len(saved), 2)
-        _delete_common_courses(self.session)
+        BuildCommonCourseMajor()._delete_common_courses()
         saved = self.session.query(CommonCourseMajor).all()
         self.assertEqual(len(saved), 0)
