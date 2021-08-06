@@ -59,8 +59,7 @@ class TestCommonCourse(DBTest):
                                                            'CHEM 142': 2})
 
     def test_save(self):
-        common_courses = BuildCommonCourseMajor().build_all_majors()
-        BuildCommonCourseMajor()._bulk_save_objects(common_courses)
+        BuildCommonCourseMajor().run()
         saved = self.session.query(CommonCourseMajor).all()
         self.assertEqual(len(saved), 2)
 
