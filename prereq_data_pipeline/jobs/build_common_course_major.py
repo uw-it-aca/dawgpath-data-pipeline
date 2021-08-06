@@ -1,4 +1,3 @@
-from prereq_data_pipeline.databases.implementation import get_db_implemenation
 from prereq_data_pipeline.models.common_course_major import CommonCourseMajor
 from prereq_data_pipeline.models.regis_major import RegisMajor
 from prereq_data_pipeline.utilities import get_previous_combined

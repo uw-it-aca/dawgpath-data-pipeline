@@ -5,8 +5,8 @@ from prereq_data_pipeline.jobs.fetch_registration_data import \
     _get_registrations, _delete_registrations, _save_registrations
 from prereq_data_pipeline.tests.shared_mock.registration import \
     registration_mock_data
-from prereq_data_pipeline.jobs.build_course_gpa_distro import \
-    _delete_gpa_distros, build_distro_for_course, build_distros_for_courses
+from prereq_data_pipeline.jobs.build_course_gpa_distro \
+    import BuildCourseGPADistro
 from prereq_data_pipeline.models.gpa_distro import GPADistribution
 
 
@@ -24,10 +24,10 @@ class TestGPADistro(DBTest):
         self.mock_registrations = _get_registrations()
         _delete_registrations(self.session)
         _save_registrations(self.session, self.mock_registrations)
-        _delete_gpa_distros(self.session)
+        BuildCourseGPADistro()._delete_gpa_distros()
 
     def test_get_for_course(self):
-        gd = build_distro_for_course(self.session, "CHEM", 142)
+        gd = BuildCourseGPADistro().build_distro_for_course("CHEM", 142)
         self.assertEqual(gd.gpa_distro[40], 1)
         self.assertEqual(gd.gpa_distro[1], 1)
         self.assertEqual(gd.gpa_distro[2], 0)
@@ -35,7 +35,7 @@ class TestGPADistro(DBTest):
         self.assertEqual(gd.gpa_distro[None], 0)
 
     def test_all_courses(self):
-        build_distros_for_courses(self.session)
+        BuildCourseGPADistro().run()
         distros = self.session.query(GPADistribution).all()
         self.assertEqual(len(distros), 9)
         self.assertEqual(distros[2].crs_curric_abbr, "BIOL")
