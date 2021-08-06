@@ -1,6 +1,5 @@
-import os
-import pyodbc
 import pandas
+import pymssql
 from commonconf import settings
 
 DB = "UWSDBDataStore"
@@ -120,21 +119,11 @@ def get_curric_info():
 
 
 def _run_query(database, query):
-    os.environ["FREETDSCONF"] = "db_config/freetds.conf"
-    os.environ["ODBCSYSINI"] = "db_config"
-
     password = getattr(settings, "EDW_PASSWORD")
     user = getattr(settings, "EDW_USER")
     server = getattr(settings, "EDW_SERVER")
-    constring = "Driver={FreeTDS};" \
-                f"SERVERNAME={server};" \
-                f"Database={database};" \
-                "Port=1433;" \
-                "TDS_Version=7.2;" \
-                f"UID={user};" \
-                f"PWD={password}"
 
-    con = pyodbc.connect(constring)
+    con = pymssql.connect(server, user, password, database)
     df = pandas.read_sql(query, con)
     con.close()
     return df
