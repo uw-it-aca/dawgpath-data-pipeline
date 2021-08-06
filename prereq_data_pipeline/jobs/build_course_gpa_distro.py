@@ -16,6 +16,7 @@ def run():
     db = get_db_implemenation()
     session = db.get_session()
     _delete_gpa_distros(session)
+    build_distros_for_courses(session)
 
 
 def build_distros_for_courses(session):

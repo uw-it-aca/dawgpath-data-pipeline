@@ -24,27 +24,27 @@ def run():
 def get_5yr_declarations(session, major, current_term):
     start_yr, start_qtr = get_previous_term((current_term[0] - 2,
                                              current_term[1]))
-    return _get_major_declarations_by_major(session,
-                                            major,
-                                            current_term[0]-5,
-                                            current_term[1],
-                                            start_yr,
-                                            start_qtr
-                                            )
+    return RegisMajor.get_major_declarations_by_major_period(session,
+                                                             major,
+                                                             current_term[0]-5,
+                                                             current_term[1],
+                                                             start_yr,
+                                                             start_qtr
+                                                             )
 
 
 def get_2yr_declarations(session, major, current_term):
-    return _get_major_declarations_by_major(session,
-                                            major,
-                                            current_term[0]-2,
-                                            current_term[1],
-                                            current_term[0],
-                                            current_term[1]
-                                            )
+    return RegisMajor.get_major_declarations_by_major_period(session,
+                                                             major,
+                                                             current_term[0]-2,
+                                                             current_term[1],
+                                                             current_term[0],
+                                                             current_term[1]
+                                                             )
 
 
 def build_gpa_distros(session):
-    majors = _get_majors(session)
+    majors = RegisMajor.get_majors(session)
     distros = []
     current_term = _get_most_recent_declaration(session)
     for major in majors:
@@ -79,8 +79,8 @@ def build_gpa_distros(session):
 
 
 def _get_most_recent_declaration(session):
-    latest_dec = session.query(RegisMajor.regis_yr, RegisMajor.regis_qtr)\
-        .order_by(RegisMajor.regis_yr.desc(), RegisMajor.regis_qtr.desc())\
+    latest_dec = session.query(RegisMajor.regis_yr, RegisMajor.regis_qtr) \
+        .order_by(RegisMajor.regis_yr.desc(), RegisMajor.regis_qtr.desc()) \
         .first()
     return latest_dec
 
@@ -94,21 +94,14 @@ def _build_distro_from_declarations(session, declarations):
     return gpa_distro
 
 
-def _get_majors(session):
-    majors = session.query(RegisMajor.regis_major_abbr)\
-        .group_by(RegisMajor.regis_major_abbr)\
-        .all()
-    return majors
-
-
 def _get_major_declarations_by_major(session, major, start_year, start_quarter,
                                      end_year, end_quarter):
     start_term = get_combined_term(start_year, start_quarter)
     end_term = get_combined_term(end_year, end_quarter)
-    declarations = session.query(RegisMajor)\
+    declarations = session.query(RegisMajor) \
         .filter(RegisMajor.regis_major_abbr == major,
                 RegisMajor.regis_term >= start_term,
-                RegisMajor.regis_term <= end_term)\
+                RegisMajor.regis_term <= end_term) \
         .all()
     return declarations
 
@@ -122,11 +115,11 @@ def _get_gpa_by_declaration(session, declaration):
         gpa_data = session.query(
             Transcript.system_key,
             func.sum(Transcript.qtr_graded_attmp).label("total_attmp"),
-            func.sum(Transcript.qtr_grade_points).label('total_points'))\
+            func.sum(Transcript.qtr_grade_points).label('total_points')) \
             .filter(Transcript.qtr_graded_attmp > 0,
                     Transcript.system_key == declaration.system_key,
                     Transcript.combined_qtr <= dec_qtr) \
-            .group_by(Transcript.system_key)\
+            .group_by(Transcript.system_key) \
             .one()
         # return GPA in rounded 2 digit int format
         return int(round((gpa_data[2] / gpa_data[1]), 1) * 10)

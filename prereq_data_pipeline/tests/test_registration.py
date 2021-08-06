@@ -23,19 +23,19 @@ class TestRegistrations(DBTest):
         _delete_registrations(self.session)
 
     def test_fetch_registrations(self):
-        self.assertEqual(len(self.mock_registrations), 15)
+        self.assertEqual(len(self.mock_registrations), 20)
         self.assertEqual(self.mock_registrations[0].system_key, 61631)
         self.assertEqual(self.mock_registrations[0].crs_curric_abbr, "BIOL")
 
     def test_save_registrations(self):
         _save_registrations(self.session, self.mock_registrations)
         saved_registrations = self.session.query(Registration).all()
-        self.assertEqual(len(saved_registrations), 15)
+        self.assertEqual(len(saved_registrations), 20)
 
     def test_delete_registrations(self):
         _save_registrations(self.session, self.mock_registrations)
         saved_registrations = self.session.query(Registration).all()
-        self.assertEqual(len(saved_registrations), 15)
+        self.assertEqual(len(saved_registrations), 20)
         _delete_registrations(self.session)
         saved_registrations = self.session.query(Registration).all()
         self.assertEqual(len(saved_registrations), 0)

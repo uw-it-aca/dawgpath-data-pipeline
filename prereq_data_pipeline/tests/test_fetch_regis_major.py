@@ -38,3 +38,14 @@ class TestMajors(DBTest):
         _delete_regis_majors(self.session)
         saved_regis_majors = self.session.query(RegisMajor).all()
         self.assertEqual(len(saved_regis_majors), 0)
+
+    def test_get_dec_by_major(self):
+        _save_regis_majors(self.session, self.mock_regis_majors)
+        declarations = RegisMajor. \
+            get_major_declarations_by_major_period(self.session,
+                                                   "N MATR",
+                                                   2020,
+                                                   1,
+                                                   2020,
+                                                   2)
+        self.assertEqual(len(declarations), 1)
