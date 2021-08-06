@@ -10,14 +10,14 @@ from prereq_data_pipeline.jobs.build_course_gpa_distro import \
 from prereq_data_pipeline.models.gpa_distro import GPADistribution
 
 
-class TestBuildConcurrent(DBTest):
+class TestGPADistro(DBTest):
     mock_registrations = None
     mock_df = None
 
     @patch('prereq_data_pipeline.jobs.'
            'fetch_registration_data.get_registrations_since_year')
     def setUp(self, get_reg_mock):
-        super(TestBuildConcurrent, self).setUp()
+        super(TestGPADistro, self).setUp()
         self.mock_df = pd.DataFrame.from_dict(registration_mock_data,
                                               orient='columns')
         get_reg_mock.return_value = self.mock_df
@@ -38,5 +38,5 @@ class TestBuildConcurrent(DBTest):
         build_distros_for_courses(self.session)
         distros = self.session.query(GPADistribution).all()
         self.assertEqual(len(distros), 9)
-        self.assertEqual(distros[0].crs_curric_abbr, "BIOL")
-        self.assertEqual(distros[0].gpa_distro[21], 1)
+        self.assertEqual(distros[2].crs_curric_abbr, "BIOL")
+        self.assertEqual(distros[2].gpa_distro[21], 1)
