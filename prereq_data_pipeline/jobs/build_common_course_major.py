@@ -19,7 +19,7 @@ def run():
     session = db.get_session()
     _delete_common_courses(session)
     common_courses = build_all_majors(session)
-    _save_common_course(common_courses)
+    _save_common_course(session, common_courses)
 
 
 def build_all_majors(session):
