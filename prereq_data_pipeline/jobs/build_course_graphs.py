@@ -1,7 +1,6 @@
 from prereq_data_pipeline.models.course import Course
 from prereq_data_pipeline.models.graph import Graph
 from prereq_data_pipeline.models.prereq import Prereq
-from prereq_data_pipeline.databases.implementation import get_db_implemenation
 from prereq_data_pipeline.utilities.graphs import GraphFactory
 from sqlalchemy.orm.exc import NoResultFound
 import multiprocessing
@@ -14,9 +13,6 @@ logger = getLogger(__name__)
 
 class BuildCoursePrereqGraphs(DataJob):
     def run(self):
-        db = get_db_implemenation()
-        session = db.get_session()
-
         # Remove old graphs (assumes we're updating all at once)
         self._delete_graphs()
 
