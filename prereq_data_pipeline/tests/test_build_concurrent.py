@@ -3,7 +3,7 @@ import pandas as pd
 from prereq_data_pipeline.models.concurrent_courses import ConcurrentCourses
 from prereq_data_pipeline.tests import DBTest
 from prereq_data_pipeline.jobs.fetch_registration_data import \
-    _get_registrations, _delete_registrations, _save_registrations
+    FetchRegistrationData
 from prereq_data_pipeline.jobs.buid_concurrent_courses import \
     BuildConcurrentCourses
 from prereq_data_pipeline.tests.shared_mock.registration import \
@@ -21,9 +21,9 @@ class TestBuildConcurrent(DBTest):
         self.mock_df = pd.DataFrame.from_dict(registration_mock_data,
                                               orient='columns')
         get_reg_mock.return_value = self.mock_df
-        self.mock_registrations = _get_registrations()
-        _delete_registrations(self.session)
-        _save_registrations(self.session, self.mock_registrations)
+        self.mock_registrations = FetchRegistrationData()._get_registrations()
+        FetchRegistrationData()._delete_registrations()
+        FetchRegistrationData()._bulk_save_objects(self.mock_registrations)
         BuildConcurrentCourses()._delete_concurrent()
 
     def _delete_concurrent_courses(self):
