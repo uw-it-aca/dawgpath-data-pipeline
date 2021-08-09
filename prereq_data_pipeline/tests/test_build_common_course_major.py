@@ -2,7 +2,7 @@ from unittest.mock import patch
 import pandas as pd
 from prereq_data_pipeline.tests import DBTest
 from prereq_data_pipeline.jobs.fetch_regis_major_data import \
-    _get_regis_majors, _save_regis_majors, _delete_regis_majors
+    FetchRegisMajorData
 from prereq_data_pipeline.jobs.fetch_registration_data import \
     _get_registrations, _delete_registrations, _save_registrations
 from prereq_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
@@ -24,9 +24,9 @@ class TestCommonCourse(DBTest):
         mock_df = pd.DataFrame.from_dict(regis_mock_data,
                                          orient='columns')
         get_regis_major_mock.return_value = mock_df
-        self.mock_regis_majors = _get_regis_majors()
-        _delete_regis_majors(self.session)
-        _save_regis_majors(self.session, self.mock_regis_majors)
+        self.mock_regis_majors = FetchRegisMajorData()._get_regis_majors()
+        FetchRegisMajorData()._delete_regis_majors()
+        FetchRegisMajorData()._bulk_save_objects(self.mock_regis_majors)
 
     @patch('prereq_data_pipeline.jobs.'
            'fetch_registration_data.get_registrations_since_year')
