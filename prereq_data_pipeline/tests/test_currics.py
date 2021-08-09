@@ -1,7 +1,6 @@
 import os
 from unittest.mock import patch
-from prereq_data_pipeline.jobs.fetch_curric_data import _get_currics, \
-    _save_currics, _delete_currics
+from prereq_data_pipeline.jobs.fetch_curric_data import FetchCurricData
 import pandas as pd
 from prereq_data_pipeline.models.curriculum import Curriculum
 from prereq_data_pipeline.tests import DBTest
@@ -27,8 +26,8 @@ class TestCurrics(DBTest):
         ]
         mock_df = pd.DataFrame(mock_data, index=['first', 'second'])
         get_curric_info_mock.return_value = mock_df
-        self.mock_currics = _get_currics()
-        _delete_currics(self.session)
+        self.mock_currics = FetchCurricData()._get_currics()
+        FetchCurricData()._delete_currics()
 
     def test_fetch_currics(self):
         self.assertEqual(len(self.mock_currics), 2)
@@ -36,15 +35,15 @@ class TestCurrics(DBTest):
         self.assertEqual(self.mock_currics[0].url, "www.foobar.com")
 
     def test_save_currics(self):
-        _save_currics(self.session, self.mock_currics)
+        FetchCurricData()._save_currics(self.mock_currics)
         saved_currics = self.session.query(Curriculum).all()
         self.assertEqual(len(saved_currics), 2)
 
     def test_delete_currics(self):
-        _save_currics(self.session, self.mock_currics)
+        FetchCurricData()._save_currics(self.mock_currics)
         saved_currics = self.session.query(Curriculum).all()
         self.assertEqual(len(saved_currics), 2)
-        _delete_currics(self.session)
+        FetchCurricData()._delete_currics()
         saved_currics = self.session.query(Curriculum).all()
         self.assertEqual(len(saved_currics), 0)
 
@@ -55,8 +54,8 @@ class TestCurrics(DBTest):
         self.assertEqual(curric_string, expected)
 
     def test_curric_export(self):
-        _delete_currics(self.session)
-        _save_currics(self.session, self.mock_currics)
+        FetchCurricData()._delete_currics()
+        FetchCurricData()._save_currics(self.mock_currics)
         curric_path = "test/curric_data.pkl"
         curric_count = len(self.mock_currics)
         # Ensure file is deleted
