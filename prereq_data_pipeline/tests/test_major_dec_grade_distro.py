@@ -5,8 +5,7 @@ from prereq_data_pipeline.jobs.build_major_dec_grade_ditro import \
     BuildMajorDecGradeDistro
 from prereq_data_pipeline.jobs.fetch_regis_major_data import \
     FetchRegisMajorData
-from prereq_data_pipeline.jobs.fetch_transcripts import _get_transcripts, \
-    _save_transcripts, _delete_transcripts
+from prereq_data_pipeline.jobs.fetch_transcripts import FetchTranscriptData
 from prereq_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
 from prereq_data_pipeline.tests.shared_mock.transcript import tran_mock_data
 from prereq_data_pipeline.models.gpa_distro import MajorDecGPADistribution
@@ -33,9 +32,9 @@ class TestMajorDecGradeDistro(DBTest):
         mock_df = pd.DataFrame.from_dict(tran_mock_data,
                                          orient='columns')
         get_tran_mock.return_value = mock_df
-        self.mock_transcripts = _get_transcripts()
-        _delete_transcripts(self.session)
-        _save_transcripts(self.session, self.mock_transcripts)
+        self.mock_transcripts = FetchTranscriptData()._get_transcripts()
+        FetchTranscriptData()._delete_transcripts()
+        FetchTranscriptData()._bulk_save_objects(self.mock_transcripts)
 
     def setUp(self,):
         super(TestMajorDecGradeDistro, self).setUp()
