@@ -1,8 +1,3 @@
-import os
-from unittest.mock import patch
-from prereq_data_pipeline.jobs.fetch_course_data import _get_courses, \
-    _save_courses, _delete_courses
-import pandas as pd
 from prereq_data_pipeline.models.course import Course
 from prereq_data_pipeline.models.prereq import Prereq
 from prereq_data_pipeline.tests import DBTest
