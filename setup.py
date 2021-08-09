@@ -24,12 +24,12 @@ setup(
     include_package_data=True,
     install_requires=[
         'pandas~=1.1.5',
-        'pyodbc==4.0.30',
         'SQLAlchemy~=1.3.23',
         'commonconf~=1.1',
         'nose2',
         'alembic',
-        'psycopg2'
+        'psycopg2',
+        'pymssql'
     ],
     license='',
     description='A tool for managing prereq map data',

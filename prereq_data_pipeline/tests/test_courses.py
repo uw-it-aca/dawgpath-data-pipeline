@@ -1,7 +1,6 @@
 import os
 from unittest.mock import patch
-from prereq_data_pipeline.jobs.fetch_course_data import _get_courses, \
-    _save_courses, _delete_courses
+from prereq_data_pipeline.jobs.fetch_course_data import FetchCourseData
 import pandas as pd
 from prereq_data_pipeline.models.course import Course
 from prereq_data_pipeline.tests import DBTest
@@ -58,8 +57,8 @@ class TestCourses(DBTest):
         ]
         mock_df = pd.DataFrame(mock_data)
         get_course_info_mock.return_value = mock_df
-        self.mock_courses = _get_courses()
-        _delete_courses(self.session)
+        self.mock_courses = FetchCourseData()._get_courses()
+        FetchCourseData()._delete_courses()
 
     def test_fetch_courses(self):
         self.assertEqual(len(self.mock_courses), 3)
@@ -67,15 +66,15 @@ class TestCourses(DBTest):
         self.assertEqual(self.mock_courses[0].course_number, 142)
 
     def test_save_courses(self):
-        _save_courses(self.session, self.mock_courses)
+        FetchCourseData()._save_courses(self.mock_courses)
         saved_courses = self.session.query(Course).all()
         self.assertEqual(len(saved_courses), 3)
 
     def test_delete_courses(self):
-        _save_courses(self.session, self.mock_courses)
+        FetchCourseData()._save_courses(self.mock_courses)
         saved_courses = self.session.query(Course).all()
         self.assertEqual(len(saved_courses), 3)
-        _delete_courses(self.session)
+        FetchCourseData()._delete_courses()
         saved_courses = self.session.query(Course).all()
         self.assertEqual(len(saved_courses), 0)
 
@@ -91,8 +90,8 @@ class TestCourses(DBTest):
         self.assertEqual(course_string, expected)
 
     def test_course_export(self):
-        _delete_courses(self.session)
-        _save_courses(self.session, self.mock_courses)
+        FetchCourseData()._delete_courses()
+        FetchCourseData()._save_courses(self.mock_courses)
         course_path = "test/course_data.pkl"
         course_count = len(self.mock_courses)
         # Ensure file is deleted

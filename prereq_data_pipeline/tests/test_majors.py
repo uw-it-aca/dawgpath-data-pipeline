@@ -2,8 +2,7 @@ from unittest.mock import patch
 import pandas as pd
 from prereq_data_pipeline.models.major import Major
 from prereq_data_pipeline.tests import DBTest
-from prereq_data_pipeline.jobs.fetch_major_data import \
-    _get_majors, _delete_majors, _save_majors
+from prereq_data_pipeline.jobs.fetch_major_data import FetchMajorData
 
 
 class TestMajors(DBTest):
@@ -79,8 +78,8 @@ class TestMajors(DBTest):
         mock_df = pd.DataFrame.from_dict(mock_data,
                                          orient='columns')
         get_major_mock.return_value = mock_df
-        self.mock_majors = _get_majors()
-        _delete_majors(self.session)
+        self.mock_majors = FetchMajorData()._get_majors()
+        FetchMajorData()._delete_majors()
 
     def test_fetch_majors(self):
         self.assertEqual(len(self.mock_majors), 3)
@@ -88,14 +87,14 @@ class TestMajors(DBTest):
         self.assertEqual(self.mock_majors[0].program_level, "Undergraduate")
 
     def test_save_majors(self):
-        _save_majors(self.session, self.mock_majors)
+        FetchMajorData()._save_majors(self.mock_majors)
         saved_majors = self.session.query(Major).all()
         self.assertEqual(len(saved_majors), 3)
 
     def test_delete_majors(self):
-        _save_majors(self.session, self.mock_majors)
+        FetchMajorData()._save_majors(self.mock_majors)
         saved_majors = self.session.query(Major).all()
         self.assertEqual(len(saved_majors), 3)
-        _delete_majors(self.session)
+        FetchMajorData()._delete_majors()
         saved_majors = self.session.query(Major).all()
         self.assertEqual(len(saved_majors), 0)
