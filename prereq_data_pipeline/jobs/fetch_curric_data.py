@@ -1,18 +1,13 @@
 from prereq_data_pipeline.dao.edw import get_curric_info
 from prereq_data_pipeline.models.curriculum import Curriculum
-from prereq_data_pipeline.databases.implementation import get_db_implemenation
 from prereq_data_pipeline.jobs import DataJob
 
 
 class FetchCurricData(DataJob):
     def run(self):
-        db = get_db_implemenation()
-        # db.create_tables()
-        session = db.get_session()
-
-        self._delete_currics(session)
+        self._delete_currics()
         currics = self._get_currics()
-        self._save_currics(session, currics)
+        self._save_currics(currics)
 
     # get curric data
     def _get_currics(self):
