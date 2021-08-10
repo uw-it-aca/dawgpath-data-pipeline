@@ -4,7 +4,7 @@ from prereq_data_pipeline.models.concurrent_courses import ConcurrentCourses
 from prereq_data_pipeline.tests import DBTest
 from prereq_data_pipeline.jobs.fetch_registration_data import \
     FetchRegistrationData
-from prereq_data_pipeline.jobs.buid_concurrent_courses import \
+from prereq_data_pipeline.jobs.build_concurrent_courses import \
     BuildConcurrentCourses
 from prereq_data_pipeline.tests.shared_mock.registration import \
     registration_mock_data
