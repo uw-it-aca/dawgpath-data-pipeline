@@ -92,4 +92,7 @@ class TestBuildConcurrent(DBTest):
             .filter(ConcurrentCourses.course_id == "CSE142").one()
 
         self.assertEqual(term2_course.concurrent_courses,
-                         {'CHEM142': 2, 'BIOL140': 1})
+                         {'CHEM142': 3,
+                          'BIOL140': 1,
+                          'PHYS301': 1,
+                          'BIO103': 1})

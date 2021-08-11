@@ -55,8 +55,10 @@ class TestCommonCourse(DBTest):
     def test_build_all_majors(self):
         common_courses = BuildCommonCourseMajor().build_all_majors()
         self.assertEqual(common_courses[0].course_counts, {})
-        self.assertEqual(common_courses[1].course_counts, {'PHYS 301': 1,
-                                                           'CHEM 142': 2})
+        self.assertEqual(common_courses[1].course_counts, {'BIO 103': 1,
+                                                           'CHEM 142': 2,
+                                                           'CSE 142': 1,
+                                                           'PHYS 301': 2})
 
     def test_save(self):
         BuildCommonCourseMajor().run()
