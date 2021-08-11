@@ -50,7 +50,7 @@ class TestCommonCourse(DBTest):
         decl.regis_qtr = 1
         decl.system_key = 322
         courses = BuildCommonCourseMajor().get_courses_for_decl(decl)
-        self.assertEqual(len(courses), 2)
+        self.assertEqual(len(courses), 3)
 
     def test_build_all_majors(self):
         common_courses = BuildCommonCourseMajor().build_all_majors()
@@ -58,7 +58,7 @@ class TestCommonCourse(DBTest):
         self.assertEqual(common_courses[1].course_counts, {'BIO 103': 1,
                                                            'CHEM 142': 2,
                                                            'CSE 142': 1,
-                                                           'PHYS 301': 2})
+                                                           'PHYS 301': 3})
 
     def test_save(self):
         BuildCommonCourseMajor().run()
