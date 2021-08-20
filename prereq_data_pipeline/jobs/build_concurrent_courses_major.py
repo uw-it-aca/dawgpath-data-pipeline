@@ -11,7 +11,7 @@ from collections import Counter
 class BuildConcurrentCoursesMajor(DataJob):
     def run(self):
         self.delete_concurrent_courses()
-        majors = []
+        majors = RegisMajor().get_majors(self.session)
         cc_objects = self.get_concurrent_courses_for_all_majors(majors)
         self._bulk_save_objects(cc_objects)
 
@@ -29,9 +29,11 @@ class BuildConcurrentCoursesMajor(DataJob):
         declared_courses = []
         for decl in decls:
             declared_courses += self.get_courses_after_decl(decl)
-            decl_conc = \
-                self.get_concurrent_from_registrations(declared_courses)
-            concurrent_courses += decl_conc
+
+            if(declared_courses):
+                decl_conc = \
+                    self.get_concurrent_from_registrations(declared_courses)
+                concurrent_courses += decl_conc
 
         return ConcurrentCoursesMajor(major_id=major,
                                       concurrent_courses=concurrent_courses)

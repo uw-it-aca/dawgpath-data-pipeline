@@ -16,7 +16,6 @@ class BuildCommonCourseMajor(DataJob):
         majors = RegisMajor().get_majors(self.session)
         cc_objects = []
         for major in majors:
-            major = major[0]
             decls = RegisMajor.get_major_declarations_by_major(self.session,
                                                                major)
             common_courses = {}
