@@ -1,13 +1,8 @@
-import os
-from unittest.mock import patch
-from prereq_data_pipeline.jobs.fetch_course_data import _get_courses, \
-    _save_courses, _delete_courses
-import pandas as pd
 from prereq_data_pipeline.models.course import Course
 from prereq_data_pipeline.models.prereq import Prereq
 from prereq_data_pipeline.tests import DBTest
 from prereq_data_pipeline.jobs.build_course_graphs import \
-    get_courses_with_prereqs, get_graphs
+    BuildCoursePrereqGraphs
 
 
 class TestBuildGraphs(DBTest):
@@ -108,11 +103,11 @@ class TestBuildGraphs(DBTest):
         self.info_371 = info_371
 
     def test_get_courses_with_prereqs(self):
-        courses = get_courses_with_prereqs(self.session)
+        courses = BuildCoursePrereqGraphs().get_courses_with_prereqs()
         self.assertEqual(len(courses), 2)
 
     def test_get_graph(self):
-        graphs = get_graphs([self.info_371])
+        graphs = BuildCoursePrereqGraphs().get_graphs([self.info_371])
         self.assertEqual(len(graphs), 1)
         graph_json = '{"x": {"nodes": {"course.level": {"0": 300, "1": 300}' \
                      ', "course_branch": null, "course_cat_omit": {"0": fal' \

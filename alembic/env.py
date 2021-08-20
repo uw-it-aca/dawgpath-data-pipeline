@@ -17,6 +17,7 @@ from prereq_data_pipeline.models.gpa_distro import GPADistribution
 from prereq_data_pipeline.models.major import Major
 from prereq_data_pipeline.models.transcript import Transcript
 from prereq_data_pipeline.models.regis_major import RegisMajor
+from prereq_data_pipeline.models.common_course_major import CommonCourseMajor
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -10,3 +10,8 @@ def get_previous_term(term):
         return year, 4
     else:
         return year, quarter - 1
+
+
+def get_previous_combined(term):
+    year, qtr = get_previous_term(term)
+    return get_combined_term(year, qtr)
