@@ -49,12 +49,10 @@ class TestConcurrentCoursesMajor(DBTest):
         courses = BuildConcurrentCoursesMajor(). \
             get_concurrent_courses_for_major("N MATR")
         self.assertEqual(courses.major_id, "N MATR")
-        expected = {'CHEM-142|PHYS-301': 4,
-                    'CHEM-142|CSE-142': 1,
-                    'CHEM-142|BIO-103': 1,
-                    'CSE-142|PHYS-301': 1,
-                    'CSE-142|BIO-103': 1,
-                    'PHYS-301|BIO-103': 1}
+        expected = {'CHEM-142|PHYS-301': 2,
+                    'PHYS-301|BIO-103': 1,
+                    'PHYS-301|MATH-124': 1,
+                    'BIO-103|MATH-124': 1}
         self.assertDictEqual(courses.concurrent_courses, expected)
 
     def test_build_for_all(self):

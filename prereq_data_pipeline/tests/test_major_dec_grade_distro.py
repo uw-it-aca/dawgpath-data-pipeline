@@ -106,7 +106,7 @@ class TestMajorDecGradeDistro(DBTest):
 
     def test_build_distros(self):
         distros = BuildMajorDecGradeDistro().build_gpa_distros()
-        self.assertEqual(len(distros), 2)
+        self.assertEqual(len(distros), 3)
         self.assertFalse(distros[0].is_2yr)
         self.assertEqual(distros[1].major_program_code, 'N MATR')
         self.assertTrue(distros[1].is_2yr)
@@ -115,13 +115,13 @@ class TestMajorDecGradeDistro(DBTest):
         distros = BuildMajorDecGradeDistro().build_gpa_distros()
         BuildMajorDecGradeDistro()._bulk_save_objects(distros)
         saved = self.session.query(MajorDecGPADistribution).all()
-        self.assertEqual(len(saved), 2)
+        self.assertEqual(len(saved), 3)
 
     def test_delete(self):
         distros = BuildMajorDecGradeDistro().build_gpa_distros()
         BuildMajorDecGradeDistro()._bulk_save_objects(distros)
         saved = self.session.query(MajorDecGPADistribution).all()
-        self.assertEqual(len(saved), 2)
+        self.assertEqual(len(saved), 3)
         BuildMajorDecGradeDistro()._delete_major_dec_distros()
         saved = self.session.query(MajorDecGPADistribution).all()
         self.assertEqual(len(saved), 0)

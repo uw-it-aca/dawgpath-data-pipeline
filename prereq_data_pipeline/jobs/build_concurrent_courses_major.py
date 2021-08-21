@@ -26,10 +26,8 @@ class BuildConcurrentCoursesMajor(DataJob):
         concurrent_courses = Counter()
         decls = RegisMajor.get_major_declarations_by_major(self.session,
                                                            major)
-        declared_courses = []
         for decl in decls:
-            declared_courses += self.get_courses_after_decl(decl)
-
+            declared_courses = self.get_courses_after_decl(decl)
             if(declared_courses):
                 decl_conc = \
                     self.get_concurrent_from_registrations(declared_courses)
@@ -66,7 +64,7 @@ class BuildConcurrentCoursesMajor(DataJob):
     def get_courses_after_decl(self, decl):
         decl_term = get_combined_term(decl.regis_yr, decl.regis_qtr)
         courses = self.session.query(Registration).filter(
-            Registration.regis_term <= decl_term,
+            Registration.regis_term >= decl_term,
             Registration.system_key == decl.system_key
         )
         return [u.__dict__ for u in courses.all()]
