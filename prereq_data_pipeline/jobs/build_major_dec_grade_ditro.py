@@ -45,8 +45,6 @@ class BuildMajorDecGradeDistro(DataJob):
         distros = []
         current_term = self._get_most_recent_declaration()
         for major in majors:
-            major = major[0]
-
             declarations_2y = self.get_2yr_declarations(major,
                                                         current_term)
             distro_2y = {}

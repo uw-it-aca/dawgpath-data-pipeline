@@ -19,6 +19,7 @@ class RegisMajor(Base):
         majors = session.query(RegisMajor.regis_major_abbr) \
             .group_by(RegisMajor.regis_major_abbr) \
             .all()
+        majors = [major for (major,) in majors]
         return majors
 
     @staticmethod

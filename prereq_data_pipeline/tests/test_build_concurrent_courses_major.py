@@ -8,13 +8,14 @@ from prereq_data_pipeline.jobs.fetch_registration_data import \
 from prereq_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
 from prereq_data_pipeline.tests.shared_mock.registration import \
     registration_mock_data
-from prereq_data_pipeline.jobs.build_common_course_major import \
-    BuildCommonCourseMajor
+from prereq_data_pipeline.jobs.build_concurrent_courses_major import \
+    BuildConcurrentCoursesMajor
 from prereq_data_pipeline.models.regis_major import RegisMajor
-from prereq_data_pipeline.models.common_course_major import CommonCourseMajor
+from prereq_data_pipeline.models.concurrent_courses import \
+    ConcurrentCoursesMajor
 
 
-class TestCommonCourse(DBTest):
+class TestConcurrentCoursesMajor(DBTest):
     mock_registrations = None
     mock_df = None
 
@@ -39,37 +40,34 @@ class TestCommonCourse(DBTest):
         FetchRegistrationData()._bulk_save_objects(self.mock_registrations)
 
     def setUp(self):
-        super(TestCommonCourse, self).setUp()
+        super(TestConcurrentCoursesMajor, self).setUp()
         self._save_regis_majors()
         self._save_registration_data()
-        BuildCommonCourseMajor()._delete_common_courses()
+        BuildConcurrentCoursesMajor().delete_concurrent_courses()
 
-    def test_get_courses_for_decl(self):
-        decl = RegisMajor()
-        decl.regis_yr = 2020
-        decl.regis_qtr = 1
-        decl.system_key = 322
-        courses = BuildCommonCourseMajor().get_courses_for_decl(decl)
-        self.assertEqual(len(courses), 3)
+    def test_build_for_major(self):
+        courses = BuildConcurrentCoursesMajor(). \
+            get_concurrent_courses_for_major("N MATR")
+        self.assertEqual(courses.major_id, "N MATR")
+        expected = {'CHEM-142|PHYS-301': 2,
+                    'PHYS-301|BIO-103': 1,
+                    'PHYS-301|MATH-124': 1,
+                    'BIO-103|MATH-124': 1}
+        self.assertDictEqual(courses.concurrent_courses, expected)
 
-    def test_build_all_majors(self):
-        common_courses = BuildCommonCourseMajor().build_all_majors()
-        self.assertEqual(common_courses[0].course_counts, {})
-        self.assertEqual(common_courses[1].course_counts, {'BIO 103': 1,
-                                                           'CHEM 142': 2,
-                                                           'CSE 142': 1,
-                                                           'PHYS 301': 3})
+    def test_build_for_all(self):
+        majors = RegisMajor().get_majors(self.session)
+        courses = BuildConcurrentCoursesMajor().\
+            get_concurrent_courses_for_all_majors(majors)
+        self.assertEqual(len(courses), 2)
+        self.assertEqual(courses[0].major_id, "GEOG  ")
+        self.assertEqual(courses[1].major_id, "N MATR")
 
-    def test_save(self):
-        BuildCommonCourseMajor().run()
-        saved = self.session.query(CommonCourseMajor).all()
-        self.assertEqual(len(saved), 2)
-
-    def test_delete(self):
-        common_courses = BuildCommonCourseMajor().build_all_majors()
-        BuildCommonCourseMajor()._bulk_save_objects(common_courses)
-        saved = self.session.query(CommonCourseMajor).all()
-        self.assertEqual(len(saved), 2)
-        BuildCommonCourseMajor()._delete_common_courses()
-        saved = self.session.query(CommonCourseMajor).all()
-        self.assertEqual(len(saved), 0)
+    def test_run(self):
+        BuildConcurrentCoursesMajor().delete_concurrent_courses()
+        BuildConcurrentCoursesMajor().run()
+        courses = self.session.query(ConcurrentCoursesMajor).all()
+        self.assertEqual(len(courses), 2)
+        BuildConcurrentCoursesMajor().delete_concurrent_courses()
+        courses = self.session.query(ConcurrentCoursesMajor).all()
+        self.assertEqual(len(courses), 0)
