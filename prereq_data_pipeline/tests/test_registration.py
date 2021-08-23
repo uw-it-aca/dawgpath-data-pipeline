@@ -24,7 +24,7 @@ class TestRegistrations(DBTest):
 
     def test_fetch_registrations(self):
         self.assertEqual(len(self.mock_registrations), 29)
-        self.assertEqual(self.mock_registrations[0].system_key, 61631)
+        self.assertEqual(self.mock_registrations[0].system_key, 41)
         self.assertEqual(self.mock_registrations[0].crs_curric_abbr, "BIOL")
 
     def test_save_registrations(self):
