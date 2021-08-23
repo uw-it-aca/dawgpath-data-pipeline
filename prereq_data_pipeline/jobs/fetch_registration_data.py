@@ -8,7 +8,7 @@ REGISTRATION_START_YEAR = 2021
 
 class FetchRegistrationData(DataJob):
     def run(self):
-        self._delete_registrations(session)
+        self._delete_registrations()
         registrations = self._get_registrations()
         self._bulk_save_objects(registrations)
 

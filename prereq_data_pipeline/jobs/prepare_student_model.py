@@ -12,15 +12,21 @@ class PrepareStudentModel(DataJob):
         self._bulk_save_objects(students)
 
     def create_students(self):
-        most_recent_decl = self.session.query(RegisMajor.system_key,
-                                              RegisMajor.regis_major_abbr,
-                                              func.max(RegisMajor.regis_term))\
-            .group_by(RegisMajor.system_key).all()
+        # doesn't work in postgres
+        # most_recent_decl = self.session.query(RegisMajor.system_key,
+        #                                       RegisMajor.regis_major_abbr,
+        #                                       func.max(RegisMajor.regis_term))\
+        #     .group_by(RegisMajor.system_key).all()
         students = []
-        for syskey, major, term in most_recent_decl:
+        syskeys = self.session.query(RegisMajor.system_key)\
+            .group_by(RegisMajor.system_key).all()
+        for syskey, in syskeys:
+            latest_term = self.session.query(RegisMajor.regis_major_abbr,
+                                             RegisMajor.regis_term) \
+                .filter(RegisMajor.system_key == syskey) \
+                .order_by(RegisMajor.regis_term.desc()).all()
             students.append(Student(system_key=syskey,
-                                    major_abbr=major))
-
+                                    major_abbr=latest_term[0][0]))
         return students
 
     def _delete_students(self):
