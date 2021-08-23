@@ -55,7 +55,7 @@ class TestCommonCourse(DBTest):
     def test_build_all_majors(self):
         common_courses = BuildCommonCourseMajor().build_all_majors()
         self.assertEqual(common_courses[0].course_counts, {})
-        self.assertEqual(common_courses[1].course_counts, {'BIO 103': 1,
+        self.assertEqual(common_courses[2].course_counts, {'BIO 103': 1,
                                                            'CHEM 142': 2,
                                                            'CSE 142': 1,
                                                            'PHYS 301': 3})
@@ -63,13 +63,13 @@ class TestCommonCourse(DBTest):
     def test_save(self):
         BuildCommonCourseMajor().run()
         saved = self.session.query(CommonCourseMajor).all()
-        self.assertEqual(len(saved), 2)
+        self.assertEqual(len(saved), 3)
 
     def test_delete(self):
         common_courses = BuildCommonCourseMajor().build_all_majors()
         BuildCommonCourseMajor()._bulk_save_objects(common_courses)
         saved = self.session.query(CommonCourseMajor).all()
-        self.assertEqual(len(saved), 2)
+        self.assertEqual(len(saved), 3)
         BuildCommonCourseMajor()._delete_common_courses()
         saved = self.session.query(CommonCourseMajor).all()
         self.assertEqual(len(saved), 0)

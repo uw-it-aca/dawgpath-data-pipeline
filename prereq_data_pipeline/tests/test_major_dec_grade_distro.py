@@ -58,7 +58,7 @@ class TestMajorDecGradeDistro(DBTest):
 
     def test_get_majors(self):
         majors = RegisMajor.get_majors(self.session)
-        self.assertEqual(len(majors), 2)
+        self.assertEqual(len(majors), 3)
 
     def test_get_gpa_by_dec(self):
         current_term = \
