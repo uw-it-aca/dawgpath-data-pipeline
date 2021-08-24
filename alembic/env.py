@@ -20,6 +20,9 @@ from prereq_data_pipeline.models.regis_major import RegisMajor
 from prereq_data_pipeline.models.common_course_major import CommonCourseMajor
 from prereq_data_pipeline.models.concurrent_courses import \
     ConcurrentCoursesMajor
+from prereq_data_pipeline.models.student import Student
+from prereq_data_pipeline.models.common_major_for_course import \
+    CommonMajorForCourse
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -59,15 +59,16 @@ class TestConcurrentCoursesMajor(DBTest):
         majors = RegisMajor().get_majors(self.session)
         courses = BuildConcurrentCoursesMajor().\
             get_concurrent_courses_for_all_majors(majors)
-        self.assertEqual(len(courses), 2)
+        self.assertEqual(len(courses), 3)
         self.assertEqual(courses[0].major_id, "GEOG  ")
-        self.assertEqual(courses[1].major_id, "N MATR")
+        self.assertEqual(courses[2].major_id, "N MATR")
+        self.assertEqual(courses[1].major_id, "MATH  ")
 
     def test_run(self):
         BuildConcurrentCoursesMajor().delete_concurrent_courses()
         BuildConcurrentCoursesMajor().run()
         courses = self.session.query(ConcurrentCoursesMajor).all()
-        self.assertEqual(len(courses), 2)
+        self.assertEqual(len(courses), 3)
         BuildConcurrentCoursesMajor().delete_concurrent_courses()
         courses = self.session.query(ConcurrentCoursesMajor).all()
         self.assertEqual(len(courses), 0)

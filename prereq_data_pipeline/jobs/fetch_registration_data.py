@@ -8,7 +8,7 @@ REGISTRATION_START_YEAR = 2021
 
 class FetchRegistrationData(DataJob):
     def run(self):
-        self._delete_registrations(session)
+        self._delete_registrations()
         registrations = self._get_registrations()
         self._bulk_save_objects(registrations)
 
@@ -20,6 +20,9 @@ class FetchRegistrationData(DataJob):
         for index, registration in registrations.iterrows():
             regis_term = get_combined_term(registration['regis_yr'],
                                            registration['regis_qtr'])
+            course_id = registration['crs_curric_abbr'].strip() + " "\
+                + str(registration['crs_number'])
+
             reg = Registration(
                     system_key=registration['system_key'],
                     regis_yr=registration['regis_yr'],
@@ -27,7 +30,8 @@ class FetchRegistrationData(DataJob):
                     regis_term=regis_term,
                     crs_curric_abbr=registration['crs_curric_abbr'].strip(),
                     crs_number=registration['crs_number'],
-                    grade=registration['grade']
+                    grade=registration['grade'],
+                    course_id=course_id
                 )
             try:
                 reg.gpa = int(registration['grade'])

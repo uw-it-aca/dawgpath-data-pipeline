@@ -6,7 +6,7 @@ regis_mock_data = [
      "regis_branch": 0,
      "regis_deg_level": 1,
      "regis_deg_type": 1,
-     "regis_major_abbr": "GEOG  "},
+     "regis_major_abbr": "MATH  "},
     {"system_key": 41,
      "regis_yr": 2017,
      "regis_qtr": 2,
