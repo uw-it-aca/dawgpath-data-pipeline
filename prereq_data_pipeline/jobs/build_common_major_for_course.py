@@ -15,23 +15,25 @@ class BuildCommonMajorForCourse(DataJob):
         self._bulk_save_objects(common_objs)
 
     def build_common_majors(self):
-        counts = self.session.query(Registration,
-                                    Student,
+        counts = self.session.query(Registration.course_id,
+                                    Student.major_abbr,
                                     func.count(Student.major_abbr))\
             .join(Student, Student.system_key == Registration.system_key)\
             .group_by(Student.major_abbr, Registration.course_id)\
             .all()
         common_maj = {}
-        for result in counts:
-            if result[0].course_id not in common_maj:
-                data = {'crs_curric_abbr': result[0].crs_curric_abbr,
-                        'crs_number': result[0].crs_number,
+        for course, major, count in counts:
+            if course not in common_maj:
+                abbr, split, number = course.rpartition(' ')
+                number = int(number)
+                data = {'crs_curric_abbr': abbr,
+                        'crs_number': number,
                         'major_counts': []
                         }
-                common_maj[result[0].course_id] = data
+                common_maj[course] = data
 
-            common_maj[result[0].course_id]['major_counts']\
-                .append({'major': result[1].major_abbr, 'count': result[2]})
+            common_maj[course]['major_counts']\
+                .append({'major': major, 'count': count})
         return common_maj
 
     def create_common_maj_objects(self, common):
