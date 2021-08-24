@@ -2,6 +2,12 @@ from prereq_data_pipeline.models.regis_major import RegisMajor
 from prereq_data_pipeline.models.student import Student
 from sqlalchemy import func
 from prereq_data_pipeline.jobs import DataJob
+from itertools import chain
+import multiprocessing
+
+
+def worker(syskeys):
+    return PrepareStudentModel().get_from_syskeys(syskeys)
 
 
 class PrepareStudentModel(DataJob):
@@ -17,9 +23,21 @@ class PrepareStudentModel(DataJob):
         #                                       RegisMajor.regis_major_abbr,
         #                                       func.max(RegisMajor.regis_term))\
         #     .group_by(RegisMajor.system_key).all()
-        students = []
         syskeys = self.session.query(RegisMajor.system_key)\
             .group_by(RegisMajor.system_key).all()
+
+        syskeys = syskeys
+        chunk_size = 10000
+        chunks = [syskeys[x:x + chunk_size] for x in
+                  range(0, len(syskeys), chunk_size)]
+        pool = multiprocessing.Pool()
+        results = pool.map(worker, chunks)
+        students = list(chain.from_iterable(results))
+
+        return students
+
+    def get_from_syskeys(self, syskeys):
+        students = []
         for syskey, in syskeys:
             latest_term = self.session.query(RegisMajor.regis_major_abbr,
                                              RegisMajor.regis_term) \
