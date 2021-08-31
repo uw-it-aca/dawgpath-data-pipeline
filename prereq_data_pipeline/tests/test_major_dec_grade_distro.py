@@ -104,24 +104,41 @@ class TestMajorDecGradeDistro(DBTest):
         }
         self.assertDictEqual(distro, expected_distro)
 
+    def test_empty_distro(self):
+        current_term = \
+            BuildMajorDecGradeDistro()._get_most_recent_declaration()
+        declarations = \
+            BuildMajorDecGradeDistro().get_5yr_declarations("MATH  ",
+                                                            current_term)
+        distro = BuildMajorDecGradeDistro(). \
+            _build_distro_from_declarations(declarations)
+        expected_distro = {
+            0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0,
+            10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0, 17: 0, 18: 0,
+            19: 0, 20: 0, 21: 0, 22: 0, 23: 0, 24: 0, 25: 0, 26: 0, 27: 0,
+            28: 0, 29: 0, 30: 0, 31: 0, 32: 0, 33: 0, 34: 0, 35: 0, 36: 0,
+            37: 0, 38: 0, 39: 0, 40: 0
+        }
+
     def test_build_distros(self):
         distros = BuildMajorDecGradeDistro().build_gpa_distros()
-        self.assertEqual(len(distros), 3)
-        self.assertFalse(distros[0].is_2yr)
-        self.assertEqual(distros[1].major_program_code, 'N MATR')
-        self.assertTrue(distros[1].is_2yr)
+        self.assertEqual(len(distros), 6)
+        self.assertTrue(distros[0].is_2yr)
+        self.assertEqual(distros[0].major_program_code, 'GEOG  ')
+        self.assertEqual(distros[4].major_program_code, 'N MATR')
+        self.assertTrue(distros[4].is_2yr)
 
     def test_save(self):
         distros = BuildMajorDecGradeDistro().build_gpa_distros()
         BuildMajorDecGradeDistro()._bulk_save_objects(distros)
         saved = self.session.query(MajorDecGPADistribution).all()
-        self.assertEqual(len(saved), 3)
+        self.assertEqual(len(saved), 6)
 
     def test_delete(self):
         distros = BuildMajorDecGradeDistro().build_gpa_distros()
         BuildMajorDecGradeDistro()._bulk_save_objects(distros)
         saved = self.session.query(MajorDecGPADistribution).all()
-        self.assertEqual(len(saved), 3)
+        self.assertEqual(len(saved), 6)
         BuildMajorDecGradeDistro()._delete_major_dec_distros()
         saved = self.session.query(MajorDecGPADistribution).all()
         self.assertEqual(len(saved), 0)
