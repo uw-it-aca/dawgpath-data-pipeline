@@ -10,10 +10,11 @@ class ExportMajorGPADistro(DataJob):
     """
 
     def run(self, file_path):
+        data = self.get_file_contents()
         # create empty file
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, 'w') as fp:
-            fp.write('test text')
+            fp.write(data)
 
     def get_file_contents(self):
         distros = self.session.query(MajorDecGPADistribution).all()
