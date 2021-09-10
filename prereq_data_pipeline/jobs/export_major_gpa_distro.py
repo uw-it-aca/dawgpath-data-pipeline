@@ -1,10 +1,13 @@
 from prereq_data_pipeline.jobs import DataJob
 from prereq_data_pipeline.models.gpa_distro import MajorDecGPADistribution
-import os
+from prereq_data_pipeline.models.major import Major
+from prereq_data_pipeline.utilities import get_SDB_program_code, \
+    MAJOR_CODE_PREFIX, MAJOR_CODE_SUFFIX
 import json
+from sqlalchemy.orm.exc import NoResultFound
 
 
-class ExportMajorGPADistro(DataJob):
+class ExportMajorData(DataJob):
     """
     Exports 2 and 5 year major gpa distributions
     """
@@ -14,16 +17,42 @@ class ExportMajorGPADistro(DataJob):
         with open(file_path, 'w') as fp:
             fp.write(data)
 
+    def get_majors(self):
+        # Select undergrad majors  w/o an end date for most recent
+        majors = self.session.query(Major)\
+            .filter(Major.program_code.contains(MAJOR_CODE_PREFIX),
+                    Major.program_code.contains(MAJOR_CODE_SUFFIX))\
+            .filter(Major.program_dateEndLabel == "").all()
+        return majors
+
+    def get_distros_for_major(self, major_code):
+        try:
+            gpa_2 = self.session.query(MajorDecGPADistribution)\
+                .filter(MajorDecGPADistribution.major_program_code == major_code,
+                        MajorDecGPADistribution.is_2yr == True)\
+                .one()\
+                .gpa_distro
+        except NoResultFound:
+            gpa_2 = None
+        try:
+            gpa_5 = self.session.query(MajorDecGPADistribution)\
+                .filter(MajorDecGPADistribution.major_program_code == major_code,
+                        MajorDecGPADistribution.is_2yr == False)\
+                .one()\
+                .gpa_distro
+        except NoResultFound:
+            gpa_5 = None
+        return gpa_2, gpa_5
+
     def get_file_contents(self):
-        distros = self.session.query(MajorDecGPADistribution).all()
-        export_data = {}
-        for distro in distros:
-            if distro.major_program_code not in export_data:
-                export_data[distro.major_program_code] = {}
-            if distro.is_2yr:
-                export_data[distro.major_program_code]['2_yr']\
-                    = distro.gpa_distro
-            else:
-                export_data[distro.major_program_code]['5_yr']\
-                    = distro.gpa_distro
-        return json.dumps(export_data)
+        majors = self.get_majors()
+        major_data = {}
+        for major in majors:
+            sdb_code = get_SDB_program_code(major.program_code)
+            gpa_2, gpa_5 = self.get_distros_for_major(sdb_code)
+
+            major_data[sdb_code] = {"major_code": sdb_code,
+                                    "major_title": major.program_title,
+                                    "2_yr": gpa_2,
+                                    "5_yr": gpa_5}
+        return json.dumps(major_data)

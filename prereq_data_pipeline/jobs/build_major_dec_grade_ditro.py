@@ -23,7 +23,7 @@ class BuildMajorDecGradeDistro(DataJob):
                                                  current_term[1]))
         return RegisMajor. \
             get_major_declarations_by_major_period(self.session,
-                                                   major,
+                                                   major.strip(),
                                                    current_term[0]-5,
                                                    current_term[1],
                                                    start_yr,
@@ -33,7 +33,7 @@ class BuildMajorDecGradeDistro(DataJob):
     def get_2yr_declarations(self, major, current_term):
         return RegisMajor. \
             get_major_declarations_by_major_period(self.session,
-                                                   major,
+                                                   major.strip(),
                                                    current_term[0]-2,
                                                    current_term[1],
                                                    current_term[0],
@@ -84,7 +84,10 @@ class BuildMajorDecGradeDistro(DataJob):
         gpa_distro = {key: 0 for key in range(0, 41)}
         if declarations:
             for declaration in declarations:
-                gpa = self._get_gpa_by_declaration(declaration)
+                try:
+                    gpa = self._get_gpa_by_declaration(declaration)
+                except ValueError as ex:
+                    pass
                 if gpa is not None:
                     gpa_distro[gpa] += 1
         return gpa_distro
@@ -117,7 +120,11 @@ class BuildMajorDecGradeDistro(DataJob):
                 .group_by(Transcript.system_key) \
                 .one()
             # return GPA in rounded 2 digit int format
-            return int(round((gpa_data[2] / gpa_data[1]), 1) * 10)
+            gpa = int(round((gpa_data[2] / gpa_data[1]), 1) * 10)
+            # GPA must be between 0, 40
+            if gpa < 0 or gpa > 40:
+                raise ValueError("GPA not between 0, 40", gpa)
+            return gpa
         except NoResultFound:
             return None
 
