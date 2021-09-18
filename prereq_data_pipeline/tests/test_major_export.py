@@ -9,7 +9,7 @@ from prereq_data_pipeline.jobs.fetch_regis_major_data import \
 from prereq_data_pipeline.jobs.fetch_transcripts import FetchTranscriptData
 from prereq_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
 from prereq_data_pipeline.tests.shared_mock.transcript import tran_mock_data
-from prereq_data_pipeline.jobs.export_major_gpa_distro import\
+from prereq_data_pipeline.jobs.export_major_data import\
     ExportMajorData
 
 
@@ -46,7 +46,9 @@ class TestMajorGPAExport(DBTest):
     def test_export(self):
         data = ExportMajorData().get_file_contents()
         parsed = json.loads(data)
-        self.assertEqual(len(parsed), 3)
-        geog = parsed['N MATR']
-        self.assertEqual(geog['2_yr']['39'], 1)
-        self.assertEqual(geog['2_yr']['38'], 0)
+        self.assertEqual(len(parsed), 1)
+        major = parsed['B EDSD']
+        self.assertIsNone(major['2_yr'])
+        self.assertEqual(major['major_campus'], "Bothell")
+        self.assertEqual(major['major_school'],
+                         "School of Educational Studies")

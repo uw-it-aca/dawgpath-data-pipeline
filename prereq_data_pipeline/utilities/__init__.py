@@ -21,7 +21,6 @@ MAJOR_CODE_PREFIX = "UG-"
 MAJOR_CODE_SUFFIX = "-MAJOR"
 
 
-
 def get_CM_program_code(program_code):
     program_code = program_code.strip()
     return "%s%s%s" % (MAJOR_CODE_PREFIX, program_code, MAJOR_CODE_SUFFIX)

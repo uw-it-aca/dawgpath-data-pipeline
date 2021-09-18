@@ -5,6 +5,7 @@ from prereq_data_pipeline.utilities import get_SDB_program_code, \
     MAJOR_CODE_PREFIX, MAJOR_CODE_SUFFIX
 import json
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql.expression import false, true
 
 
 class ExportMajorData(DataJob):
@@ -28,16 +29,18 @@ class ExportMajorData(DataJob):
     def get_distros_for_major(self, major_code):
         try:
             gpa_2 = self.session.query(MajorDecGPADistribution)\
-                .filter(MajorDecGPADistribution.major_program_code == major_code,
-                        MajorDecGPADistribution.is_2yr == True)\
+                .filter(MajorDecGPADistribution.major_program_code
+                        == major_code,
+                        MajorDecGPADistribution.is_2yr == true())\
                 .one()\
                 .gpa_distro
         except NoResultFound:
             gpa_2 = None
         try:
             gpa_5 = self.session.query(MajorDecGPADistribution)\
-                .filter(MajorDecGPADistribution.major_program_code == major_code,
-                        MajorDecGPADistribution.is_2yr == False)\
+                .filter(MajorDecGPADistribution.major_program_code
+                        == major_code,
+                        MajorDecGPADistribution.is_2yr == false())\
                 .one()\
                 .gpa_distro
         except NoResultFound:
@@ -52,7 +55,15 @@ class ExportMajorData(DataJob):
             gpa_2, gpa_5 = self.get_distros_for_major(sdb_code)
 
             major_data[sdb_code] = {"major_code": sdb_code,
+                                    "program_code": major.program_code,
                                     "major_title": major.program_title,
+                                    "major_school":
+                                        major.program_school_or_college,
+                                    "major_campus": major.campus_name,
+                                    "major_description":
+                                        major.program_description,
+                                    "major_admission":
+                                        major.program_admissionType,
                                     "2_yr": gpa_2,
                                     "5_yr": gpa_5}
         return json.dumps(major_data)
