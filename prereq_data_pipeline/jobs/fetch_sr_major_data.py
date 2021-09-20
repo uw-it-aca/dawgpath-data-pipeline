@@ -16,7 +16,7 @@ class FetchSRMajorData(DataJob):
         for index, sr_major in sr_majors.iterrows():
             sr_major_obj = SRMajor(
                 major_abbr=sr_major['major_abbr'].strip(),
-                major_home_url=sr_major['major_home_url']
+                major_home_url=sr_major['major_home_url'].strip()
             )
             sr_major_objects.append(sr_major_obj)
         return sr_major_objects

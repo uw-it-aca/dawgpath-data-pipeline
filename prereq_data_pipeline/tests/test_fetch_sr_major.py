@@ -21,7 +21,7 @@ class TestSRMajors(DBTest):
         FetchSRMajorData()._delete_sr_majors()
 
     def test_fetch_sr_majors(self):
-        self.assertEqual(len(self.mock_sr_majors), 3)
+        self.assertEqual(len(self.mock_sr_majors), 4)
         self.assertEqual(self.mock_sr_majors[0].major_abbr, "MATH")
         self.assertEqual(self.mock_sr_majors[0].major_home_url,
                          "www.uw.edu/math")
@@ -29,12 +29,12 @@ class TestSRMajors(DBTest):
     def test_save_sr_majors(self):
         FetchSRMajorData()._bulk_save_objects(self.mock_sr_majors)
         saved_sr_majors = self.session.query(SRMajor).all()
-        self.assertEqual(len(saved_sr_majors), 3)
+        self.assertEqual(len(saved_sr_majors), 4)
 
     def test_delete_sr_majors(self):
         FetchSRMajorData()._bulk_save_objects(self.mock_sr_majors)
         saved_sr_majors = self.session.query(SRMajor).all()
-        self.assertEqual(len(saved_sr_majors), 3)
+        self.assertEqual(len(saved_sr_majors), 4)
         FetchSRMajorData()._delete_sr_majors()
         saved_sr_majors = self.session.query(SRMajor).all()
         self.assertEqual(len(saved_sr_majors), 0)
