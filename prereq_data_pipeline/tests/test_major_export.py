@@ -53,3 +53,4 @@ class TestMajorGPAExport(DBTest):
         self.assertEqual(major['major_school'],
                          "School of Educational Studies")
         self.assertEqual(major['major_home_url'], "www.uw.edu/bedsd")
+        self.assertIsNone(major['common_course_decl'])

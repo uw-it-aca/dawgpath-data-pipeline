@@ -2,6 +2,7 @@ from prereq_data_pipeline.jobs import DataJob
 from prereq_data_pipeline.models.gpa_distro import MajorDecGPADistribution
 from prereq_data_pipeline.models.major import Major
 from prereq_data_pipeline.models.sr_major import SRMajor
+from prereq_data_pipeline.models.common_course_major import CommonCourseMajor
 from prereq_data_pipeline.utilities import get_SDB_program_code, \
     MAJOR_CODE_PREFIX, MAJOR_CODE_SUFFIX
 import json
@@ -54,7 +55,16 @@ class ExportMajorData(DataJob):
                 .filter(SRMajor.major_abbr == sdb_code).one()
             return major.major_home_url
         except NoResultFound:
-            print(sdb_code)
+            print("no url", sdb_code)
+
+    def get_common_courses(self, major):
+        try:
+            common_courses = self.session.query(CommonCourseMajor)\
+                .filter(CommonCourseMajor.major == major)\
+                .one()
+            return common_courses.course_counts
+        except NoResultFound:
+            print("no common", major)
 
     def get_file_contents(self):
         majors = self.get_majors()
@@ -63,6 +73,7 @@ class ExportMajorData(DataJob):
             sdb_code = get_SDB_program_code(major.program_code)
             gpa_2, gpa_5 = self.get_distros_for_major(sdb_code)
             home_url = self.get_major_url(sdb_code)
+            common_course = self.get_common_courses(sdb_code)
 
             major_data[sdb_code] = {"major_code": sdb_code,
                                     "program_code": major.program_code,
@@ -75,6 +86,7 @@ class ExportMajorData(DataJob):
                                     "major_admission":
                                         major.program_admissionType,
                                     "major_home_url": home_url,
+                                    "common_course_decl": common_course,
                                     "2_yr": gpa_2,
                                     "5_yr": gpa_5}
         return json.dumps(major_data)
