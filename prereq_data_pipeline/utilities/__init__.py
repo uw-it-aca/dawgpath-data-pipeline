@@ -30,3 +30,10 @@ def get_SDB_program_code(program_code):
     return program_code\
         .replace(MAJOR_CODE_PREFIX, "")\
         .replace(MAJOR_CODE_SUFFIX, "")
+
+
+def get_course_abbr_title_dict(courses):
+    title_dict = {}
+    for course in courses:
+        title_dict[course.course_id] = course.long_course_title
+    return title_dict

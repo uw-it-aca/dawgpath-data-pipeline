@@ -1,7 +1,9 @@
 from prereq_data_pipeline.models.common_course_major import CommonCourseMajor
 from prereq_data_pipeline.models.regis_major import RegisMajor
-from prereq_data_pipeline.utilities import get_previous_combined
+from prereq_data_pipeline.utilities import get_previous_combined,\
+    get_course_abbr_title_dict
 from prereq_data_pipeline.models.registration import Registration
+from prereq_data_pipeline.models.course import Course
 from prereq_data_pipeline.jobs import DataJob
 
 
@@ -34,7 +36,7 @@ class BuildCommonCourseMajor(DataJob):
             sorted_courses = sorted_courses[:10]
 
             courses_by_percent = \
-                self.get_percentages_from_common(len(decls), sorted_courses)
+                self.process_common_course_data(len(decls), sorted_courses)
 
             common_course_obj = CommonCourseMajor(
                 major=major,
@@ -55,10 +57,18 @@ class BuildCommonCourseMajor(DataJob):
     def _delete_common_courses(self):
         self._delete_objects(CommonCourseMajor)
 
-    @staticmethod
-    def get_percentages_from_common(total_students, common_courses):
+    def process_common_course_data(self, total_students, common_courses):
+        courses = self.session.query(Course).all()
+        title_dict = get_course_abbr_title_dict(courses)
         common_percents = {}
+
         for course in common_courses:
+            try:
+                title = title_dict[course[0]]
+            except KeyError:
+                title = ""
             percent = int(round((course[1]/total_students)*100))
-            common_percents[course[0]] = percent
+            common_percents[course[0]] = {"percent": percent,
+                                          "title": title}
+
         return common_percents

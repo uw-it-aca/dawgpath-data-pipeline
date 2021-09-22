@@ -8,10 +8,12 @@ from prereq_data_pipeline.jobs.fetch_registration_data import \
 from prereq_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
 from prereq_data_pipeline.tests.shared_mock.registration import \
     registration_mock_data
+from prereq_data_pipeline.tests.shared_mock.courses import course_mock_data
 from prereq_data_pipeline.jobs.build_common_course_major import \
     BuildCommonCourseMajor
 from prereq_data_pipeline.models.regis_major import RegisMajor
 from prereq_data_pipeline.models.common_course_major import CommonCourseMajor
+from prereq_data_pipeline.jobs.fetch_course_data import FetchCourseData
 
 
 class TestCommonCourse(DBTest):
@@ -38,10 +40,19 @@ class TestCommonCourse(DBTest):
         FetchRegistrationData()._delete_registrations()
         FetchRegistrationData()._bulk_save_objects(self.mock_registrations)
 
+    @patch('prereq_data_pipeline.jobs.fetch_course_data.get_course_titles')
+    def _save_course_data(self, get_course_info_mock):
+        mock_df = pd.DataFrame(course_mock_data)
+        get_course_info_mock.return_value = mock_df
+        self.mock_courses = FetchCourseData()._get_courses()
+        FetchCourseData()._delete_courses()
+        FetchCourseData()._save_courses(self.mock_courses)
+
     def setUp(self):
         super(TestCommonCourse, self).setUp()
         self._save_regis_majors()
         self._save_registration_data()
+        self._save_course_data()
         BuildCommonCourseMajor()._delete_common_courses()
 
     def test_get_courses_for_decl(self):
@@ -55,10 +66,12 @@ class TestCommonCourse(DBTest):
     def test_build_all_majors(self):
         common_courses = BuildCommonCourseMajor().build_all_majors()
         self.assertEqual(common_courses[0].course_counts, {})
-        self.assertEqual(common_courses[2].course_counts, {'BIO 103': 25,
-                                                           'CHEM 142': 50,
-                                                           'CSE 142': 25,
-                                                           'PHYS 301': 75})
+        common_dict = {'BIO 103': {'percent': 25, 'title': 'Into to Bio'},
+                       'CHEM 142': {'percent': 50, 'title': 'Intro to chem'},
+                       'CSE 142': {'percent': 25,
+                                   'title': 'Fundamentals of Programming'},
+                       'PHYS 301': {'percent': 75, 'title': ''}}
+        self.assertEqual(common_courses[2].course_counts, common_dict)
 
     def test_save(self):
         BuildCommonCourseMajor().run()
