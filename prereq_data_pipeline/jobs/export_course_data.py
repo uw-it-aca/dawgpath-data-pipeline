@@ -1,23 +1,23 @@
+from prereq_data_pipeline.jobs import DataJob
+import json
 from prereq_data_pipeline.models.course import Course
-from prereq_data_pipeline.databases.implementation import get_db_implemenation
-import pandas as pd
-import os
-
-"""
-Builds course data pkl files as currently used by prereq map
-"""
 
 
-def run(file_path):
-    # create empty file
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    with open(file_path, 'w') as fp:
-        pass
+class ExportCourseData(DataJob):
+    def run(self, file_path):
+        data = self.get_file_contents()
+        with open(file_path, 'w') as fp:
+            fp.write(data)
 
-    # get courses
-    db = get_db_implemenation()
-    session = db.get_session()
-    q = session.query(Course)
+    def get_courses(self):
+        courses = self.session.query(Course)
+        return courses
 
-    df = pd.read_sql(q.filter().statement, q.session.bind)
-    df.to_pickle(file_path)
+    def get_file_contents(self):
+        courses = self.get_courses()
+        course_data = []
+        for course in courses:
+            course_data.append({"course_id": course.course_id,
+                                "course_title": course.long_course_title})
+
+        return json.dumps(course_data)
