@@ -28,7 +28,7 @@ class FetchRegisMajorData(DataJob):
                 regis_branch=regis_major['regis_branch'],
                 regis_deg_level=regis_major['regis_deg_level'],
                 regis_deg_type=regis_major['regis_deg_type'],
-                regis_major_abbr=regis_major['regis_major_abbr']
+                regis_major_abbr=regis_major['regis_major_abbr'].strip()
             )
             regis_major_objects.append(regis_major_obj)
 

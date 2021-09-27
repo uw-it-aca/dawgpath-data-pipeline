@@ -49,6 +49,20 @@ def get_majors():
     return _run_query(DB, db_query)
 
 
+def get_sr_majors():
+    db_query = f"""
+            SELECT
+                major_abbr,
+                major_home_url
+            FROM sec.sr_major_code
+            WHERE
+                major_last_yr = 9999
+                AND major_branch = 0
+                AND major_pathway = 0
+    """
+    return _run_query(DB, db_query)
+
+
 def get_registrations_since_year(year):
     # Filtering out duplicate enrollments and withdrawn courses
     db_query = f"""

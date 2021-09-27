@@ -1,7 +1,9 @@
 from prereq_data_pipeline.models.common_course_major import CommonCourseMajor
 from prereq_data_pipeline.models.regis_major import RegisMajor
-from prereq_data_pipeline.utilities import get_previous_combined
+from prereq_data_pipeline.utilities import get_previous_combined,\
+    get_course_abbr_title_dict
 from prereq_data_pipeline.models.registration import Registration
+from prereq_data_pipeline.models.course import Course
 from prereq_data_pipeline.jobs import DataJob
 
 
@@ -12,7 +14,7 @@ class BuildCommonCourseMajor(DataJob):
         common_courses = self.build_all_majors()
         self._bulk_save_objects(common_courses)
 
-    def build_all_majors(self,):
+    def build_all_majors(self):
         majors = RegisMajor().get_majors(self.session)
         cc_objects = []
         for major in majors:
@@ -27,9 +29,18 @@ class BuildCommonCourseMajor(DataJob):
                         common_courses[course.course_id] += 1
                     else:
                         common_courses[course.course_id] = 1
+            # Limit to top 10 most common
+            sorted_courses = sorted(common_courses.items(),
+                                    key=lambda kv: kv[1],
+                                    reverse=True)
+            sorted_courses = sorted_courses[:10]
+
+            courses_by_percent = \
+                self.process_common_course_data(len(decls), sorted_courses)
+
             common_course_obj = CommonCourseMajor(
                 major=major,
-                course_counts=common_courses
+                course_counts=courses_by_percent
             )
             cc_objects.append(common_course_obj)
         return cc_objects
@@ -45,3 +56,19 @@ class BuildCommonCourseMajor(DataJob):
 
     def _delete_common_courses(self):
         self._delete_objects(CommonCourseMajor)
+
+    def process_common_course_data(self, total_students, common_courses):
+        courses = self.session.query(Course).all()
+        title_dict = get_course_abbr_title_dict(courses)
+        common_percents = {}
+
+        for course in common_courses:
+            try:
+                title = title_dict[course[0]]
+            except KeyError:
+                title = ""
+            percent = int(round((course[1]/total_students)*100))
+            common_percents[course[0]] = {"percent": percent,
+                                          "title": title}
+
+        return common_percents

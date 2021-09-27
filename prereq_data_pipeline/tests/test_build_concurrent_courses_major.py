@@ -60,9 +60,9 @@ class TestConcurrentCoursesMajor(DBTest):
         courses = BuildConcurrentCoursesMajor().\
             get_concurrent_courses_for_all_majors(majors)
         self.assertEqual(len(courses), 3)
-        self.assertEqual(courses[0].major_id, "GEOG  ")
+        self.assertEqual(courses[0].major_id, "GEOG")
         self.assertEqual(courses[2].major_id, "N MATR")
-        self.assertEqual(courses[1].major_id, "MATH  ")
+        self.assertEqual(courses[1].major_id, "MATH")
 
     def test_run(self):
         BuildConcurrentCoursesMajor().delete_concurrent_courses()

@@ -25,7 +25,7 @@ class TestPrepareStudent(DBTest):
         students = PrepareStudentModel().create_students()
         self.assertEqual(len(students), 5)
         self.assertEqual(students[0].system_key, 41)
-        self.assertEqual(students[0].major_abbr, "GEOG  ")
+        self.assertEqual(students[0].major_abbr, "GEOG")
 
     def test_run(self):
         PrepareStudentModel().run()

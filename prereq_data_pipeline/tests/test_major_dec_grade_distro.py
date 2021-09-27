@@ -52,7 +52,7 @@ class TestMajorDecGradeDistro(DBTest):
         dec_2yr = BuildMajorDecGradeDistro().get_2yr_declarations("N MATR",
                                                                   current_term)
         self.assertEqual(len(dec_2yr), 2)
-        dec_5yr = BuildMajorDecGradeDistro().get_5yr_declarations("GEOG  ",
+        dec_5yr = BuildMajorDecGradeDistro().get_5yr_declarations("GEOG",
                                                                   current_term)
         self.assertEqual(len(dec_5yr), 1)
 
@@ -91,7 +91,7 @@ class TestMajorDecGradeDistro(DBTest):
         current_term = \
             BuildMajorDecGradeDistro()._get_most_recent_declaration()
         declarations = \
-            BuildMajorDecGradeDistro().get_5yr_declarations("GEOG  ",
+            BuildMajorDecGradeDistro().get_5yr_declarations("GEOG",
                                                             current_term)
         distro = BuildMajorDecGradeDistro(). \
             _build_distro_from_declarations(declarations)
@@ -108,7 +108,7 @@ class TestMajorDecGradeDistro(DBTest):
         current_term = \
             BuildMajorDecGradeDistro()._get_most_recent_declaration()
         declarations = \
-            BuildMajorDecGradeDistro().get_5yr_declarations("MATH  ",
+            BuildMajorDecGradeDistro().get_5yr_declarations("MATH",
                                                             current_term)
         distro = BuildMajorDecGradeDistro(). \
             _build_distro_from_declarations(declarations)
@@ -124,7 +124,7 @@ class TestMajorDecGradeDistro(DBTest):
         distros = BuildMajorDecGradeDistro().build_gpa_distros()
         self.assertEqual(len(distros), 6)
         self.assertTrue(distros[0].is_2yr)
-        self.assertEqual(distros[0].major_program_code, 'GEOG  ')
+        self.assertEqual(distros[0].major_program_code, 'GEOG')
         self.assertEqual(distros[4].major_program_code, 'N MATR')
         self.assertTrue(distros[4].is_2yr)
 
