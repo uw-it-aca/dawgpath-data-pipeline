@@ -17,7 +17,16 @@ class ExportCourseData(DataJob):
         courses = self.get_courses()
         course_data = []
         for course in courses:
+
             course_data.append({"course_id": course.course_id,
-                                "course_title": course.long_course_title})
+                                "course_title": course.long_course_title,
+                                "course_credits":
+                                    self.get_credits_for_course(course)})
 
         return json.dumps(course_data)
+
+    def get_credits_for_course(self, course):
+        if course.max_credits > 0:
+            return "%s - %s" % (course.min_credits, course.max_credits)
+        else:
+            return course.min_credits
