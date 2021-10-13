@@ -82,6 +82,27 @@ def get_registrations_since_year(year):
     return _run_query(DB, db_query)
 
 
+def get_registrations_in_year_quarter(year, quarter):
+    # Filtering out duplicate enrollments and withdrawn courses
+    db_query = f"""
+            SELECT
+                system_key,
+                regis_yr,
+                regis_qtr,
+                crs_curric_abbr,
+                crs_number,
+                grade
+            FROM sec.registration_courses
+            WHERE
+                regis_yr = {year}
+                AND regis_qtr = {quarter}
+                AND dup_enroll = ''
+                AND request_status in ('A', 'C', 'R')
+                AND crs_number < 500
+        """
+    return _run_query(DB, db_query)
+
+
 def get_prereqs():
     db_query = """
         SELECT
