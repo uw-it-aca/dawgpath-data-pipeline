@@ -30,12 +30,13 @@ class TestConcurrentCoursesMajor(DBTest):
         FetchRegisMajorData()._bulk_save_objects(self.mock_regis_majors)
 
     @patch('prereq_data_pipeline.jobs.'
-           'fetch_registration_data.get_registrations_since_year')
+           'fetch_registration_data.get_registrations_in_year_quarter')
     def _save_registration_data(self, get_reg_mock):
         self.mock_df = pd.DataFrame.from_dict(registration_mock_data,
                                               orient='columns')
         get_reg_mock.return_value = self.mock_df
-        self.mock_registrations = FetchRegistrationData()._get_registrations()
+        self.mock_registrations = FetchRegistrationData()\
+            ._get_registrations(2020, 1)
         FetchRegistrationData()._delete_registrations()
         FetchRegistrationData()._bulk_save_objects(self.mock_registrations)
 
