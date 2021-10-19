@@ -4,9 +4,9 @@ from prereq_data_pipeline.jobs.fetch_course_data import FetchCourseData
 import pandas as pd
 from prereq_data_pipeline.models.course import Course
 from prereq_data_pipeline.tests import DBTest
-from prereq_data_pipeline.jobs.export_course_data import run \
-    as export_course_data
+from prereq_data_pipeline.jobs.export_course_data import ExportCourseData
 from prereq_data_pipeline.tests.shared_mock.courses import course_mock_data
+import json
 
 
 class TestCourses(DBTest):
@@ -46,25 +46,20 @@ class TestCourses(DBTest):
                    " course_branch=0, course_cat_omit=False, " \
                    "diversity_crs=False, english_comp=True, " \
                    "indiv_society=False, natural_world=True, qsr=False, " \
-                   "vis_lit_perf_arts=False, writing_crs=False)"
+                   "vis_lit_perf_arts=False, writing_crs=False, " \
+                   "min_credits=1, max_credits=5)"
+
         self.assertEqual(course_string, expected)
 
     def test_course_export(self):
         FetchCourseData()._delete_courses()
         FetchCourseData()._save_courses(self.mock_courses)
-        course_path = "test/course_data.pkl"
-        course_count = len(self.mock_courses)
-        # Ensure file is deleted
-        try:
-            os.remove(course_path)
-        except FileNotFoundError:
-            pass
+        data = ExportCourseData().get_file_contents()
 
-        self.assertFalse(os.path.exists(course_path))
-        export_course_data(course_path)
-        self.assertTrue(os.path.exists(course_path))
+        parsed = json.loads(data)
+        self.assertEqual(len(parsed), 5)
 
-        df = pd.read_pickle(course_path)
-        self.assertEqual(len(df.index), course_count)
-        # clean up file
-        os.remove(course_path)
+        course = parsed[0]
+        self.assertEqual(course['course_id'], "CSE 142")
+        self.assertEqual(course['course_id'], "CSE 142")
+        self.assertEqual(course['course_credits'], "1.0 - 5.0")
