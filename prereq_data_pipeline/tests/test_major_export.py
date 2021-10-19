@@ -121,7 +121,6 @@ class TestMajorGPAExport(DBTest):
     def test_export(self):
         data = ExportMajorData().get_file_contents()
         parsed = json.loads(data)
-        print(parsed)
         self.assertEqual(len(parsed), 1)
         major = parsed['B EDSD']
         self.assertIsNone(major['2_yr'])
