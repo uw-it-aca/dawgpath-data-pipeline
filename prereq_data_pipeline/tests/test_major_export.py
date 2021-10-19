@@ -115,6 +115,7 @@ class TestMajorGPAExport(DBTest):
         super(TestMajorGPAExport, self).setUp()
         self._save_regis_majors()
         self._save_transcript_data()
+        self._save_major_data()
         BuildMajorDecGradeDistro().run()
 
     def test_export(self):
