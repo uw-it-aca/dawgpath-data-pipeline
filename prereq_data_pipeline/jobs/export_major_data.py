@@ -69,6 +69,8 @@ class ExportMajorData(DataJob):
     def get_file_contents(self):
         majors = self.get_majors()
         major_data = {}
+        print(len(majors))
+        print(majors)
         for major in majors:
             sdb_code = get_SDB_program_code(major.program_code)
             gpa_2, gpa_5 = self.get_distros_for_major(sdb_code)
