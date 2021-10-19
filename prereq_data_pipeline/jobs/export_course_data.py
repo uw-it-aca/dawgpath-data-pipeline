@@ -26,7 +26,10 @@ class ExportCourseData(DataJob):
         return json.dumps(course_data)
 
     def get_credits_for_course(self, course):
-        if course.max_credits > 0:
-            return "%s - %s" % (course.min_credits, course.max_credits)
-        else:
+        try:
+            if course.max_credits > 0:
+                return "%s - %s" % (course.min_credits, course.max_credits)
+            else:
+                return course.min_credits
+        except TypeError:
             return course.min_credits

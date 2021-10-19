@@ -5,7 +5,7 @@ from sqlalchemy import Column, Text, ForeignKey, Integer, DateTime
 
 
 class Graph(Base):
-    course_id = Column(Integer, ForeignKey('course.id'))
+    course_id = Column(Integer, ForeignKey('course.id', ondelete="CASCADE"))
     course = relationship("Course", back_populates="graph")
     graph_json = Column(Text())
     create_date = Column(DateTime, default=datetime.datetime.utcnow)
