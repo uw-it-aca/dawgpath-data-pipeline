@@ -1,21 +1,30 @@
-from prereq_data_pipeline.dao.edw import get_registrations_since_year
+from prereq_data_pipeline.dao.edw import get_registrations_in_year_quarter
 from prereq_data_pipeline.models.registration import Registration
 from prereq_data_pipeline.utilities import get_combined_term
 from prereq_data_pipeline.jobs import DataJob
+from datetime import date
 
-REGISTRATION_START_YEAR = 2021
+REGISTRATION_START_YEAR = 2016
+REG_QUARTERS = [1, 2, 3, 4]
 
 
 class FetchRegistrationData(DataJob):
     def run(self):
         self._delete_registrations()
-        registrations = self._get_registrations()
-        self._bulk_save_objects(registrations)
+        self.get_all_years()
 
-    # get registration data
-    def _get_registrations(self):
-        registrations = get_registrations_since_year(REGISTRATION_START_YEAR)
+    def get_all_years(self):
+        current_year = date.today().year
+        reg_year = REGISTRATION_START_YEAR
+        while reg_year <= current_year:
+            for quarter in REG_QUARTERS:
+                registrations = self._get_registrations(reg_year, quarter)
+                self._bulk_save_objects(registrations)
+            reg_year += 1
 
+    # get registration data by year and quarter
+    def _get_registrations(self, year, quarter):
+        registrations = get_registrations_in_year_quarter(year, quarter)
         registration_objects = []
         for index, registration in registrations.iterrows():
             regis_term = get_combined_term(registration['regis_yr'],

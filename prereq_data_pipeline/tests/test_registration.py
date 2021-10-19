@@ -12,14 +12,15 @@ class TestRegistrations(DBTest):
     mock_registrations = None
 
     @patch('prereq_data_pipeline.jobs.'
-           'fetch_registration_data.get_registrations_since_year')
+           'fetch_registration_data.get_registrations_in_year_quarter')
     def setUp(self, get_reg_mock):
         super(TestRegistrations, self).setUp()
 
         mock_df = pd.DataFrame.from_dict(registration_mock_data,
                                          orient='columns')
         get_reg_mock.return_value = mock_df
-        self.mock_registrations = FetchRegistrationData()._get_registrations()
+        self.mock_registrations = FetchRegistrationData()\
+            ._get_registrations(2020, 1)
         FetchRegistrationData()._delete_registrations()
 
     def test_fetch_registrations(self):
