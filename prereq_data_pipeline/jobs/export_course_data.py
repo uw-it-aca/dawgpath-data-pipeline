@@ -1,6 +1,8 @@
 from prereq_data_pipeline.jobs import DataJob
 import json
 from prereq_data_pipeline.models.course import Course
+from prereq_data_pipeline.models.gpa_distro import GPADistribution
+from sqlalchemy.orm.exc import NoResultFound
 
 
 class ExportCourseData(DataJob):
@@ -17,11 +19,12 @@ class ExportCourseData(DataJob):
         courses = self.get_courses()
         course_data = []
         for course in courses:
-
+            gpa_distro = self.get_gpa_for_course(course)
             course_data.append({"course_id": course.course_id,
                                 "course_title": course.long_course_title,
                                 "course_credits":
-                                    self.get_credits_for_course(course)})
+                                    self.get_credits_for_course(course),
+                                "gpa_distro": gpa_distro})
 
         return json.dumps(course_data)
 
@@ -33,3 +36,16 @@ class ExportCourseData(DataJob):
                 return course.min_credits
         except TypeError:
             return course.min_credits
+
+    def get_gpa_for_course(self, course):
+        try:
+            distro = self.session.query(GPADistribution) \
+                .filter(GPADistribution.crs_curric_abbr
+                        == course.department_abbrev) \
+                .filter(GPADistribution.crs_number == course.course_number) \
+                .one()
+            return distro.gpa_distro
+        except NoResultFound:
+            print("no gpa distro", course.course_id)
+            pass
+
