@@ -1,9 +1,11 @@
 from prereq_data_pipeline.models.base import Base
-from sqlalchemy import Column, String, PickleType
+from sqlalchemy import Column, String, PickleType, Integer, SmallInteger
 
 
 class ConcurrentCourses(Base):
-    course_id = Column(String(length=10), unique=True)
+    department_abbrev = Column(String(length=6))
+    course_number = Column(SmallInteger())
+    registration_count = Column(Integer())
     concurrent_courses = Column(PickleType())
 
 

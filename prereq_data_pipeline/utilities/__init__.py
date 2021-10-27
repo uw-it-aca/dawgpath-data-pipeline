@@ -7,7 +7,7 @@ def get_previous_term(term):
     # Gets previous term from (year, quarter) tuple
     year, quarter = term
     if quarter == 1:
-        return year, 4
+        return year - 1, 4
     else:
         return year, quarter - 1
 

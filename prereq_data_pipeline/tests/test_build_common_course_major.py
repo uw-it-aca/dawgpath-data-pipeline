@@ -59,7 +59,7 @@ class TestCommonCourse(DBTest):
     def test_get_courses_for_decl(self):
         decl = RegisMajor()
         decl.regis_yr = 2020
-        decl.regis_qtr = 1
+        decl.regis_qtr = 2
         decl.system_key = 322
         courses = BuildCommonCourseMajor().get_courses_for_decl(decl)
         self.assertEqual(len(courses), 3)
@@ -68,10 +68,10 @@ class TestCommonCourse(DBTest):
         common_courses = BuildCommonCourseMajor().build_all_majors()
         self.assertEqual(common_courses[0].course_counts, {})
         common_dict = {'BIO 103': {'percent': 25, 'title': 'Into to Bio'},
-                       'CHEM 142': {'percent': 50, 'title': 'Intro to chem'},
+                       'CHEM 142': {'percent': 25, 'title': 'Intro to chem'},
                        'CSE 142': {'percent': 25,
                                    'title': 'Fundamentals of Programming'},
-                       'PHYS 301': {'percent': 75, 'title': ''}}
+                       'PHYS 301': {'percent': 50, 'title': ''}}
         self.assertEqual(common_courses[2].course_counts, common_dict)
 
     def test_save(self):

@@ -7,9 +7,11 @@ import pandas as pd
 from collections import Counter
 from sqlalchemy.orm.exc import NoResultFound
 from prereq_data_pipeline.jobs import DataJob
+from prereq_data_pipeline.utilities import get_previous_term
+from sqlalchemy import func
 
-# REGISTRATION_START_YEAR = 2021
-TOP_CONCURRENT_COURSE_COUNT = 100
+TOP_CONCURRENT_COURSE_COUNT = 10
+PREV_QTR_COUNT = 7
 
 
 class BuildConcurrentCourses(DataJob):
@@ -24,14 +26,12 @@ class BuildConcurrentCourses(DataJob):
 
     def _get_terms_from_registrations(self):
         terms = []
-        # hack because sqlite3 doesn't support DISTINCT ON
-        years = self.session.query(Registration.regis_yr).distinct()
-        for year in years:
-            year = year[0]
-            quarters = self.session.query(Registration.regis_qtr)\
-                .filter(Registration.regis_yr == year).distinct()
-            for quarter in quarters:
-                terms.append((year, quarter[0]))
+        max_year = self.session.query(func.max(Registration.regis_yr)).one()[0]
+        max_qtr = self.session.query(func.max(Registration.regis_qtr))\
+            .filter(Registration.regis_yr == max_year).one()[0]
+        terms.append((max_year, max_qtr))
+        for x in range(PREV_QTR_COUNT):
+            terms.append(get_previous_term(terms[-1]))
         return sorted(terms, key=lambda term: (term[0], term[1]))
 
     def run_for_quarter(self, year, quarter, is_first=False):
@@ -56,14 +56,14 @@ class BuildConcurrentCourses(DataJob):
 
     def get_concurrent_courses_from_course(self, registrations, course):
         # get current courses for a given course data
-        course_id = course[0] + str(course[1])
+        course_id = course[0] + " " + str(course[1])
         syskeys = self.get_students_for_course(registrations, course)
         course_counts = {}
 
         for syskey in syskeys:
             student_courses = registrations.query('system_key == @syskey')
             for index, row in student_courses.iterrows():
-                conc_course_id = row['crs_curric_abbr'] + \
+                conc_course_id = row['crs_curric_abbr'] + " " + \
                                  str(row['crs_number'])
                 if conc_course_id != course_id:
                     if conc_course_id in course_counts:
@@ -77,6 +77,10 @@ class BuildConcurrentCourses(DataJob):
 
         return top_counts
 
+    def get_reg_count_for_course(self, registrations, course):
+        syskeys = self.get_students_for_course(registrations, course)
+        return len(syskeys)
+
     def get_students_for_course(self, registrations, course):
         abbr, number = course
         syskeys = registrations\
@@ -87,31 +91,37 @@ class BuildConcurrentCourses(DataJob):
     def run_first_term(self, registrations, courses):
         concurrent_course_objs = []
         for course in courses:
-            course_id = course[0] + str(course[1])
             top_counts = self.get_concurrent_courses_from_course(registrations,
                                                                  course)
-            conc_course = ConcurrentCourses(course_id=course_id,
-                                            concurrent_courses=top_counts)
+            reg_count = self.get_reg_count_for_course(registrations, course)
+            conc_course = ConcurrentCourses(department_abbrev=course[0],
+                                            course_number=course[1],
+                                            concurrent_courses=top_counts,
+                                            registration_count=reg_count)
             concurrent_course_objs.append(conc_course)
         self.session.bulk_save_objects(concurrent_course_objs)
         self.session.commit()
 
     def run_subsequent_term(self, registrations, courses):
         for course in courses:
-            course_id = course[0] + str(course[1])
             top_counts = self.get_concurrent_courses_from_course(registrations,
                                                                  course)
+            reg_count = self.get_reg_count_for_course(registrations, course)
             try:
                 conc_course = self.session.query(ConcurrentCourses)\
-                    .filter(ConcurrentCourses.course_id == course_id)\
+                    .filter(ConcurrentCourses.department_abbrev == course[0])\
+                    .filter(ConcurrentCourses.course_number == course[1])\
                     .one()
                 conc_course.concurrent_courses \
                     = Counter(top_counts) + \
                     Counter(conc_course.concurrent_courses)
+                conc_course.registration_count += reg_count
 
             except NoResultFound:
-                conc_course = ConcurrentCourses(course_id=course_id,
-                                                concurrent_courses=top_counts)
+                conc_course = ConcurrentCourses(department_abbrev=course[0],
+                                                course_number=course[1],
+                                                concurrent_courses=top_counts,
+                                                registration_count=reg_count)
                 self.session.add(conc_course)
             self.session.commit()
 
