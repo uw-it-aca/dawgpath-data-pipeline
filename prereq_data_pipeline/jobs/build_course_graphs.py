@@ -11,6 +11,11 @@ from prereq_data_pipeline.jobs import DataJob
 logger = getLogger(__name__)
 
 
+def get_graphs(courses):
+    gf = GraphFactory(courses)
+    return gf.build_graphs_from_courses()
+
+
 class BuildCoursePrereqGraphs(DataJob):
     def run(self):
         # Remove old graphs (assumes we're updating all at once)
@@ -28,15 +33,12 @@ class BuildCoursePrereqGraphs(DataJob):
         chunks = [courses[x:x+chunk_size] for x in
                   range(0, len(courses), chunk_size)]
         pool = multiprocessing.Pool()
-        results = pool.map(self.get_graphs, chunks)
+        results = pool.map(get_graphs, chunks)
         graphs = list(chain.from_iterable(results))
 
-        session.bulk_save_objects(graphs)
-        session.commit()
+        self.session.bulk_save_objects(graphs)
+        self.session.commit()
 
-    def get_graphs(self, courses):
-        gf = GraphFactory(courses)
-        return gf.build_graphs_from_courses()
 
     def get_courses_with_prereqs(self):
         '''
