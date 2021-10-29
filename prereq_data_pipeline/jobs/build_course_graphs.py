@@ -12,7 +12,7 @@ logger = getLogger(__name__)
 
 
 def get_graphs(courses):
-    gf = GraphFactory(courses)
+    gf = GraphFactory(courses=courses)
     return gf.build_graphs_from_courses()
 
 

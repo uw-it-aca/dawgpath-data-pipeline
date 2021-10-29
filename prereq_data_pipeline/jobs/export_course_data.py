@@ -3,6 +3,7 @@ import json
 from prereq_data_pipeline.models.course import Course
 from prereq_data_pipeline.models.gpa_distro import GPADistribution
 from prereq_data_pipeline.models.concurrent_courses import ConcurrentCourses
+from prereq_data_pipeline.models.graph import Graph
 from sqlalchemy.orm.exc import NoResultFound
 
 
@@ -22,12 +23,18 @@ class ExportCourseData(DataJob):
         for course in courses:
             gpa_distro = self.get_gpa_for_course(course)
             concurrent = self.get_concurrent_for_course(course)
+            try:
+                graph = course.graph.graph_json
+            except AttributeError:
+                graph = None
+
             course_data.append({"course_id": course.course_id,
                                 "course_title": course.long_course_title,
                                 "course_credits":
                                     self.get_credits_for_course(course),
                                 "gpa_distro": gpa_distro,
-                                "concurrent_courses": concurrent})
+                                "concurrent_courses": concurrent,
+                                "prereq_graph": graph})
 
         return json.dumps(course_data)
 

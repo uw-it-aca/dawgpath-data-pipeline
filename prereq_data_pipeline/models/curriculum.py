@@ -1,4 +1,5 @@
 from prereq_data_pipeline.models.base import Base
+from sqlalchemy.orm import relationship
 from sqlalchemy import Column, SmallInteger, String
 
 
