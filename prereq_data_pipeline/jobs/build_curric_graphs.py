@@ -26,19 +26,6 @@ class BuildCurricPrereqGraphs(DataJob):
         currics = self.get_currics()
         courses = BuildCoursePrereqGraphs().get_courses_with_prereqs()
 
-
-        # """
-        # Setting the chunk size too small (eg 10) will quickly deplete DB
-        # connections due to those made in the GraphFactory __init__
-        # This appears to be due to the time it takes to close the connection,
-        # new processes spwan faster than the connections can close
-        # """
-        # chunk_size = 1000
-        # chunks = [currics[x:x+chunk_size] for x in
-        #           range(0, len(currics), chunk_size)]
-        # pool = multiprocessing.Pool()
-        # results = pool.map(get_graphs, chunks)
-        # graphs = list(chain.from_iterable(results))
         graphs = get_graphs(currics, courses)
 
         self.session.bulk_save_objects(graphs)

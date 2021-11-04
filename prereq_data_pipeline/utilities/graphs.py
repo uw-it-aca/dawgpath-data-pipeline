@@ -55,11 +55,11 @@ class GraphFactory():
         self.session.close()
 
     def build_curric_graphs(self):
-        self.course_data = self.clean_cd.copy()
-        self.prereq_data = self.clean_pd.copy()
         curric_list = self.currics
         curric_graphs = []
         for curric in curric_list:
+            self.course_data = self.clean_cd.copy()
+            self.prereq_data = self.clean_pd.copy()
             abbrev = curric.abbrev.strip()
             graph_json = json.dumps(self._process_data(
                 curric_filter=abbrev)
