@@ -1,5 +1,4 @@
 from prereq_data_pipeline.models.base import Base
-from sqlalchemy.orm import relationship
 from sqlalchemy import Column, SmallInteger, String, Text
 
 
@@ -8,5 +7,4 @@ class Curriculum(Base):
     name = Column(String(length=25))
     campus = Column(SmallInteger())
     url = Column(String(length=80))
-    prereqs = Column(Text())
-    postreqs = Column(Text())
+    course_data = Column(Text())

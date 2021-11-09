@@ -11,9 +11,8 @@ class BuildCurricPrereqLists(DataJob):
 
         currics = self.get_currics()
         for curric in currics:
-            prereqs, postreqs = self.build_all_courses(curric)
-            curric.prereqs = json.dumps(prereqs)
-            curric.postreqs = json.dumps(postreqs)
+            course_data = self.build_all_courses(curric)
+            curric.course_data = json.dumps(course_data)
             self.session.commit()
 
     def get_currics(self):
@@ -27,21 +26,15 @@ class BuildCurricPrereqLists(DataJob):
         return courses
 
     def build_all_courses(self, curric):
-        prereqs = []
-        postreqs = []
+        course_data = []
         for course in self.get_courses_from_curric(curric):
             prereq_data = self.get_prereqs_for_course(course)
-            if len(prereq_data) > 0:
-                prereqs.append({"course_id": course.course_id,
-                                "course_title": course.long_course_title,
-                                "prereq_data": prereq_data})
-
             postreq_data = self.get_postreqs_for_course(course)
-            if len(postreq_data) > 0:
-                postreqs.append({"course_id": course.course_id,
-                                 "course_title": course.long_course_title,
-                                 "prereq_data": postreq_data})
-        return prereqs, postreqs
+            course_data.append({"course_id": course.course_id,
+                                "course_title": course.long_course_title,
+                                "prereqs": prereq_data,
+                                "postreqs": postreq_data})
+        return course_data
 
     def get_prereqs_for_course(self, course):
         prereqs = self.session.query(Prereq) \
