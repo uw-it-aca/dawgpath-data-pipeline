@@ -29,7 +29,8 @@ setup(
         'nose2',
         'alembic',
         'psycopg2',
-        'pymssql'
+        'pymssql',
+        'UW-RestClients-SWS~=2.3'
     ],
     license='',
     description='A tool for managing prereq map data',

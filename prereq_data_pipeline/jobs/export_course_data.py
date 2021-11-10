@@ -3,7 +3,7 @@ import json
 from prereq_data_pipeline.models.course import Course
 from prereq_data_pipeline.models.gpa_distro import GPADistribution
 from prereq_data_pipeline.models.concurrent_courses import ConcurrentCourses
-from prereq_data_pipeline.models.graph import Graph
+from prereq_data_pipeline.models.sws_course import SWSCourse
 from sqlalchemy.orm.exc import NoResultFound
 
 
@@ -27,6 +27,12 @@ class ExportCourseData(DataJob):
                 graph = course.graph.graph_json
             except AttributeError:
                 graph = None
+            sws_course = self.get_sws_course_for_course(course)
+            try:
+                c_desc = sws_course.course_description
+                c_offer = sws_course.offered_string
+            except AttributeError:
+                pass
 
             course_data.append({"course_id": course.course_id,
                                 "course_title": course.long_course_title,
@@ -34,7 +40,10 @@ class ExportCourseData(DataJob):
                                     self.get_credits_for_course(course),
                                 "gpa_distro": gpa_distro,
                                 "concurrent_courses": concurrent,
-                                "prereq_graph": graph})
+                                "prereq_graph": graph,
+                                "course_description": c_desc,
+                                "offered_string": c_offer
+                                })
 
         return json.dumps(course_data)
 
@@ -76,4 +85,15 @@ class ExportCourseData(DataJob):
             return conc.concurrent_courses
         except NoResultFound:
             print("No concurrent", course.course_id)
+            return None
+
+    def get_sws_course_for_course(self, course):
+        try:
+            sws_course = self.session.query(SWSCourse) \
+                .filter(SWSCourse.department_abbrev ==
+                        course.department_abbrev) \
+                .filter(SWSCourse.course_number == course.course_number)\
+                .one()
+            return sws_course
+        except NoResultFound:
             return None
