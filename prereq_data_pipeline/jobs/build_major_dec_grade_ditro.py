@@ -86,10 +86,10 @@ class BuildMajorDecGradeDistro(DataJob):
             for declaration in declarations:
                 try:
                     gpa = self._get_gpa_by_declaration(declaration)
+                    if gpa is not None:
+                        gpa_distro[gpa] += 1
                 except ValueError as ex:
                     pass
-                if gpa is not None:
-                    gpa_distro[gpa] += 1
         return gpa_distro
 
     def _get_major_declarations_by_major(self, major, start_year,

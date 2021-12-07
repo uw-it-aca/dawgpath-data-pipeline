@@ -28,7 +28,9 @@ class FetchCourseData(DataJob):
                     natural_world=course['natural_world'],
                     qsr=course['qsr'],
                     vis_lit_perf_arts=course['vis_lit_perf_arts'],
-                    writing_crs=course['writing_crs']
+                    writing_crs=course['writing_crs'],
+                    min_credits=course['min_qtr_credits'],
+                    max_credits=course['max_qtr_credits']
                 )
             )
         return course_objects

@@ -130,7 +130,9 @@ def get_course_titles():
             natural_world,
             qsr,
             vis_lit_perf_arts,
-            writing_crs
+            writing_crs,
+            min_qtr_credits,
+            max_qtr_credits
         FROM sec.sr_course_titles
         WHERE
             last_eff_yr = 9999
