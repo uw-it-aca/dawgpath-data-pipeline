@@ -14,7 +14,7 @@ class ExportCourseData(DataJob):
             fp.write(data)
 
     def get_courses(self):
-        courses = self.session.query(Course)
+        courses = self.session.query(Course).filter(Course.course_number < 500)
         return courses
 
     def get_file_contents(self):
@@ -33,11 +33,12 @@ class ExportCourseData(DataJob):
                 c_offer = sws_course.offered_string
             except AttributeError:
                 pass
-
+            campus = self.get_course_campus(course.course_branch)
             course_data.append({"course_id": course.course_id,
                                 "course_title": course.long_course_title,
                                 "course_credits":
                                     self.get_credits_for_course(course),
+                                "course_campus": campus,
                                 "gpa_distro": gpa_distro,
                                 "concurrent_courses": concurrent,
                                 "prereq_graph": graph,
@@ -46,6 +47,13 @@ class ExportCourseData(DataJob):
                                 })
 
         return json.dumps(course_data)
+
+    def get_course_campus(self, course_branch):
+        # 0=Seattle
+        # 1=Bothell
+        # 2=Tacoma
+        campus_names = ["seattle", "bothell", "tacoma"]
+        return campus_names[course_branch]
 
     def get_credits_for_course(self, course):
         try:
