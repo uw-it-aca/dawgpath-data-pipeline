@@ -1,6 +1,6 @@
 from prereq_data_pipeline.models.base import Base
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, SmallInteger, String, Boolean
+from sqlalchemy import Column, SmallInteger, String, Boolean, Float
 
 
 class Course(Base):
@@ -18,6 +18,8 @@ class Course(Base):
     vis_lit_perf_arts = Column(Boolean())
     writing_crs = Column(Boolean())
     graph = relationship("Graph", uselist=False, back_populates="course")
+    min_credits = Column(Float(precision=4))
+    max_credits = Column(Float(precision=4))
 
     @property
     def course_id(self):
