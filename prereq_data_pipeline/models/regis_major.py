@@ -48,7 +48,7 @@ class RegisMajor(Base):
             for decl in decls:
                 if decl.system_key in seen_students:
                     if seen_students[decl.system_key].regis_term \
-                            < decl.regis_term:
+                            > decl.regis_term:
                         seen_students[decl.system_key] = decl
                 else:
                     seen_students[decl.system_key] = decl
