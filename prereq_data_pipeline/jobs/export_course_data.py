@@ -28,6 +28,8 @@ class ExportCourseData(DataJob):
             except AttributeError:
                 graph = None
             sws_course = self.get_sws_course_for_course(course)
+            c_desc = None
+            c_offer = None
             try:
                 c_desc = sws_course.course_description
                 c_offer = sws_course.offered_string
