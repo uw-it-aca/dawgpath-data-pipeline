@@ -19,6 +19,7 @@ from prereq_data_pipeline.jobs.fetch_sr_major_data import FetchSRMajorData
 class TestMajorGPAExport(DBTest):
     mock_registrations = None
     mock_df = None
+
     @patch('prereq_data_pipeline.jobs.'
            'fetch_sr_major_data.get_sr_majors')
     def _save_sr_majors(self, get_sr_major_mock):
