@@ -24,11 +24,15 @@ class BuildCommonCourseMajor(DataJob):
 
             for decl in decls:
                 courses = self.get_courses_for_decl(decl)
+                user_courses = {}
                 for course in courses:
-                    if course.course_id in common_courses:
-                        common_courses[course.course_id] += 1
-                    else:
-                        common_courses[course.course_id] = 1
+                    if course.course_id not in user_courses:
+                        if course.course_id in common_courses:
+                            common_courses[course.course_id] += 1
+                        else:
+                            common_courses[course.course_id] = 1
+                        user_courses[course.course_id] = True
+
             # Limit to top 10 most common
             sorted_courses = sorted(common_courses.items(),
                                     key=lambda kv: kv[1],

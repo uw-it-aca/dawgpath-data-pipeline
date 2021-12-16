@@ -9,14 +9,24 @@ from prereq_data_pipeline.jobs.fetch_regis_major_data import \
 from prereq_data_pipeline.jobs.fetch_transcripts import FetchTranscriptData
 from prereq_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
 from prereq_data_pipeline.tests.shared_mock.transcript import tran_mock_data
+from prereq_data_pipeline.tests.shared_mock.sr_major import sr_mock_data
 from prereq_data_pipeline.jobs.export_major_data import\
     ExportMajorData
 from prereq_data_pipeline.jobs.fetch_major_data import FetchMajorData
+from prereq_data_pipeline.jobs.fetch_sr_major_data import FetchSRMajorData
 
 
 class TestMajorGPAExport(DBTest):
     mock_registrations = None
     mock_df = None
+
+    @patch('prereq_data_pipeline.jobs.'
+           'fetch_sr_major_data.get_sr_majors')
+    def _save_sr_majors(self, get_sr_major_mock):
+        mock_df = pd.DataFrame.from_dict(sr_mock_data,
+                                         orient='columns')
+        get_sr_major_mock.return_value = mock_df
+        self.mock_sr_majors = FetchSRMajorData()._get_sr_majors()
 
     @patch('prereq_data_pipeline.jobs.'
            'fetch_regis_major_data.get_regis_majors_since_year')
@@ -116,6 +126,7 @@ class TestMajorGPAExport(DBTest):
         self._save_regis_majors()
         self._save_transcript_data()
         self._save_major_data()
+        self._save_sr_majors()
         BuildMajorDecGradeDistro().run()
 
     def test_export(self):
@@ -127,5 +138,4 @@ class TestMajorGPAExport(DBTest):
         self.assertEqual(major['major_campus'], "Bothell")
         self.assertEqual(major['major_school'],
                          "School of Educational Studies")
-        self.assertEqual(major['major_home_url'], "www.uw.edu/bedsd")
         self.assertIsNone(major['common_course_decl'])
