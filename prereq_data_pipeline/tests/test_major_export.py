@@ -123,6 +123,7 @@ class TestMajorGPAExport(DBTest):
         parsed = json.loads(data)
         self.assertEqual(len(parsed), 1)
         major = parsed['B EDSD']
+        print(major)
         self.assertIsNone(major['2_yr'])
         self.assertEqual(major['major_campus'], "Bothell")
         self.assertEqual(major['major_school'],
