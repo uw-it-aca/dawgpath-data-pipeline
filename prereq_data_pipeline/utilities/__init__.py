@@ -32,6 +32,10 @@ def get_SDB_program_code(program_code):
         .replace(MAJOR_CODE_SUFFIX, "")
 
 
+def get_SDB_credential_code(credential_code):
+    return credential_code.split("-")[0]
+
+
 def get_course_abbr_title_dict(courses):
     title_dict = {}
     for course in courses:
