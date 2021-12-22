@@ -52,38 +52,6 @@ class TestMajorGPAExport(DBTest):
            'fetch_major_data.get_majors')
     def _save_major_data(self, get_major_mock):
         mock_data = [
-            {"program_verdep_id": "fea9cb9a-677f-4be5-89c5-4ffc095bc9ab",
-             "program_verind_id": "4kicZWD9l",
-             "program_code": "UG-B EDSD-MAJOR",
-             "program_title": "Educational Studies",
-             "program_dept_code": 875,
-             "campus_name": "Bothell     ",
-             "program_school_or_college": "School of Educational Studies",
-             "program_department": "Education (Bothell)",
-             "program_dateStartLabel": "Winter 2016",
-             "program_dateEndLabel": "",
-             "CIPCode": "13.0101",
-             "CIPCode_title": "Education, General",
-             "program_admissionType": "mixed",
-             "program_description": "",
-             "program_level": "Undergraduate",
-             "program_type": "Major"},
-            {"program_verdep_id": "fec84b03-40c9-447d-a752-26ea8c50d7f9",
-             "program_verind_id": "VyODbbDqg",
-             "program_code": "UG-NORW-MAJOR",
-             "program_title": "Norwegian",
-             "program_dept_code": 281,
-             "campus_name": "Seattle     ",
-             "program_school_or_college": "College of Arts and Sciences",
-             "program_department": "Scandinavian Studies (Seattle)",
-             "program_dateStartLabel": "Winter 2016",
-             "program_dateEndLabel": "Spring 2016",
-             "CIPCode": "16.0505",
-             "CIPCode_title": "Norwegian Language and Literature",
-             "program_admissionType": "open",
-             "program_description": "Scandinavian Studies",
-             "program_level": "Undergraduate",
-             "program_type": "Major"},
             {"program_verdep_id": "ffeaaf99-981d-46fb-be27-dd634fe97d88",
              "program_verind_id": "413ZGWvql",
              "program_code": "UG-INFO-MAJOR",
@@ -93,7 +61,7 @@ class TestMajorGPAExport(DBTest):
              "program_school_or_college": "The Information School",
              "program_department": "The Information School (Seattle)",
              "program_dateStartLabel": "Summer 2016",
-             "program_dateEndLabel": "Summer 2021",
+             "program_dateEndLabel": "",
              "CIPCode": "11.0104",
              "CIPCode_title": "Informatics",
              "program_admissionType": "capacity-constrained",
@@ -112,7 +80,14 @@ class TestMajorGPAExport(DBTest):
                                     " Data Science, and Information "
                                     "Architecture are available.",
              "program_level": "Undergraduate",
-             "program_type": "Major"}
+             "program_type": "Major",
+             "DoNotPublish": "",
+             "credential_dateStartLabel": "Winter 2012",
+             "credential_dateEndLabel": "",
+             "credential_title": "Cred title",
+             "credential_description": "Lorem ipsum description",
+             "credential_code": "FOO_2_190_3"
+             }
         ]
         mock_df = pd.DataFrame.from_dict(mock_data,
                                          orient='columns')
@@ -133,9 +108,9 @@ class TestMajorGPAExport(DBTest):
         data = ExportMajorData().get_file_contents()
         parsed = json.loads(data)
         self.assertEqual(len(parsed), 1)
-        major = parsed['B EDSD']
+        major = parsed['FOO_2_190_3']
         self.assertIsNone(major['2_yr'])
-        self.assertEqual(major['major_campus'], "Bothell")
+        self.assertEqual(major['major_campus'], "Seattle")
         self.assertEqual(major['major_school'],
-                         "School of Educational Studies")
+                         "The Information School")
         self.assertIsNone(major['common_course_decl'])
