@@ -44,7 +44,13 @@ def get_majors():
     db_query = f"""
             SELECT
                 *
-            FROM sec.CM_Programs
+            FROM sec.CM_Credentials c
+            JOIN sec.CM_Programs p
+            ON c.program_verind_id = p.program_verind_id
+            WHERE c.credential_dateEndLabel = ''
+                AND p.program_dateEndLabel = ''
+                AND p.program_code LIKE '%MAJOR%'
+                AND c.DoNotPublish <> 'TRUE'
     """
     return _run_query(DB, db_query)
 
