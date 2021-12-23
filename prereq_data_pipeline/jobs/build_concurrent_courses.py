@@ -62,14 +62,19 @@ class BuildConcurrentCourses(DataJob):
 
         for syskey in syskeys:
             student_courses = registrations.query('system_key == @syskey')
+            # Resolves issue where students have multiple
+            # registrations to course for a given term
+            student_course_ids = []
             for index, row in student_courses.iterrows():
                 conc_course_id = row['crs_curric_abbr'] + " " + \
                                  str(row['crs_number'])
-                if conc_course_id != course_id:
+                if conc_course_id != course_id \
+                        and conc_course_id not in student_course_ids:
                     if conc_course_id in course_counts:
                         course_counts[conc_course_id] += 1
                     else:
                         course_counts[conc_course_id] = 1
+                student_course_ids.append(conc_course_id)
 
         top_counts = dict(
             sorted(course_counts.items(), key=operator.itemgetter(1),
