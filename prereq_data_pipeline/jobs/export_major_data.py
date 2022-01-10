@@ -71,9 +71,11 @@ class ExportMajorData(DataJob):
             gpa_2, gpa_5 = self.get_distros_for_major(sdb_code)
             home_url = self.get_major_url(sdb_code)
             common_course = self.get_common_courses(sdb_code)
+            major_title = ' '.join(major.program_title.split())
+
             maj_data = {"major_code": sdb_code,
                         "program_code": major.program_code,
-                        "major_title": major.program_title,
+                        "major_title": major_title,
                         "major_school":
                             major.program_school_or_college,
                         "major_campus": major.campus_name,
