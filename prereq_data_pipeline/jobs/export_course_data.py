@@ -36,8 +36,9 @@ class ExportCourseData(DataJob):
             except AttributeError:
                 pass
             campus = self.get_course_campus(course.course_branch)
+            course_title = ' '.join(course.long_course_title.split())
             course_data.append({"course_id": course.course_id,
-                                "course_title": course.long_course_title,
+                                "course_title": course_title,
                                 "course_credits":
                                     self.get_credits_for_course(course),
                                 "course_campus": campus,
