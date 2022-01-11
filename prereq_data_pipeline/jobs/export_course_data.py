@@ -5,6 +5,7 @@ from prereq_data_pipeline.models.gpa_distro import GPADistribution
 from prereq_data_pipeline.models.concurrent_courses import ConcurrentCourses
 from prereq_data_pipeline.models.sws_course import SWSCourse
 from sqlalchemy.orm.exc import NoResultFound
+from prereq_data_pipeline import MINIMUM_DATA_COUNT
 
 
 class ExportCourseData(DataJob):
@@ -89,11 +90,13 @@ class ExportCourseData(DataJob):
                 .one()
             # Convert concurrent counts to percentages
             course_data = conc.concurrent_courses
+            proc_courses = {}
             for course in course_data:
-                course_data[course] = course_data[course] \
-                                      / conc.registration_count
+                if course_data[course] >= MINIMUM_DATA_COUNT:
+                    proc_courses[course] = course_data[course] \
+                                          / conc.registration_count
 
-            return conc.concurrent_courses
+            return proc_courses
         except NoResultFound:
             print("No concurrent", course.course_id)
             return None

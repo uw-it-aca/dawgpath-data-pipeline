@@ -21,7 +21,7 @@ class TestRegisMajors(DBTest):
         FetchRegisMajorData()._delete_regis_majors()
 
     def test_fetch_regis_majors(self):
-        self.assertEqual(len(self.mock_regis_majors), 6)
+        self.assertEqual(len(self.mock_regis_majors), 25)
         self.assertEqual(self.mock_regis_majors[0].system_key, 41)
         self.assertEqual(self.mock_regis_majors[0].regis_major_abbr, "MATH")
         self.assertEqual(self.mock_regis_majors[0].regis_term, 20161)
@@ -29,12 +29,12 @@ class TestRegisMajors(DBTest):
     def test_save_regis_majors(self):
         FetchRegisMajorData()._bulk_save_objects(self.mock_regis_majors)
         saved_regis_majors = self.session.query(RegisMajor).all()
-        self.assertEqual(len(saved_regis_majors), 6)
+        self.assertEqual(len(saved_regis_majors), 25)
 
     def test_delete_regis_majors(self):
         FetchRegisMajorData()._bulk_save_objects(self.mock_regis_majors)
         saved_regis_majors = self.session.query(RegisMajor).all()
-        self.assertEqual(len(saved_regis_majors), 6)
+        self.assertEqual(len(saved_regis_majors), 25)
         FetchRegisMajorData()._delete_regis_majors()
         saved_regis_majors = self.session.query(RegisMajor).all()
         self.assertEqual(len(saved_regis_majors), 0)

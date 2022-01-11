@@ -51,18 +51,18 @@ class TestCommonMajor(DBTest):
     def test_create_common(self):
         common = BuildCommonMajorForCourse().build_common_majors()
         objects = BuildCommonMajorForCourse().create_common_maj_objects(common)
-        self.assertEqual(len(objects), 7)
+        self.assertEqual(len(objects), 8)
         self.assertEqual(objects[1].crs_curric_abbr, "CHEM")
         self.assertEqual(objects[1].crs_number, 142)
         self.assertEqual(objects[1].major_courts,
-                         [{'major': 'GEOG', 'count': 1},
+                         [{'major': 'GEOG', 'count': 10},
                           {'major': 'N MATR', 'count': 3}])
 
     def test_run(self):
         BuildCommonMajorForCourse()._delete_common_major()
         BuildCommonMajorForCourse().run()
         objs = self.session.query(CommonMajorForCourse).all()
-        self.assertEqual(len(objs), 7)
+        self.assertEqual(len(objs), 8)
 
         BuildCommonMajorForCourse()._delete_common_major()
         objs = self.session.query(CommonMajorForCourse).all()

@@ -51,10 +51,10 @@ class TestMajorDecGradeDistro(DBTest):
             BuildMajorDecGradeDistro()._get_most_recent_declaration()
         dec_2yr = BuildMajorDecGradeDistro().get_2yr_declarations("N MATR",
                                                                   current_term)
-        self.assertEqual(len(dec_2yr), 2)
+        self.assertEqual(len(dec_2yr), 10)
         dec_5yr = BuildMajorDecGradeDistro().get_5yr_declarations("GEOG",
                                                                   current_term)
-        self.assertEqual(len(dec_5yr), 1)
+        self.assertEqual(len(dec_5yr), 11)
 
     def test_get_majors(self):
         majors = RegisMajor.get_majors(self.session)
