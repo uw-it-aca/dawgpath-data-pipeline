@@ -66,13 +66,10 @@ class TestCommonCourse(DBTest):
 
     def test_build_all_majors(self):
         common_courses = BuildCommonCourseMajor().build_all_majors()
-        self.assertEqual(common_courses[0].course_counts, {})
-        common_dict = {'BIO 103': {'percent': 25, 'title': 'Into to Bio'},
-                       'CHEM 142': {'percent': 25, 'title': 'Intro to chem'},
-                       'CSE 142': {'percent': 25,
-                                   'title': 'Fundamentals of Programming'},
-                       'PHYS 301': {'percent': 50, 'title': ''}}
-        self.assertEqual(common_courses[2].course_counts, common_dict)
+        self.assertEqual(common_courses[1].course_counts, {})
+        common_dict = {'CHEM 142': {'percent': 82, 'title': 'Intro to chem'},
+                       'MATH 142': {'percent': 100, 'title': ''}}
+        self.assertEqual(common_courses[0].course_counts, common_dict)
 
     def test_save(self):
         BuildCommonCourseMajor().run()

@@ -5,6 +5,7 @@ from prereq_data_pipeline.utilities import get_previous_combined,\
 from prereq_data_pipeline.models.registration import Registration
 from prereq_data_pipeline.models.course import Course
 from prereq_data_pipeline.jobs import DataJob
+from prereq_data_pipeline import MINIMUM_DATA_COUNT
 
 
 class BuildCommonCourseMajor(DataJob):
@@ -72,7 +73,8 @@ class BuildCommonCourseMajor(DataJob):
             except KeyError:
                 title = ""
             percent = int(round((course[1]/total_students)*100))
-            common_percents[course[0]] = {"percent": percent,
-                                          "title": title}
+            if course[1] >= MINIMUM_DATA_COUNT:
+                common_percents[course[0]] = {"percent": percent,
+                                              "title": title}
 
         return common_percents

@@ -45,7 +45,7 @@ class TestBuildConcurrent(DBTest):
         concurrent = BuildConcurrentCourses(). \
             get_concurrent_courses_from_course(self.mock_df,
                                                ("BIOL", 140))
-        self.assertEqual(len(concurrent.keys()), 3)
+        self.assertEqual(len(concurrent.keys()), 4)
         self.assertEqual(concurrent['CHEM 142'], 2)
         self.assertEqual(concurrent['CSE 142'], 1)
 

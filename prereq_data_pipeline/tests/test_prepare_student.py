@@ -23,12 +23,12 @@ class TestPrepareStudent(DBTest):
 
     def test_create_students(self):
         students = PrepareStudentModel().create_students()
-        self.assertEqual(len(students), 5)
+        self.assertEqual(len(students), 24)
         self.assertEqual(students[0].system_key, 41)
         self.assertEqual(students[0].major_abbr, "GEOG")
 
     def test_run(self):
         PrepareStudentModel().run()
-        self.assertEqual(len(self.session.query(Student).all()), 5)
+        self.assertEqual(len(self.session.query(Student).all()), 24)
         PrepareStudentModel()._delete_students()
         self.assertEqual(len(self.session.query(Student).all()), 0)

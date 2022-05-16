@@ -6,6 +6,7 @@ from prereq_data_pipeline.utilities import get_previous_term, get_combined_term
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
 from prereq_data_pipeline.jobs import DataJob
+from prereq_data_pipeline import MINIMUM_DATA_COUNT
 
 
 START_YEAR_QUARTER = 20163
@@ -21,7 +22,7 @@ class BuildMajorDecGradeDistro(DataJob):
     def get_5yr_declarations(self, major, current_term):
         start_yr, start_qtr = get_previous_term((current_term[0] - 2,
                                                  current_term[1]))
-        return RegisMajor. \
+        decls = RegisMajor. \
             get_major_declarations_by_major_period(self.session,
                                                    major.strip(),
                                                    current_term[0]-5,
@@ -30,8 +31,11 @@ class BuildMajorDecGradeDistro(DataJob):
                                                    start_qtr
                                                    )
 
+        if len(decls) >= MINIMUM_DATA_COUNT:
+            return decls
+
     def get_2yr_declarations(self, major, current_term):
-        return RegisMajor. \
+        decls = RegisMajor. \
             get_major_declarations_by_major_period(self.session,
                                                    major.strip(),
                                                    current_term[0]-2,
@@ -39,6 +43,8 @@ class BuildMajorDecGradeDistro(DataJob):
                                                    current_term[0],
                                                    current_term[1]
                                                    )
+        if len(decls) >= MINIMUM_DATA_COUNT:
+            return decls
 
     def build_gpa_distros(self):
         majors = RegisMajor.get_majors(self.session)
@@ -47,7 +53,6 @@ class BuildMajorDecGradeDistro(DataJob):
         for major in majors:
             declarations_2y = self.get_2yr_declarations(major,
                                                         current_term)
-            distro_2y = {}
             distro_2y = \
                 self._build_distro_from_declarations(declarations_2y)
             major_distro_2y = \
