@@ -1,5 +1,5 @@
 from prereq_data_pipeline.models.base import Base
-from sqlalchemy import Column, Integer, SmallInteger, String
+from sqlalchemy import Column, Integer, SmallInteger, String, func, and_
 from prereq_data_pipeline.utilities import get_combined_term
 
 
@@ -28,11 +28,22 @@ class RegisMajor(Base):
                                                end_year, end_quarter):
         start_term = get_combined_term(start_year, start_quarter)
         end_term = get_combined_term(end_year, end_quarter)
-        declarations = session.query(RegisMajor) \
-            .filter(RegisMajor.regis_major_abbr == major,
-                    RegisMajor.regis_term >= start_term,
-                    RegisMajor.regis_term <= end_term) \
-            .all()
+
+        subq = session.query(
+            RegisMajor.system_key,
+            func.min(RegisMajor.regis_term).label('minterm')
+        ).group_by(RegisMajor.system_key).subquery('t2')
+        declarations = session.query(RegisMajor).join(
+            subq,
+            and_(
+                RegisMajor.system_key == subq.c.system_key,
+                RegisMajor.regis_term == subq.c.minterm,
+                RegisMajor.regis_major_abbr == major,
+                RegisMajor.regis_term >= start_term,
+                RegisMajor.regis_term <= end_term
+            )
+        ).all()
+
         return declarations
 
     @staticmethod
