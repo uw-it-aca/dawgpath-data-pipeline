@@ -78,12 +78,16 @@ class BuildMajorDecGradeDistro(DataJob):
         return distros
 
     def _get_most_recent_declaration(self):
-        latest_dec = \
-            self.session.query(RegisMajor.regis_yr, RegisMajor.regis_qtr) \
-                .order_by(RegisMajor.regis_yr.desc(),
-                          RegisMajor.regis_qtr.desc()) \
-                .first()
-        return latest_dec
+        # There there are a limited number of entries for future quarters,
+        # (in the range of 2-4000/quarter, normal terms have 20-80k)
+        # filter those out
+        latest_dec = self.session.query(RegisMajor.regis_term,
+                                        func.count(RegisMajor.regis_term)) \
+            .group_by(RegisMajor.regis_term) \
+            .having(func.count(RegisMajor.regis_term) > 5000) \
+            .order_by(RegisMajor.regis_term.desc()).first()
+        term = str(latest_dec.regis_term)
+        return int(term[:4]), int(term[-1])
 
     def _build_distro_from_declarations(self, declarations):
         gpa_distro = {key: 0 for key in range(0, 41)}
