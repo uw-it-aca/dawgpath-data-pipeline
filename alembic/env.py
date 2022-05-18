@@ -25,6 +25,7 @@ from prereq_data_pipeline.models.common_major_for_course import \
     CommonMajorForCourse
 from prereq_data_pipeline.models.sr_major import SRMajor
 from prereq_data_pipeline.models.sws_course import SWSCourse
+from prereq_data_pipeline.models.major_declaration import MajorDeclaration
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
