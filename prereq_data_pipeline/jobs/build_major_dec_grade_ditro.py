@@ -1,6 +1,7 @@
 from collections import Counter
 from prereq_data_pipeline.models.gpa_distro import MajorDecGPADistribution
 from prereq_data_pipeline.models.regis_major import RegisMajor
+from prereq_data_pipeline.models.major_declaration import MajorDeclaration
 from prereq_data_pipeline.models.transcript import Transcript
 from prereq_data_pipeline.utilities import get_previous_term, get_combined_term
 from sqlalchemy import func
@@ -22,7 +23,7 @@ class BuildMajorDecGradeDistro(DataJob):
     def get_5yr_declarations(self, major, current_term):
         start_yr, start_qtr = get_previous_term((current_term[0] - 2,
                                                  current_term[1]))
-        decls = RegisMajor. \
+        decls = MajorDeclaration. \
             get_major_declarations_by_major_period(self.session,
                                                    major.strip(),
                                                    current_term[0]-5,
@@ -35,7 +36,7 @@ class BuildMajorDecGradeDistro(DataJob):
             return decls
 
     def get_2yr_declarations(self, major, current_term):
-        decls = RegisMajor. \
+        decls = MajorDeclaration. \
             get_major_declarations_by_major_period(self.session,
                                                    major.strip(),
                                                    current_term[0]-2,
@@ -100,17 +101,6 @@ class BuildMajorDecGradeDistro(DataJob):
                 except ValueError as ex:
                     pass
         return gpa_distro
-
-    def _get_major_declarations_by_major(self, major, start_year,
-                                         start_quarter, end_year, end_quarter):
-        start_term = get_combined_term(start_year, start_quarter)
-        end_term = get_combined_term(end_year, end_quarter)
-        declarations = self.session.query(RegisMajor) \
-            .filter(RegisMajor.regis_major_abbr == major,
-                    RegisMajor.regis_term >= start_term,
-                    RegisMajor.regis_term <= end_term) \
-            .all()
-        return declarations
 
     def _get_gpa_by_declaration(self, declaration):
         """
