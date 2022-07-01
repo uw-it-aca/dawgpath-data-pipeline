@@ -50,8 +50,10 @@ class PrepareMajorDeclarations(DataJob):
         major_map = {}
         for quarter in registered_quarters:
             if quarter.regis_term in major_map:
-                major_map[quarter.regis_term]['majors'].append(quarter.regis_major_abbr)
+                major_map[quarter.regis_term]['majors']\
+                    .append(quarter.regis_major_abbr)
             else:
-                term = {"quarter": quarter, "majors": [quarter.regis_major_abbr]}
+                term = {"quarter": quarter,
+                        "majors": [quarter.regis_major_abbr]}
                 major_map[quarter.regis_term] = term
         return major_map

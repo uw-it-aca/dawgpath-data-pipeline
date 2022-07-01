@@ -2,6 +2,7 @@ from prereq_data_pipeline.jobs import DataJob
 from prereq_data_pipeline.models.concurrent_courses import \
     ConcurrentCoursesMajor
 from prereq_data_pipeline.models.regis_major import RegisMajor
+from prereq_data_pipeline.models.major_declaration import MajorDeclaration
 from prereq_data_pipeline.models.registration import Registration
 from prereq_data_pipeline.utilities import get_combined_term
 import pandas as pd
@@ -24,8 +25,10 @@ class BuildConcurrentCoursesMajor(DataJob):
 
     def get_concurrent_courses_for_major(self, major):
         concurrent_courses = Counter()
-        decls = RegisMajor.get_major_declarations_by_major(self.session,
-                                                           major)
+        decls = MajorDeclaration.get_major_declarations_by_major(
+            self.session,
+            major
+        )
         for decl in decls:
             declared_courses = self.get_courses_after_decl(decl)
             if(declared_courses):

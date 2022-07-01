@@ -21,3 +21,24 @@ class MajorDeclaration(Base):
                     MajorDeclaration.regis_term <= end_term,
                     MajorDeclaration.regis_major_abbr == major) \
             .all()
+
+    @staticmethod
+    def get_major_declarations_by_major(session, major):
+        declarations = session.query(MajorDeclaration) \
+            .filter(MajorDeclaration.regis_major_abbr == major) \
+            .all()
+
+        # doing this programmatically because I can't get sqlalchemy to work
+        # in a way that supports sqlite and postgres
+        def dedup_students(decls):
+            seen_students = {}
+            for decl in decls:
+                if decl.system_key in seen_students:
+                    if seen_students[decl.system_key].regis_term \
+                            > decl.regis_term:
+                        seen_students[decl.system_key] = decl
+                else:
+                    seen_students[decl.system_key] = decl
+            return list(seen_students.values())
+
+        return dedup_students(declarations)

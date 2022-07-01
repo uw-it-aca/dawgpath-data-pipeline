@@ -1,5 +1,6 @@
 from prereq_data_pipeline.models.common_course_major import CommonCourseMajor
 from prereq_data_pipeline.models.regis_major import RegisMajor
+from prereq_data_pipeline.models.major_declaration import MajorDeclaration
 from prereq_data_pipeline.utilities import get_previous_combined,\
     get_course_abbr_title_dict
 from prereq_data_pipeline.models.registration import Registration
@@ -19,8 +20,10 @@ class BuildCommonCourseMajor(DataJob):
         majors = RegisMajor().get_majors(self.session)
         cc_objects = []
         for major in majors:
-            decls = RegisMajor.get_major_declarations_by_major(self.session,
-                                                               major)
+            decls = MajorDeclaration.get_major_declarations_by_major(
+                self.session,
+                major
+            )
             common_courses = {}
 
             for decl in decls:
