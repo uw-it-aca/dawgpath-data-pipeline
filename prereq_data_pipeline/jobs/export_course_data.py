@@ -31,9 +31,11 @@ class ExportCourseData(DataJob):
             sws_course = self.get_sws_course_for_course(course)
             c_desc = None
             c_offer = None
+            c_prereq = None
             try:
                 c_desc = sws_course.course_description
                 c_offer = sws_course.offered_string
+                c_prereq = sws_course.prereq_string
             except AttributeError:
                 pass
             campus = self.get_course_campus(course.course_branch)
@@ -47,7 +49,8 @@ class ExportCourseData(DataJob):
                                 "concurrent_courses": concurrent,
                                 "prereq_graph": graph,
                                 "course_description": c_desc,
-                                "offered_string": c_offer
+                                "offered_string": c_offer,
+                                "prereq_string": c_prereq
                                 })
 
         return json.dumps(course_data)

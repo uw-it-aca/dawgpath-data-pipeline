@@ -1,7 +1,7 @@
 """add prereq field to course descriptions
 
 Revision ID: f31ddd9f5ced
-Revises: 2decc9b8b6e8
+Revises: 140915d317a6
 Create Date: 2022-10-14 23:07:25.181299+00:00
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'f31ddd9f5ced'
-down_revision = '2decc9b8b6e8'
+down_revision = '140915d317a6'
 branch_labels = None
 depends_on = None
 
