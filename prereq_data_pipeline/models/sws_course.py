@@ -7,3 +7,4 @@ class SWSCourse(Base):
     course_number = Column(SmallInteger())
     course_description = Column(Text())
     offered_string = Column(Text())
+    prereq_string = Column(Text())

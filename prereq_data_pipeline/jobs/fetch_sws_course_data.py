@@ -69,11 +69,37 @@ class FetchSWSCourseData(DataJob):
             offered_str = offered_str[0]
         else:
             offered_str = None
+        prereq_string = self._get_prereq_string(response.course_description)
         course = SWSCourse(department_abbrev=response.curriculum_abbr,
                            course_number=response.course_number,
                            course_description=response.course_description,
-                           offered_string=offered_str)
+                           offered_string=offered_str,
+                           prereq_string=prereq_string)
         return course
+
+    def _get_prereq_string(self, course_desc):
+        if "Prerequisite" in course_desc:
+            try:
+                desc, details = course_desc.split("Prerequisite: ")
+            except ValueError:
+                try:
+                    desc, details = course_desc.split("Prerequisite ")
+                except ValueError:
+                    try:
+                        desc, dupe_prereq, details = course_desc.split(
+                            "Prerequisite: ")
+                    except ValueError:
+                        return None
+            if " Offered" in details:
+                details, offered = details.split(" Offered")
+            if " Instructors: " in details:
+                try:
+                    details, offered = details.split(" Instructors: ")
+                except ValueError:
+                    print(details)
+            prereqs = details.replace("Credit/no-credit only.", "")
+            return prereqs
+
 
     # save sws_course data
     def _save_sws_course(self, sws_courses):
