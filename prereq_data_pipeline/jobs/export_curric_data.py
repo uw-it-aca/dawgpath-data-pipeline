@@ -16,6 +16,7 @@ class ExportCurricData(DataJob):
         curric_data = []
         for curric in currics:
             curric_data.append({"curric_abbrev": curric.abbrev,
+                                "curric_name": curric.name,
                                 "prereq_graph": self.get_prereqs(curric),
                                 "course_data": curric.course_data})
 
