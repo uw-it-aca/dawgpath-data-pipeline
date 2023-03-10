@@ -41,6 +41,7 @@ class ExportCourseData(DataJob):
             campus = self.get_course_campus(course.course_branch)
             course_title = ' '.join(course.long_course_title.split())
             course_data.append({"course_id": course.course_id,
+                                "department_abbrev": course.department_abbrev,
                                 "course_title": course_title,
                                 "course_credits":
                                     self.get_credits_for_course(course),
