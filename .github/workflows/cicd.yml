@@ -23,7 +23,7 @@
 name: tests
 
 env:
-  APP_NAME: prereq_data_pipeline
+  APP_NAME: dawgpath_data_pipeline
 
 on:
   push:

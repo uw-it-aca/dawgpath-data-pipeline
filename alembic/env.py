@@ -3,28 +3,28 @@ use_configparser_backend("conf/app.conf", "PDP-Settings")
 
 from logging.config import fileConfig # nopep8
 from alembic import context # nopep8
-from prereq_data_pipeline.databases.implementation import get_db_implemenation # nopep8
-from prereq_data_pipeline.models.base import Base
+from dawgpath_data_pipeline.databases.implementation import get_db_implemenation # nopep8
+from dawgpath_data_pipeline.models.base import Base
 
 # models must me imported for autogenerate to detect changes
-from prereq_data_pipeline.models.curriculum import Curriculum
-from prereq_data_pipeline.models.course import Course
-from prereq_data_pipeline.models.prereq import Prereq
-from prereq_data_pipeline.models.graph import Graph
-from prereq_data_pipeline.models.registration import Registration
-from prereq_data_pipeline.models.concurrent_courses import ConcurrentCourses
-from prereq_data_pipeline.models.gpa_distro import GPADistribution
-from prereq_data_pipeline.models.major import Major
-from prereq_data_pipeline.models.transcript import Transcript
-from prereq_data_pipeline.models.regis_major import RegisMajor
-from prereq_data_pipeline.models.common_course_major import CommonCourseMajor
-from prereq_data_pipeline.models.concurrent_courses import \
+from dawgpath_data_pipeline.models.curriculum import Curriculum
+from dawgpath_data_pipeline.models.course import Course
+from dawgpath_data_pipeline.models.prereq import Prereq
+from dawgpath_data_pipeline.models.graph import Graph
+from dawgpath_data_pipeline.models.registration import Registration
+from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCourses
+from dawgpath_data_pipeline.models.gpa_distro import GPADistribution
+from dawgpath_data_pipeline.models.major import Major
+from dawgpath_data_pipeline.models.transcript import Transcript
+from dawgpath_data_pipeline.models.regis_major import RegisMajor
+from dawgpath_data_pipeline.models.common_course_major import CommonCourseMajor
+from dawgpath_data_pipeline.models.concurrent_courses import \
     ConcurrentCoursesMajor
-from prereq_data_pipeline.models.student import Student
-from prereq_data_pipeline.models.common_major_for_course import \
+from dawgpath_data_pipeline.models.student import Student
+from dawgpath_data_pipeline.models.common_major_for_course import \
     CommonMajorForCourse
-from prereq_data_pipeline.models.sr_major import SRMajor
-from prereq_data_pipeline.models.sws_course import SWSCourse
+from dawgpath_data_pipeline.models.sr_major import SRMajor
+from dawgpath_data_pipeline.models.sws_course import SWSCourse
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

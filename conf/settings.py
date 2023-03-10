@@ -1,4 +1,4 @@
 
 INSTALLED_APPS += [
-    'prereq_data_pipeline',
+    'dawgpath_data_pipeline',
 ]

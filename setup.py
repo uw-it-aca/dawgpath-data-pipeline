@@ -7,7 +7,7 @@ See the README on `GitHub
 """
 
 # The VERSION file is created by travis-ci, based on the tag name
-version_path = 'prereq_data_pipeline/VERSION'
+version_path = 'dawgpath_data_pipeline/VERSION'
 VERSION = open(os.path.join(os.path.dirname(__file__), version_path)).read()
 VERSION = VERSION.replace("\n", "")
 
@@ -18,7 +18,7 @@ url = "https://github.com/uw-it-aca/prereq-data-pipeline"
 setup(
     name='Prereq Data Pipeline',
     version=VERSION,
-    packages=['prereq_data_pipeline'],
+    packages=['dawgpath_data_pipeline'],
     author="UW-IT AXDD",
     author_email="aca-it@uw.edu",
     include_package_data=True,

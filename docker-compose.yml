@@ -1,0 +1,42 @@
+version: '3.4'
+
+services:
+  app:
+    build:
+      context: .
+      target: app-container
+    restart: always
+    container_name: dawgpath_data_pipeline_app
+    environment:
+      ENV: localdev
+      AUTH: SAML_MOCK
+      GOOGLE_ANALYTICS_KEY: "${GOOGLE_ANALYTICS_KEY}"
+    volumes:
+      - ./dawgpath_data_pipeline:/app/dawgpath_data_pipeline
+      - statics-volume:/static
+    ports:
+      - "${RUNSERVER_PORT:-8000}:8000"
+    stdin_open: true
+    tty: true
+  node-bundler:
+    build:
+      context: .
+      target: node-bundler
+    restart: always
+    container_name: dawgpath_data_pipeline_node
+    ports:
+      - "${BUNDLE_ANALYZER_PORT:-8888}:8888" # Required when environment.BUNDLE_ANALYZER is true
+    environment:
+      NODE_ENV: "development"
+      VUE_DEVTOOLS: "True"
+      BUNDLE_ANALYZER: "True"
+      ENV: "development"
+    volumes:
+      - ./dawgpath_data_pipeline:/app/dawgpath_data_pipeline # expose main django app so webpack-loader can output bundles here
+      - ./dawgpath_data_pipeline_vue:/app/dawgpath_data_pipeline_vue
+      - statics-volume:/static
+    command: npm run watch
+    stdin_open: true
+    tty: true
+volumes:
+  statics-volume:
