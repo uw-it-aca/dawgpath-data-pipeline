@@ -1,0 +1,26 @@
+{
+  "dawgpath_pipeline_admin_vue/main.css": {
+    "file": "dawgpath_pipeline_admin/assets/main-532dc85a.css",
+    "src": "dawgpath_pipeline_admin_vue/main.css"
+  },
+  "dawgpath_pipeline_admin_vue/main.js": {
+    "assets": [
+      "dawgpath_pipeline_admin/assets/bootstrap-icons-bacd70af.woff2",
+      "dawgpath_pipeline_admin/assets/bootstrap-icons-4d4572ef.woff"
+    ],
+    "css": [
+      "dawgpath_pipeline_admin/assets/main-532dc85a.css"
+    ],
+    "file": "dawgpath_pipeline_admin/assets/main-64ab4322.js",
+    "isEntry": true,
+    "src": "dawgpath_pipeline_admin_vue/main.js"
+  },
+  "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff": {
+    "file": "dawgpath_pipeline_admin/assets/bootstrap-icons-4d4572ef.woff",
+    "src": "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff"
+  },
+  "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2": {
+    "file": "dawgpath_pipeline_admin/assets/bootstrap-icons-bacd70af.woff2",
+    "src": "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2"
+  }
+}

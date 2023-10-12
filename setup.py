@@ -3,43 +3,38 @@ from setuptools import setup
 
 README = """
 See the README on `GitHub
-<https://github.com/uw-it-aca/prereq-data-pipeline>`_.
+<https://github.com/uw-it-aca/dawgpath-data-pipeline>`_.
 """
 
 # The VERSION file is created by travis-ci, based on the tag name
-version_path = 'dawgpath_data_pipeline/VERSION'
+version_path = "dawgpath_pipeline_admin/VERSION"
+print(os.path.join(os.path.dirname(__file__), version_path))
 VERSION = open(os.path.join(os.path.dirname(__file__), version_path)).read()
 VERSION = VERSION.replace("\n", "")
 
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
-url = "https://github.com/uw-it-aca/prereq-data-pipeline"
+url = "https://github.com/uw-it-aca/dawgpath-data-pipeline"
 setup(
-    name='Prereq Data Pipeline',
+    name="dawgpath_pipeline_admin",
     version=VERSION,
-    packages=['dawgpath_data_pipeline'],
-    author="UW-IT AXDD",
+    packages=["dawgpath_pipeline_admin"],
+    author="UW-IT",
     author_email="aca-it@uw.edu",
     include_package_data=True,
     install_requires=[
-        'pandas~=1.1.5',
-        'SQLAlchemy~=1.3.23',
-        'commonconf~=1.1',
-        'nose2',
-        'alembic',
-        'psycopg2',
-        'pymssql',
-        'UW-RestClients-SWS~=2.3'
+        "django~=4.2",
     ],
-    license='',
-    description='A tool for managing prereq map data',
+    license="Apache License, Version 2.0",
+    description="",
     long_description=README,
     url=url,
     classifiers=[
-        'Intended Audience :: Developers',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3.6',
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python",
+        "Framework :: Django",
     ],
 )

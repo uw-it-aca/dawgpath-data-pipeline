@@ -1,4 +1,6 @@
-#!/bin/bash
+if [ "$ENV"  = "localdev" ]
+then
 
-python3 manage.py migrate
-python3 manage.py import_data
+  . /scripts/app_deploy.sh
+
+fi
