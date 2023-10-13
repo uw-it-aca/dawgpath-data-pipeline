@@ -1,0 +1,8 @@
+[run]
+source = dawgpath_pipeline_admin
+parallel = True
+
+[paths]
+source =
+  dawgpath_pipeline_admin/
+  /app/dawgpath_pipeline_admin/
