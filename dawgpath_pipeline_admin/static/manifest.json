@@ -1,4 +1,12 @@
 {
+  "bootstrap-icons.woff": {
+    "file": "dawgpath_pipeline_admin/assets/bootstrap-icons-4d4572ef.woff",
+    "src": "bootstrap-icons.woff"
+  },
+  "bootstrap-icons.woff2": {
+    "file": "dawgpath_pipeline_admin/assets/bootstrap-icons-bacd70af.woff2",
+    "src": "bootstrap-icons.woff2"
+  },
   "dawgpath_pipeline_admin_vue/main.css": {
     "file": "dawgpath_pipeline_admin/assets/main-532dc85a.css",
     "src": "dawgpath_pipeline_admin_vue/main.css"
