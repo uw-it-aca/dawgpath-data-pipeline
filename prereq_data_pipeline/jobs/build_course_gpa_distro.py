@@ -2,6 +2,7 @@ from prereq_data_pipeline.models.registration import Registration
 from prereq_data_pipeline.models.gpa_distro import GPADistribution
 from sqlalchemy import func
 from prereq_data_pipeline.jobs import DataJob
+from prereq_data_pipeline import MINIMUM_DATA_COUNT
 
 SAVE_COUNT = 1000
 
@@ -36,8 +37,13 @@ class BuildCourseGPADistro(DataJob):
                     Registration.crs_number == number) \
             .group_by(Registration.gpa).all()
         distro = {key: 0 for key in range(0, 41)}
+        data_points = 0
         for gpa, count in gpa_data:
+            data_points += count
             distro[gpa] = count
+
+        if data_points < MINIMUM_DATA_COUNT:
+            distro = {key: 0 for key in range(0, 41)}
         gpa_distro = GPADistribution(crs_curric_abbr=curric,
                                      crs_number=number,
                                      gpa_distro=distro)

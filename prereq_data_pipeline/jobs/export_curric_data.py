@@ -1,23 +1,36 @@
 from prereq_data_pipeline.models.curriculum import Curriculum
-from prereq_data_pipeline.databases.implementation import get_db_implemenation
-import pandas as pd
-import os
-
-"""
-Builds curriculum data pkl files as currently used by prereq map
-"""
+from prereq_data_pipeline.models.graph import CurricGraph
+from prereq_data_pipeline.jobs import DataJob
+import json
+from sqlalchemy.orm.exc import NoResultFound
 
 
-def run(file_path):
-    # create empty file
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    with open(file_path, 'w') as fp:
-        pass
+class ExportCurricData(DataJob):
+    def run(self, file_path):
+        data = self.get_file_contents()
+        with open(file_path, 'w') as fp:
+            fp.write(data)
 
-    # get currics
-    db = get_db_implemenation()
-    session = db.get_session()
-    q = session.query(Curriculum)
+    def get_file_contents(self):
+        currics = self.get_currics()
+        curric_data = []
+        for curric in currics:
+            curric_data.append({"curric_abbrev": curric.abbrev,
+                                "curric_name": curric.name,
+                                "prereq_graph": self.get_prereqs(curric),
+                                "course_data": curric.course_data})
 
-    df = pd.read_sql(q.filter().statement, q.session.bind)
-    df.to_pickle(file_path)
+        return json.dumps(curric_data)
+
+    def get_currics(self):
+        return self.session.query(Curriculum).all()
+
+    def get_prereqs(self, curric):
+        try:
+            prereqs = self.session.query(CurricGraph)\
+                .filter(CurricGraph.abbrev == curric.abbrev)\
+                .one()
+            return prereqs.graph_json
+        except NoResultFound:
+            print("no prereq graph", curric.abbrev)
+            pass

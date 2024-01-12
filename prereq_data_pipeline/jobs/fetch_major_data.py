@@ -1,6 +1,7 @@
 from prereq_data_pipeline.dao.edw import get_majors
 from prereq_data_pipeline.models.major import Major
 from prereq_data_pipeline.jobs import DataJob
+from distutils.util import strtobool
 
 
 class FetchMajorData(DataJob):
@@ -15,18 +16,35 @@ class FetchMajorData(DataJob):
 
         major_objects = []
         for index, major in majors.iterrows():
+            soc = major['program_school_or_college'].strip()
+            try:
+                no_publish = strtobool(major['DoNotPublish'].strip())
+            except ValueError as ex:
+                if(len(major['DoNotPublish'].strip()) == 0):
+                    no_publish = False
+                else:
+                    raise
+
+            cdsl = major['credential_dateStartLabel'].strip()
+            cdel = major['credential_dateEndLabel'].strip()
             major_obj = Major(
-                program_code=major['program_code'],
-                program_title=major['program_title'],
-                program_department=major['program_department'],
-                program_description=major['program_description'],
-                program_level=major['program_level'],
-                program_type=major['program_type'],
-                program_school_or_college=major['program_school_or_college'],
-                program_dateStartLabel=major['program_dateStartLabel'],
-                program_dateEndLabel=major['program_dateEndLabel'],
-                campus_name=major['campus_name'],
-                program_admissionType=major['program_admissionType']
+                program_code=major['program_code'].strip(),
+                program_title=major['program_title'].strip(),
+                program_department=major['program_department'].strip(),
+                program_description=major['program_description'].strip(),
+                program_level=major['program_level'].strip(),
+                program_type=major['program_type'].strip(),
+                program_school_or_college=soc,
+                program_dateStartLabel=major['program_dateStartLabel'].strip(),
+                program_dateEndLabel=major['program_dateEndLabel'].strip(),
+                campus_name=major['campus_name'].strip(),
+                program_admissionType=major['program_admissionType'].strip(),
+                credential_title=major['credential_title'].strip(),
+                credential_code=major['credential_code'].strip(),
+                credential_description=major['credential_description'].strip(),
+                credential_dateStartLabel=cdsl,
+                credential_dateEndLabel=cdel,
+                credential_DoNotPublish=no_publish
             )
             major_objects.append(major_obj)
         return major_objects

@@ -2,7 +2,7 @@ from prereq_data_pipeline.models.course import Course
 from prereq_data_pipeline.models.prereq import Prereq
 from prereq_data_pipeline.tests import DBTest
 from prereq_data_pipeline.jobs.build_course_graphs import \
-    BuildCoursePrereqGraphs
+    BuildCoursePrereqGraphs, get_graphs
 
 
 class TestBuildGraphs(DBTest):
@@ -107,7 +107,7 @@ class TestBuildGraphs(DBTest):
         self.assertEqual(len(courses), 2)
 
     def test_get_graph(self):
-        graphs = BuildCoursePrereqGraphs().get_graphs([self.info_371])
+        graphs = get_graphs([self.info_371])
         self.assertEqual(len(graphs), 1)
         graph_json = '{"x": {"nodes": {"course.level": {"0": 300, "1": 300}' \
                      ', "course_branch": null, "course_cat_omit": {"0": fal' \

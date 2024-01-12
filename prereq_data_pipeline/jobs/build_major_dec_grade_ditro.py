@@ -6,6 +6,7 @@ from prereq_data_pipeline.utilities import get_previous_term, get_combined_term
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
 from prereq_data_pipeline.jobs import DataJob
+from prereq_data_pipeline import MINIMUM_DATA_COUNT
 
 
 START_YEAR_QUARTER = 20163
@@ -21,55 +22,58 @@ class BuildMajorDecGradeDistro(DataJob):
     def get_5yr_declarations(self, major, current_term):
         start_yr, start_qtr = get_previous_term((current_term[0] - 2,
                                                  current_term[1]))
-        return RegisMajor. \
+        decls = RegisMajor. \
             get_major_declarations_by_major_period(self.session,
-                                                   major,
+                                                   major.strip(),
                                                    current_term[0]-5,
                                                    current_term[1],
                                                    start_yr,
                                                    start_qtr
                                                    )
 
+        if len(decls) >= MINIMUM_DATA_COUNT:
+            return decls
+
     def get_2yr_declarations(self, major, current_term):
-        return RegisMajor. \
+        decls = RegisMajor. \
             get_major_declarations_by_major_period(self.session,
-                                                   major,
+                                                   major.strip(),
                                                    current_term[0]-2,
                                                    current_term[1],
                                                    current_term[0],
                                                    current_term[1]
                                                    )
+        if len(decls) >= MINIMUM_DATA_COUNT:
+            return decls
 
     def build_gpa_distros(self):
         majors = RegisMajor.get_majors(self.session)
         distros = []
         current_term = self._get_most_recent_declaration()
         for major in majors:
-            major = major[0]
-
             declarations_2y = self.get_2yr_declarations(major,
                                                         current_term)
-            distro_2y = {}
-            if declarations_2y:
-                distro_2y = \
-                    self._build_distro_from_declarations(declarations_2y)
-                major_distro_2y = \
-                    MajorDecGPADistribution(gpa_distro=distro_2y,
-                                            major_program_code=major,
-                                            is_2yr=True)
-                distros.append(major_distro_2y)
+            distro_2y = \
+                self._build_distro_from_declarations(declarations_2y)
+            major_distro_2y = \
+                MajorDecGPADistribution(gpa_distro=distro_2y,
+                                        major_program_code=major,
+                                        is_2yr=True)
+            distros.append(major_distro_2y)
 
             declarations_5y = self.get_5yr_declarations(major,
                                                         current_term)
-            if declarations_5y:
-                distro_5y = \
-                    self._build_distro_from_declarations(declarations_5y)
-                combined_distro = Counter(distro_2y) + Counter(distro_5y)
-                args = {"gpa_distro": combined_distro,
-                        "major_program_code": major,
-                        "is_2yr": False}
-                major_distro_5y = MajorDecGPADistribution(**args)
-                distros.append(major_distro_5y)
+            distro_5y = \
+                self._build_distro_from_declarations(declarations_5y)
+            combined_distro = {
+                k: distro_2y.get(k, 0) + distro_5y.get(k, 0)
+                for k in distro_2y.keys() | distro_5y.keys()
+            }
+            args = {"gpa_distro": combined_distro,
+                    "major_program_code": major,
+                    "is_2yr": False}
+            major_distro_5y = MajorDecGPADistribution(**args)
+            distros.append(major_distro_5y)
 
         return distros
 
@@ -83,10 +87,14 @@ class BuildMajorDecGradeDistro(DataJob):
 
     def _build_distro_from_declarations(self, declarations):
         gpa_distro = {key: 0 for key in range(0, 41)}
-        for declaration in declarations:
-            gpa = self._get_gpa_by_declaration(declaration)
-            if gpa is not None:
-                gpa_distro[gpa] += 1
+        if declarations:
+            for declaration in declarations:
+                try:
+                    gpa = self._get_gpa_by_declaration(declaration)
+                    if gpa is not None:
+                        gpa_distro[gpa] += 1
+                except ValueError as ex:
+                    pass
         return gpa_distro
 
     def _get_major_declarations_by_major(self, major, start_year,
@@ -117,7 +125,11 @@ class BuildMajorDecGradeDistro(DataJob):
                 .group_by(Transcript.system_key) \
                 .one()
             # return GPA in rounded 2 digit int format
-            return int(round((gpa_data[2] / gpa_data[1]), 1) * 10)
+            gpa = int(round((gpa_data[2] / gpa_data[1]), 1) * 10)
+            # GPA must be between 0, 40
+            if gpa < 0 or gpa > 40:
+                raise ValueError("GPA not between 0, 40", gpa)
+            return gpa
         except NoResultFound:
             return None
 

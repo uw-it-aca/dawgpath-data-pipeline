@@ -1,5 +1,5 @@
 from prereq_data_pipeline.models.course import Course
-from prereq_data_pipeline.models.graph import Graph
+from prereq_data_pipeline.models.graph import Graph, CurricGraph
 from prereq_data_pipeline.models.prereq import Prereq
 from prereq_data_pipeline.databases.implementation import get_db_implemenation
 import json
@@ -11,13 +11,14 @@ class GraphFactory():
     prereq_data = None
     course_data = None
 
-    def __init__(self, courses, session=None):
+    def __init__(self, courses=None, currics=None, session=None):
         if session is None:
             db = get_db_implemenation()
             session = db.get_session()
 
         self.session = session
         self.courses = courses
+        self.currics = currics
 
         # get dataframes
         q = self.session.query(Prereq)
@@ -52,6 +53,20 @@ class GraphFactory():
 
         # close connection
         self.session.close()
+
+    def build_curric_graphs(self):
+        curric_list = self.currics
+        curric_graphs = []
+        for curric in curric_list:
+            self.course_data = self.clean_cd.copy()
+            self.prereq_data = self.clean_pd.copy()
+            abbrev = curric.abbrev.strip()
+            graph_json = json.dumps(self._process_data(
+                curric_filter=abbrev)
+            )
+            curric_graphs.append(CurricGraph(abbrev=abbrev,
+                                             graph_json=graph_json))
+        return curric_graphs
 
     def build_graphs_from_courses(self):
         graphs = []
