@@ -25,6 +25,12 @@ setup(
     include_package_data=True,
     install_requires=[
         "django~=4.2",
+        "sqlalchemy~=2.0",
+        "pandas~=2.0",
+        "commonconf~=1.1",
+        "uw-restclients-sws~=2.4",
+        "pymssql~=2.2",
+        "alembic~=1.12",
     ],
     license="Apache License, Version 2.0",
     description="",

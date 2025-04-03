@@ -162,10 +162,9 @@ def get_curric_info():
 
 
 def _run_query(database, query):
-    password = getattr(settings, "EDW_PASSWORD")
-    user = getattr(settings, "EDW_USER")
-    server = getattr(settings, "EDW_SERVER")
-
+    password = settings.EDW_PASSWORD
+    user = settings.EDW_USER
+    server = settings.EDW_SERVER
     con = pymssql.connect(server, user, password, database)
     df = pandas.read_sql(query, con)
     con.close()
