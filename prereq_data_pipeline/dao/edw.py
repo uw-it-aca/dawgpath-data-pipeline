@@ -44,7 +44,27 @@ def get_majors():
     db_query = f"""
             SELECT
                 *
-            FROM sec.CM_Programs
+            FROM sec.CM_Credentials c
+            JOIN sec.CM_Programs p
+            ON c.program_verind_id = p.program_verind_id
+            WHERE c.credential_dateEndLabel = ''
+                AND p.program_dateEndLabel = ''
+                AND p.program_code LIKE '%MAJOR%'
+                AND c.DoNotPublish <> 'TRUE'
+    """
+    return _run_query(DB, db_query)
+
+
+def get_sr_majors():
+    db_query = f"""
+            SELECT
+                major_abbr,
+                major_home_url
+            FROM sec.sr_major_code
+            WHERE
+                major_last_yr = 9999
+                AND major_branch = 0
+                AND major_pathway = 0
     """
     return _run_query(DB, db_query)
 
@@ -64,6 +84,27 @@ def get_registrations_since_year(year):
                 regis_yr >= {year}
                 AND dup_enroll = ''
                 AND request_status in ('A', 'C', 'R')
+        """
+    return _run_query(DB, db_query)
+
+
+def get_registrations_in_year_quarter(year, quarter):
+    # Filtering out duplicate enrollments and withdrawn courses
+    db_query = f"""
+            SELECT
+                system_key,
+                regis_yr,
+                regis_qtr,
+                crs_curric_abbr,
+                crs_number,
+                grade
+            FROM sec.registration_courses
+            WHERE
+                regis_yr = {year}
+                AND regis_qtr = {quarter}
+                AND dup_enroll = ''
+                AND request_status in ('A', 'C', 'R')
+                AND crs_number < 500
         """
     return _run_query(DB, db_query)
 
@@ -91,11 +132,13 @@ def get_course_titles():
             course_cat_omit,
             diversity_crs,
             english_comp,
-            indiv_society,
-            natural_world,
-            qsr,
-            vis_lit_perf_arts,
-            writing_crs
+            social_science,
+            natural_science,
+            rsn,
+            arts_hum,
+            writing_crs,
+            min_qtr_credits,
+            max_qtr_credits
         FROM sec.sr_course_titles
         WHERE
             last_eff_yr = 9999

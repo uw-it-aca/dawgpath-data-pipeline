@@ -13,7 +13,7 @@ class FetchTranscriptData(DataJob):
 
     # get transcript data
     def _get_transcripts(self):
-        transcripts = get_transcripts_since_year(2016)
+        transcripts = get_transcripts_since_year(2020)
 
         transcript_objects = []
         for index, transcript in transcripts.iterrows():

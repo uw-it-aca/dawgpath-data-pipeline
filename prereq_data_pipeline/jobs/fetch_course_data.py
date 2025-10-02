@@ -24,11 +24,13 @@ class FetchCourseData(DataJob):
                     course_cat_omit=course['course_cat_omit'],
                     diversity_crs=course['diversity_crs'],
                     english_comp=course['english_comp'],
-                    indiv_society=course['indiv_society'],
-                    natural_world=course['natural_world'],
-                    qsr=course['qsr'],
-                    vis_lit_perf_arts=course['vis_lit_perf_arts'],
-                    writing_crs=course['writing_crs']
+                    indiv_society=course['social_science'],
+                    natural_world=course['natural_science'],
+                    qsr=course['rsn'],
+                    vis_lit_perf_arts=course['arts_hum'],
+                    writing_crs=course['writing_crs'],
+                    min_credits=course['min_qtr_credits'],
+                    max_credits=course['max_qtr_credits']
                 )
             )
         return course_objects

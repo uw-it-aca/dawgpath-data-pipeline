@@ -1,11 +1,12 @@
 import os
+import json
 from unittest.mock import patch
 from prereq_data_pipeline.jobs.fetch_curric_data import FetchCurricData
 import pandas as pd
 from prereq_data_pipeline.models.curriculum import Curriculum
 from prereq_data_pipeline.tests import DBTest
 from prereq_data_pipeline.jobs.export_curric_data \
-    import run as export_curric_data
+    import ExportCurricData
 
 
 class TestCurrics(DBTest):
@@ -65,10 +66,12 @@ class TestCurrics(DBTest):
             pass
 
         self.assertFalse(os.path.exists(curric_path))
-        export_curric_data(curric_path)
+        ExportCurricData().run(curric_path)
         self.assertTrue(os.path.exists(curric_path))
 
-        df = pd.read_pickle(curric_path)
-        self.assertEqual(len(df.index), curric_count)
+        file = open(curric_path)
+        data = json.load(file)
+
+        self.assertEqual(len(data), curric_count)
         # clean up file
         os.remove(curric_path)

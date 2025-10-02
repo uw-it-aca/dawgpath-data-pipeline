@@ -13,7 +13,7 @@ class FetchRegisMajorData(DataJob):
 
     # get regis_major data
     def _get_regis_majors(self):
-        regis_majors = get_regis_majors_since_year(2016)
+        regis_majors = get_regis_majors_since_year(2020)
 
         regis_major_objects = []
         for index, regis_major in regis_majors.iterrows():
@@ -28,7 +28,7 @@ class FetchRegisMajorData(DataJob):
                 regis_branch=regis_major['regis_branch'],
                 regis_deg_level=regis_major['regis_deg_level'],
                 regis_deg_type=regis_major['regis_deg_type'],
-                regis_major_abbr=regis_major['regis_major_abbr']
+                regis_major_abbr=regis_major['regis_major_abbr'].strip()
             )
             regis_major_objects.append(regis_major_obj)
 

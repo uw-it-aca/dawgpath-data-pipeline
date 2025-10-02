@@ -4,7 +4,7 @@ from prereq_data_pipeline.models.concurrent_courses import ConcurrentCourses
 from prereq_data_pipeline.tests import DBTest
 from prereq_data_pipeline.jobs.fetch_registration_data import \
     FetchRegistrationData
-from prereq_data_pipeline.jobs.buid_concurrent_courses import \
+from prereq_data_pipeline.jobs.build_concurrent_courses import \
     BuildConcurrentCourses
 from prereq_data_pipeline.tests.shared_mock.registration import \
     registration_mock_data
@@ -15,13 +15,14 @@ class TestBuildConcurrent(DBTest):
     mock_df = None
 
     @patch('prereq_data_pipeline.jobs.'
-           'fetch_registration_data.get_registrations_since_year')
+           'fetch_registration_data.get_registrations_in_year_quarter')
     def setUp(self, get_reg_mock):
         super(TestBuildConcurrent, self).setUp()
         self.mock_df = pd.DataFrame.from_dict(registration_mock_data,
                                               orient='columns')
         get_reg_mock.return_value = self.mock_df
-        self.mock_registrations = FetchRegistrationData()._get_registrations()
+        self.mock_registrations = FetchRegistrationData()\
+            ._get_registrations(2020, 1)
         FetchRegistrationData()._delete_registrations()
         FetchRegistrationData()._bulk_save_objects(self.mock_registrations)
         BuildConcurrentCourses()._delete_concurrent()
@@ -44,52 +45,58 @@ class TestBuildConcurrent(DBTest):
         concurrent = BuildConcurrentCourses(). \
             get_concurrent_courses_from_course(self.mock_df,
                                                ("BIOL", 140))
-        self.assertEqual(len(concurrent.keys()), 3)
-        self.assertEqual(concurrent['CHEM142'], 2)
-        self.assertEqual(concurrent['CSE142'], 1)
+        self.assertEqual(len(concurrent.keys()), 4)
+        self.assertEqual(concurrent['CHEM 142'], 2)
+        self.assertEqual(concurrent['CSE 142'], 1)
 
     def test_first_term(self):
         BuildConcurrentCourses()._delete_concurrent()
         BuildConcurrentCourses().run_for_quarter(2021, 1, is_first=True)
         concurrent = self.session.query(ConcurrentCourses)\
-            .filter(ConcurrentCourses.course_id == "CHEM142").one()
+            .filter(ConcurrentCourses.department_abbrev == "CHEM")\
+            .filter(ConcurrentCourses.course_number == 142)\
+            .one()
         self.assertEqual(len(concurrent.concurrent_courses.keys()), 3)
-        self.assertEqual(concurrent.concurrent_courses['BIOL140'], 2)
-        self.assertEqual(concurrent.concurrent_courses['MATH124'], 1)
+        self.assertEqual(concurrent.concurrent_courses['BIOL 140'], 2)
+        self.assertEqual(concurrent.concurrent_courses['MATH 124'], 1)
 
     def test_subsequent_term(self):
         BuildConcurrentCourses()._delete_concurrent()
         BuildConcurrentCourses().run_for_quarter(2021, 1, is_first=True)
         BuildConcurrentCourses().run_for_quarter(2021, 2, is_first=False)
-        concurrent = self.session.query(ConcurrentCourses)\
-            .filter(ConcurrentCourses.course_id == "CHEM142").one()
+        concurrent = self.session.query(ConcurrentCourses) \
+            .filter(ConcurrentCourses.department_abbrev == "CHEM") \
+            .filter(ConcurrentCourses.course_number == 142) \
+            .one()
         self.assertEqual(len(concurrent.concurrent_courses.keys()), 3)
-        self.assertEqual(concurrent.concurrent_courses['BIOL140'], 2)
-        self.assertEqual(concurrent.concurrent_courses['MATH124'], 2)
+        self.assertEqual(concurrent.concurrent_courses['BIOL 140'], 2)
+        self.assertEqual(concurrent.concurrent_courses['MATH 124'], 2)
 
     def test_get_terms_from_registrations(self):
         terms = BuildConcurrentCourses()._get_terms_from_registrations()
-        self.assertEqual(terms, [(2015, 1), (2015, 4), (2018, 1),
-                                 (2019, 1), (2020, 1), (2021, 1), (2021, 2)])
+        self.assertEqual(terms, [(2019, 3), (2019, 4), (2020, 1), (2020, 2),
+                                 (2020, 3), (2020, 4), (2021, 1), (2021, 2)])
 
     def test_run_all(self):
         BuildConcurrentCourses()._delete_concurrent()
         BuildConcurrentCourses().run_for_all_registrations()
         concurrent = self.session.query(ConcurrentCourses).all()
-        self.assertEqual(len(concurrent), 9)
+        self.assertEqual(len(concurrent), 8)
 
         no_conc = self.session.query(ConcurrentCourses) \
-            .filter(ConcurrentCourses.course_id == "ENGL354").one()
+            .filter(ConcurrentCourses.department_abbrev == "ENGL") \
+            .filter(ConcurrentCourses.course_number == 354)\
+            .one()
 
         self.assertEqual(no_conc.concurrent_courses, {})
 
-        term1_course = self.session.query(ConcurrentCourses) \
-            .filter(ConcurrentCourses.course_id == "ASTRO540").one()
-
-        self.assertEqual(term1_course.concurrent_courses, {'PHYS301': 1})
-
         term2_course = self.session.query(ConcurrentCourses) \
-            .filter(ConcurrentCourses.course_id == "CSE142").one()
+            .filter(ConcurrentCourses.department_abbrev == "CSE") \
+            .filter(ConcurrentCourses.course_number == 142) \
+            .one()
 
         self.assertEqual(term2_course.concurrent_courses,
-                         {'CHEM142': 2, 'BIOL140': 1})
+                         {'CHEM 142': 3,
+                          'BIOL 140': 1,
+                          'PHYS 301': 1,
+                          'BIO 103': 1})

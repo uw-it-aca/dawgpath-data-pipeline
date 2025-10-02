@@ -11,10 +11,4 @@ class Registration(Base):
     crs_number = Column(SmallInteger(), index=True)
     grade = Column(String(length=2))
     gpa = Column(SmallInteger())
-
-    @property
-    def course_id(self):
-        '''
-        :return: The course id "{crs_curric_abbr} {crs_number}"
-        '''
-        return "%s %s" % (self.crs_curric_abbr, self.crs_number)
+    course_id = Column(String(length=10), index=True)

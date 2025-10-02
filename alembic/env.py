@@ -1,11 +1,11 @@
 from commonconf.backends import use_configparser_backend
-use_configparser_backend("conf/app.conf", "PDP-Settings")
+use_configparser_backend("/home/devights/devel/dawgpath-data-pipeline/prereq_data_pipeline/conf/app.conf", "PDP-Settings")
 
 from logging.config import fileConfig # nopep8
 from alembic import context # nopep8
 from prereq_data_pipeline.databases.implementation import get_db_implemenation # nopep8
 from prereq_data_pipeline.models.base import Base
-
+print('ENV')
 # models must me imported for autogenerate to detect changes
 from prereq_data_pipeline.models.curriculum import Curriculum
 from prereq_data_pipeline.models.course import Course
@@ -18,6 +18,13 @@ from prereq_data_pipeline.models.major import Major
 from prereq_data_pipeline.models.transcript import Transcript
 from prereq_data_pipeline.models.regis_major import RegisMajor
 from prereq_data_pipeline.models.common_course_major import CommonCourseMajor
+from prereq_data_pipeline.models.concurrent_courses import \
+    ConcurrentCoursesMajor
+from prereq_data_pipeline.models.student import Student
+from prereq_data_pipeline.models.common_major_for_course import \
+    CommonMajorForCourse
+from prereq_data_pipeline.models.sr_major import SRMajor
+from prereq_data_pipeline.models.sws_course import SWSCourse
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
