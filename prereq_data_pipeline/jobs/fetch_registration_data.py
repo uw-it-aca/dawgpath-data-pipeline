@@ -4,7 +4,7 @@ from prereq_data_pipeline.utilities import get_combined_term
 from prereq_data_pipeline.jobs import DataJob
 from datetime import date
 
-REGISTRATION_START_YEAR = 2016
+REGISTRATION_START_YEAR = 2020
 REG_QUARTERS = [1, 2, 3, 4]
 
 
@@ -18,6 +18,7 @@ class FetchRegistrationData(DataJob):
         reg_year = REGISTRATION_START_YEAR
         while reg_year <= current_year:
             for quarter in REG_QUARTERS:
+                print(f"Fetching registration data for {reg_year} Q{quarter}")
                 registrations = self._get_registrations(reg_year, quarter)
                 self._bulk_save_objects(registrations)
             reg_year += 1

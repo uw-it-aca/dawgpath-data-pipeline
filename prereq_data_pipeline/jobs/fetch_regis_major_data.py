@@ -13,7 +13,7 @@ class FetchRegisMajorData(DataJob):
 
     # get regis_major data
     def _get_regis_majors(self):
-        regis_majors = get_regis_majors_since_year(2016)
+        regis_majors = get_regis_majors_since_year(2020)
 
         regis_major_objects = []
         for index, regis_major in regis_majors.iterrows():

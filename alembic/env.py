@@ -1,11 +1,11 @@
 from commonconf.backends import use_configparser_backend
-use_configparser_backend("conf/app.conf", "PDP-Settings")
+use_configparser_backend("/home/devights/devel/dawgpath-data-pipeline/prereq_data_pipeline/conf/app.conf", "PDP-Settings")
 
 from logging.config import fileConfig # nopep8
 from alembic import context # nopep8
 from prereq_data_pipeline.databases.implementation import get_db_implemenation # nopep8
 from prereq_data_pipeline.models.base import Base
-
+print('ENV')
 # models must me imported for autogenerate to detect changes
 from prereq_data_pipeline.models.curriculum import Curriculum
 from prereq_data_pipeline.models.course import Course

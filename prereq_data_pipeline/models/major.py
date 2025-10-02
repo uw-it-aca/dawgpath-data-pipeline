@@ -12,6 +12,7 @@ class Major(Base):
     program_school_or_college = Column(String(length=300))
     program_dateStartLabel = Column(String(length=25))
     program_dateEndLabel = Column(String(length=25))
+    program_verind_id = Column(String(length=50))
     campus_name = Column(String(length=12))
     program_admissionType = Column(String(length=25))
 

@@ -91,6 +91,7 @@ class ExportMajorData(DataJob):
                         "credential_code": major.credential_code,
                         "credential_description":
                             major.credential_description,
+                        "program_verind_id": major.program_verind_id,
                         }
             major_data[major.credential_code] = maj_data
         return json.dumps(major_data)

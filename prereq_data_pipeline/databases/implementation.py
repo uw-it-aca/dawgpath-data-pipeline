@@ -5,6 +5,7 @@ from prereq_data_pipeline.databases.postgres import Postgres
 
 def get_db_implemenation():
     db_class = getattr(settings, 'DB_CLASS', 'sqlite3')
+    print('dbc', db_class)
     if db_class == 'sqlite3':
         return Sqlite3(is_memory=False)
     if db_class == 'memory':

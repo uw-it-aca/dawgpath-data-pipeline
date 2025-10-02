@@ -9,7 +9,6 @@ from prereq_data_pipeline.jobs import DataJob
 from prereq_data_pipeline import MINIMUM_DATA_COUNT
 
 
-START_YEAR_QUARTER = 20163
 
 
 class BuildMajorDecGradeDistro(DataJob):
@@ -49,7 +48,9 @@ class BuildMajorDecGradeDistro(DataJob):
     def build_gpa_distros(self):
         majors = RegisMajor.get_majors(self.session)
         distros = []
-        current_term = self._get_most_recent_declaration()
+        # TODO: Find better solution for current term (SWS?)
+        # current_term = self._get_most_recent_declaration()
+        current_term = (2025, 3)
         for major in majors:
             declarations_2y = self.get_2yr_declarations(major,
                                                         current_term)
@@ -78,6 +79,8 @@ class BuildMajorDecGradeDistro(DataJob):
         return distros
 
     def _get_most_recent_declaration(self):
+        # TODO: This is broken as there are registrations in future terms
+        #  (Eg 3 for 2028 in Sum 2025)
         latest_dec = \
             self.session.query(RegisMajor.regis_yr, RegisMajor.regis_qtr) \
                 .order_by(RegisMajor.regis_yr.desc(),

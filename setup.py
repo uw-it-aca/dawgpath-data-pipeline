@@ -23,7 +23,7 @@ setup(
     author_email="aca-it@uw.edu",
     include_package_data=True,
     install_requires=[
-        'pandas~=1.1.5',
+        'pandas~=1.5.3',
         'SQLAlchemy~=1.3.23',
         'commonconf~=1.1',
         'nose2',

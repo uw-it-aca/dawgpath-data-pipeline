@@ -8,36 +8,35 @@ import time
 from sqlalchemy.orm.exc import NoResultFound
 
 
-REQUESTS_PER_SECOND = 1
+REQUESTS_PER_SECOND = 5
 DELAY = 1/REQUESTS_PER_SECOND
 
 
 class FetchSWSCourseData(DataJob):
     def run(self):
-        # self._delete_sws_courses()
-        courses = self._get_sws_courses()
-        self._save_sws_course(courses)
+        self._delete_sws_courses()
+        sws_courses = self._get_sws_courses()
+        self._save_sws_course(sws_courses)
 
     def _get_sws_courses(self):
-        courses = self.session.query(Course).all()
-        chunk_size = 10
-        chunks = [courses[x:x + chunk_size] for x in
-                  range(0, len(courses), chunk_size)]
-        for chunk in chunks:
-            sws_courses = []
-            for course in chunk:
-                try:
-                    self.session.query(SWSCourse) \
-                        .filter(SWSCourse.department_abbrev
-                                == course.department_abbrev) \
-                        .filter(SWSCourse.course_number
-                                == course.course_number) \
-                        .one()
-                except NoResultFound:
-                    sws_course = self._get_sws_course(course)
-                    if sws_course is not None:
-                        sws_courses.append(sws_course)
-            self._save_sws_course(sws_courses)
+        courses =self._get_courses_with_registrations()
+        sws_courses = []
+        for course in courses:
+            sws_course = self._get_sws_course(course)
+            if sws_course is not None:
+                sws_courses.append(sws_course)
+        return sws_courses
+
+    def _get_courses_with_registrations(self):
+        """
+        Get all courses that have at least one registration.
+        This is used to limit the number of courses we fetch from SWS.
+        """
+        courses = self.session.query(Course) \
+            .join(Registration, (Course.department_abbrev == Registration.crs_curric_abbr) &
+                  (Course.course_number == Registration.crs_number)) \
+            .distinct().all()
+        return courses
 
     def _get_sws_course(self, course):
         registration = self.session.query(Registration) \
@@ -69,6 +68,7 @@ class FetchSWSCourseData(DataJob):
             offered_str = offered_str[0]
         else:
             offered_str = None
+        print("Offered String: ", offered_str)
         prereq_string = self._get_prereq_string(response.course_description)
         course = SWSCourse(department_abbrev=response.curriculum_abbr,
                            course_number=response.course_number,

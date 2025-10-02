@@ -37,6 +37,7 @@ class FetchMajorData(DataJob):
                 program_school_or_college=soc,
                 program_dateStartLabel=major['program_dateStartLabel'].strip(),
                 program_dateEndLabel=major['program_dateEndLabel'].strip(),
+                program_verind_id=major['program_verind_id'][1].strip(),
                 campus_name=major['campus_name'].strip(),
                 program_admissionType=major['program_admissionType'].strip(),
                 credential_title=major['credential_title'].strip(),
