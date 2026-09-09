@@ -58,7 +58,7 @@ class TestJobContracts(DBTest):
             (BuildCommonCourseMajor, 'build_all_majors', []),
             (BuildCommonMajorForCourse, 'build_common_majors', {}),
             (BuildConcurrentCoursesMajor, 'get_concurrent_courses_for_all_majors', []),
-            (BuildCourseGPADistro, 'build_distros_for_courses', 0),
+            (BuildCourseGPADistro, 'build_distros_for_courses', []),
             (BuildCurricPrereqLists, 'get_currics', []),
             (BuildMajorDecGradeDistro, 'build_gpa_distros', []),
             (PrepareStudentModel, 'create_students', []),

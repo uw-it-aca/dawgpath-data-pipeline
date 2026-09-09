@@ -10,10 +10,9 @@ from collections import Counter
 
 class BuildConcurrentCoursesMajor(DataJob):
     def run(self):
-        self.delete_concurrent_courses()
         majors = RegisMajor().get_majors(self.session)
         cc_objects = self.get_concurrent_courses_for_all_majors(majors)
-        self._bulk_save_objects(cc_objects)
+        self._atomic_replace(ConcurrentCoursesMajor, cc_objects)
         return self._create_result(rows_affected=len(cc_objects))
 
     def get_concurrent_courses_for_all_majors(self, majors):

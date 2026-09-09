@@ -10,6 +10,7 @@ This repository is currently in an in-progress refactor from manually run ETL sc
 
 - [Current state](docs/current-state.md): branch status, architecture snapshot, validation status, and deployment fit.
 - [ETL job catalog](docs/jobs.md): current jobs, inputs, outputs, dependencies, and inferred workflow order.
+- [Job safety and transaction audit](docs/job-safety-audit.md): destructive execution audit, transaction strategies, and staging table plan.
 - [Operations and deployment notes](docs/operations.md): local operation, cluster fit, and suggested lockdown plan.
 - [Known issues and immediate fixes](docs/known-issues.md): items to address before deployment or deeper refactoring.
 

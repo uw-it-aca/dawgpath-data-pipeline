@@ -11,9 +11,8 @@ from dawgpath_data_pipeline import MINIMUM_DATA_COUNT
 class BuildCommonCourseMajor(DataJob):
 
     def run(self):
-        self._delete_common_courses()
         common_courses = self.build_all_majors()
-        self._bulk_save_objects(common_courses)
+        self._atomic_replace(CommonCourseMajor, common_courses)
         return self._create_result(rows_affected=len(common_courses))
 
     def build_all_majors(self):

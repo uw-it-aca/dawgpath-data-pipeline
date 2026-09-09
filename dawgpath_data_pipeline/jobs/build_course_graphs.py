@@ -18,9 +18,6 @@ def get_graphs(courses):
 
 class BuildCoursePrereqGraphs(DataJob):
     def run(self):
-        # Remove old graphs (assumes we're updating all at once)
-        self._delete_graphs()
-
         courses = self.get_courses_with_prereqs()
 
         """
@@ -36,8 +33,7 @@ class BuildCoursePrereqGraphs(DataJob):
         results = pool.map(get_graphs, chunks)
         graphs = list(chain.from_iterable(results))
 
-        self.session.bulk_save_objects(graphs)
-        self.session.commit()
+        self._atomic_replace(Graph, graphs)
         return self._create_result(rows_affected=len(graphs))
 
     def get_courses_with_prereqs(self):

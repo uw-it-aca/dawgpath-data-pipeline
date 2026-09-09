@@ -6,9 +6,8 @@ from distutils.util import strtobool
 
 class FetchMajorData(DataJob):
     def run(self):
-        self._delete_majors()
         majors = self._get_majors()
-        self._save_majors(majors)
+        self._atomic_replace(Major, majors)
         return self._create_result(rows_affected=len(majors))
 
     # get major data

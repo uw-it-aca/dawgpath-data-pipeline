@@ -9,29 +9,20 @@ SAVE_COUNT = 1000
 
 class BuildCourseGPADistro(DataJob):
     def run(self):
-        self._delete_gpa_distros()
-        saved_count = self.build_distros_for_courses()
-        return self._create_result(rows_affected=saved_count)
+        distros = self.build_distros_for_courses()
+        self._atomic_replace(GPADistribution, distros)
+        return self._create_result(rows_affected=len(distros))
 
     def build_distros_for_courses(self):
         courses = self.session.query(Registration.crs_curric_abbr,
                                      Registration.crs_number) \
             .distinct(Registration.crs_curric_abbr,
                       Registration.crs_number).all()
-        count = 0
         distros = []
         for course in courses:
             distros.append(self.build_distro_for_course(course.crs_curric_abbr,
                                                         course.crs_number))
-            if count % SAVE_COUNT == 0:
-                self.session.bulk_save_objects(distros)
-                self.session.commit()
-                distros.clear()
-            count += 1
-        self.session.bulk_save_objects(distros)
-        self.session.commit()
-        return len(courses)
-        self.session.commit()
+        return distros
 
     def build_distro_for_course(self, curric, number):
         gpa_data = self.session.query(Registration.gpa,

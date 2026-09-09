@@ -57,7 +57,24 @@ class DataJob:
         except TypeError:
             pass
 
-    def _delete_objects(self, to_delete):
+    def _delete_objects(self, to_delete, commit=True):
         q = self.session.query(to_delete)
         q.delete()
-        self.session.commit()
+        if commit:
+            self.session.commit()
+
+    def _atomic_replace(self, model_cls, objects, chunk_size=10000):
+        """
+        Atomically deletes existing rows for model_cls and saves replacement objects
+        within a single transaction. If saving fails, changes are rolled back.
+        """
+        try:
+            self._delete_objects(model_cls, commit=False)
+            chunks = [objects[x:x + chunk_size] for x in
+                      range(0, len(objects), chunk_size)]
+            for chunk in chunks:
+                self.session.add_all(chunk)
+            self.session.commit()
+        except Exception:
+            self.session.rollback()
+            raise

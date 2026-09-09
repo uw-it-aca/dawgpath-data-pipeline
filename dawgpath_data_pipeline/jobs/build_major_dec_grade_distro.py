@@ -14,10 +14,8 @@ START_YEAR_QUARTER = 20163
 
 class BuildMajorDecGradeDistro(DataJob):
     def run(self):
-        self._delete_major_dec_distros()
         distros = self.build_gpa_distros()
-
-        self._bulk_save_objects(distros)
+        self._atomic_replace(MajorDecGPADistribution, distros)
         return self._create_result(rows_affected=len(distros))
 
     def get_5yr_declarations(self, major, current_term):

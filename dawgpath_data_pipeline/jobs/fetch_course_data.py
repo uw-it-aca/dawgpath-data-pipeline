@@ -5,9 +5,8 @@ from dawgpath_data_pipeline.jobs import DataJob
 
 class FetchCourseData(DataJob):
     def run(self):
-        self._delete_courses()
         courses = self._get_courses()
-        self._save_courses(courses)
+        self._atomic_replace(Course, courses)
         return self._create_result(rows_affected=len(courses))
 
     # get course data

@@ -5,9 +5,8 @@ from dawgpath_data_pipeline.jobs import DataJob
 
 class FetchCurricData(DataJob):
     def run(self):
-        self._delete_currics()
         currics = self._get_currics()
-        self._save_currics(currics)
+        self._atomic_replace(Curriculum, currics)
         return self._create_result(rows_affected=len(currics))
 
     # get curric data

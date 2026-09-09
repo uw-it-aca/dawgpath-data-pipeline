@@ -5,9 +5,8 @@ from dawgpath_data_pipeline.jobs import DataJob
 
 class FetchPrereqData(DataJob):
     def run(self):
-        self._delete_prereqs()
         prereqs = self._get_prereqs()
-        self._save_prereqs(prereqs)
+        self._atomic_replace(Prereq, prereqs)
         return self._create_result(rows_affected=len(prereqs))
 
     # get prereq data

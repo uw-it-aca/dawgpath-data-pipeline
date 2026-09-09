@@ -13,9 +13,8 @@ def worker(syskeys):
 class PrepareStudentModel(DataJob):
 
     def run(self):
-        self._delete_students()
         students = self.create_students()
-        self._bulk_save_objects(students)
+        self._atomic_replace(Student, students)
         return self._create_result(rows_affected=len(students))
 
     def create_students(self):

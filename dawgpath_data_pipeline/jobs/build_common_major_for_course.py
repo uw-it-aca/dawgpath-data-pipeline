@@ -9,10 +9,9 @@ from dawgpath_data_pipeline.jobs import DataJob
 class BuildCommonMajorForCourse(DataJob):
 
     def run(self):
-        self._delete_common_major()
         common_majors = self.build_common_majors()
         common_objs = self.create_common_maj_objects(common_majors)
-        self._bulk_save_objects(common_objs)
+        self._atomic_replace(CommonMajorForCourse, common_objs)
         return self._create_result(rows_affected=len(common_objs))
 
     def build_common_majors(self):

@@ -7,9 +7,8 @@ from dawgpath_data_pipeline.jobs import DataJob
 class FetchTranscriptData(DataJob):
 
     def run(self):
-        self._delete_transcripts()
         transcripts = self._get_transcripts()
-        self._bulk_save_objects(transcripts)
+        self._atomic_replace(Transcript, transcripts)
         return self._create_result(rows_affected=len(transcripts))
 
     # get transcript data

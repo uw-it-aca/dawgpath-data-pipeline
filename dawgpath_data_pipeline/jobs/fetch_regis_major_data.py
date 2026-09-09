@@ -6,10 +6,8 @@ from dawgpath_data_pipeline.jobs import DataJob
 
 class FetchRegisMajorData(DataJob):
     def run(self):
-        self._delete_regis_majors()
-
         regis_majors = self._get_regis_majors()
-        self._bulk_save_objects(regis_majors)
+        self._atomic_replace(RegisMajor, regis_majors)
         return self._create_result(rows_affected=len(regis_majors))
 
     # get regis_major data

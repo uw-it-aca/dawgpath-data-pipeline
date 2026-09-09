@@ -5,13 +5,19 @@ import json
 from sqlalchemy.orm.exc import NoResultFound
 
 
+import os
+
 class ExportCurricData(DataJob):
     def run(self, file_path=None):
         data = self.get_file_contents()
         parsed = json.loads(data)
         if file_path:
-            with open(file_path, 'w') as fp:
+            dir_name = os.path.dirname(os.path.abspath(file_path))
+            os.makedirs(dir_name, exist_ok=True)
+            tmp_path = f"{file_path}.tmp"
+            with open(tmp_path, 'w') as fp:
                 fp.write(data)
+            os.replace(tmp_path, file_path)
         return self._create_result(rows_affected=len(parsed),
                                    metadata={"file_path": file_path, "bytes": len(data)})
 

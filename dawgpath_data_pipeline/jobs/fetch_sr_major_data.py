@@ -5,9 +5,8 @@ from dawgpath_data_pipeline.jobs import DataJob
 
 class FetchSRMajorData(DataJob):
     def run(self):
-        self._delete_sr_majors()
         majors = self._get_sr_majors()
-        self._save_sr_majors(majors)
+        self._atomic_replace(SRMajor, majors)
         return self._create_result(rows_affected=len(majors))
 
     # get sr_major data

@@ -20,16 +20,12 @@ def get_graphs(currics, courses):
 
 class BuildCurricPrereqGraphs(DataJob):
     def run(self):
-        # Remove old graphs (assumes we're updating all at once)
-        self.delete_graphs()
-
         currics = self.get_currics()
         courses = BuildCoursePrereqGraphs().get_courses_with_prereqs()
 
         graphs = get_graphs(currics, courses)
 
-        self.session.bulk_save_objects(graphs)
-        self.session.commit()
+        self._atomic_replace(CurricGraph, graphs)
         return self._create_result(rows_affected=len(graphs))
 
     def get_currics(self):
