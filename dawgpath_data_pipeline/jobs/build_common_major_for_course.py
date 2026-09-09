@@ -42,7 +42,7 @@ class BuildCommonMajorForCourse(DataJob):
             cmc = CommonMajorForCourse(
                 crs_curric_abbr=course['crs_curric_abbr'],
                 crs_number=course['crs_number'],
-                major_courts=course['major_counts']
+                major_counts=course['major_counts']
             )
             objects.append(cmc)
         return objects

@@ -1,7 +1,7 @@
 from dawgpath_data_pipeline.models.course import Course
 from dawgpath_data_pipeline.models.graph import Graph, CurricGraph
 from dawgpath_data_pipeline.models.prereq import Prereq
-from dawgpath_data_pipeline.databases.implementation import get_db_implemenation
+from dawgpath_data_pipeline.databases.implementation import get_db_implementation
 import json
 import pandas as pd
 
@@ -13,7 +13,7 @@ class GraphFactory():
 
     def __init__(self, courses=None, currics=None, session=None):
         if session is None:
-            db = get_db_implemenation()
+            db = get_db_implementation()
             session = db.get_session()
 
         self.session = session

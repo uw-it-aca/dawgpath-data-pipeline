@@ -2,7 +2,7 @@ from unittest.mock import patch, mock_open
 import json
 import pandas as pd
 from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.jobs.build_major_dec_grade_ditro import \
+from dawgpath_data_pipeline.jobs.build_major_dec_grade_distro import \
     BuildMajorDecGradeDistro
 from dawgpath_data_pipeline.jobs.fetch_regis_major_data import \
     FetchRegisMajorData

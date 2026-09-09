@@ -1,5 +1,5 @@
 from dawgpath_data_pipeline.models.course import Course
-from dawgpath_data_pipeline.databases.implementation import get_db_implemenation
+from dawgpath_data_pipeline.databases.implementation import get_db_implementation
 import pandas as pd
 import os
 
@@ -15,7 +15,7 @@ def run(file_path):
         pass
 
     # get courses
-    db = get_db_implemenation()
+    db = get_db_implementation()
     session = db.get_session()
     q = session.query(Course)
 

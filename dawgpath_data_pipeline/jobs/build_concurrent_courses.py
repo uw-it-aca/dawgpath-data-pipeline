@@ -1,7 +1,7 @@
 from dawgpath_data_pipeline.dao.edw import get_registrations_since_year
 from dawgpath_data_pipeline.models.registration import Registration
 from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCourses
-from dawgpath_data_pipeline.databases.implementation import get_db_implemenation
+from dawgpath_data_pipeline.databases.implementation import get_db_implementation
 import operator
 import pandas as pd
 from collections import Counter
@@ -35,7 +35,7 @@ class BuildConcurrentCourses(DataJob):
         return sorted(terms, key=lambda term: (term[0], term[1]))
 
     def run_for_quarter(self, year, quarter, is_first=False):
-        db = get_db_implemenation()
+        db = get_db_implementation()
         session = db.get_session()
 
         query = session.query(Registration) \

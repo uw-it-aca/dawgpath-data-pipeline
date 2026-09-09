@@ -54,7 +54,7 @@ class TestCommonMajor(DBTest):
         self.assertEqual(len(objects), 8)
         self.assertEqual(objects[1].crs_curric_abbr, "CHEM")
         self.assertEqual(objects[1].crs_number, 142)
-        self.assertEqual(objects[1].major_courts,
+        self.assertEqual(objects[1].major_counts,
                          [{'major': 'GEOG', 'count': 10},
                           {'major': 'N MATR', 'count': 3}])
 

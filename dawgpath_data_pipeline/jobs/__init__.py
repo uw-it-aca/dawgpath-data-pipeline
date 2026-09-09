@@ -1,11 +1,11 @@
-from dawgpath_data_pipeline.databases.implementation import get_db_implemenation
+from dawgpath_data_pipeline.databases.implementation import get_db_implementation
 
 
 class DataJob:
     session = None
 
     def __init__(self):
-        db = get_db_implemenation()
+        db = get_db_implementation()
         self.session = db.get_session()
 
     def _bulk_save_objects(self, objects, chunk_size=10000):

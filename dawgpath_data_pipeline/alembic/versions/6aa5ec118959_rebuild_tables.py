@@ -1,7 +1,7 @@
 """rebuild tables
 
 Revision ID: 6aa5ec118959
-Revises: 
+Revises:
 Create Date: 2021-10-27 20:50:09.912274+00:00
 
 """
@@ -28,7 +28,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('crs_curric_abbr', sa.String(length=6), nullable=True),
     sa.Column('crs_number', sa.SmallInteger(), nullable=True),
-    sa.Column('major_courts', sa.PickleType(), nullable=True),
+    sa.Column('major_counts', sa.PickleType(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_commonmajorforcourse_crs_curric_abbr'), 'commonmajorforcourse', ['crs_curric_abbr'], unique=False)

@@ -3,7 +3,7 @@ use_configparser_backend("conf/app.conf", "PDP-Settings")
 
 from logging.config import fileConfig # nopep8
 from alembic import context # nopep8
-from dawgpath_data_pipeline.databases.implementation import get_db_implemenation # nopep8
+from dawgpath_data_pipeline.databases.implementation import get_db_implementation # nopep8
 from dawgpath_data_pipeline.models.base import Base
 
 # models must me imported for autogenerate to detect changes
@@ -81,7 +81,7 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
-    connectable = get_db_implemenation().engine
+    connectable = get_db_implementation().engine
 
     with connectable.connect() as connection:
         context.configure(
