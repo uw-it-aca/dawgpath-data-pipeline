@@ -10,21 +10,22 @@ REG_QUARTERS = [1, 2, 3, 4]
 
 class FetchRegistrationData(DataJob):
     def run(self):
-        self._delete_registrations()
-        total_saved = self.get_all_years()
-        return self._create_result(rows_affected=total_saved)
+        # Gather all registration objects across all years/quarters in memory first
+        all_registrations = self.get_all_years()
+        # Perform single atomic transaction replace
+        self._atomic_replace(Registration, all_registrations)
+        return self._create_result(rows_affected=len(all_registrations))
 
     def get_all_years(self):
         current_year = date.today().year
         reg_year = REGISTRATION_START_YEAR
-        total_saved = 0
+        all_registration_objects = []
         while reg_year <= current_year:
             for quarter in REG_QUARTERS:
                 registrations = self._get_registrations(reg_year, quarter)
-                self._bulk_save_objects(registrations)
-                total_saved += len(registrations)
+                all_registration_objects.extend(registrations)
             reg_year += 1
-        return total_saved
+        return all_registration_objects
 
     # get registration data by year and quarter
     def _get_registrations(self, year, quarter):

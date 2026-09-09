@@ -28,11 +28,12 @@ Recommended approach: move DawgPath ETL toward a dedicated Python orchestration 
    - Implemented `ArtifactPublisher` in `dawgpath_data_pipeline/utilities/artifact_publisher.py` with support for GCS bucket publishing and local directory fallback.
    - Writes run-versioned copies (`runs/{run_id}/{filename}`), latest copies (`latest/{filename}`), SHA-256 checksums, byte sizes, and an atomic `latest/manifest.json`.
    - Updated published artifact assets (`export_course_data_json`, `export_curric_data_json`, `export_major_data_json`, `export_course_prereq_pickle`, `export_prereq_pickle`) to publish versioned artifacts and update `manifest.json`.
-5. Make destructive jobs production-safe:
-   - use staging tables, run IDs, or transaction boundaries
-   - avoid delete-then-load windows becoming visible to exports
-   - add idempotency and concurrency guards
-6. Add operational metadata:
+5. [x] Make destructive jobs production-safe:
+   - Implemented single-transaction `_atomic_replace()` in `DataJob` for all in-memory table refreshes.
+   - Updated `FetchRegistrationData` to perform full in-memory fetch across 10 years before replacing `Registration` table atomically in a single transaction.
+   - Verified transaction boundaries and `.tmp` -> `os.replace` atomic file writes across all export jobs.
+   - Documented staging table & transaction strategy in `docs/job-safety-audit.md`.
+6. [ ] Add operational metadata:
    - per-job status, start/end time, row counts, upstream source, output artifact URI, exception details
    - preserve `MINIMUM_DATA_COUNT = 8` behavior and document it as a privacy/data-release rule
 7. Deploy in phases:

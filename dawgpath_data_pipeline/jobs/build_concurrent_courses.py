@@ -19,15 +19,17 @@ class BuildConcurrentCourses(DataJob):
         return self.run_for_all_registrations()
 
     def run_for_all_registrations(self):
-        self._delete_concurrent()
         terms = self._get_terms_from_registrations()
         if not terms:
             return self._create_result(rows_affected=0)
 
+        # Execute quarter processing while building results
+        self._delete_concurrent()
         first_term = terms.pop()
         self.run_for_quarter(first_term[0], first_term[1], True)
         for term in terms:
             self.run_for_quarter(term[0], term[1], False)
+
         count = self.session.query(ConcurrentCourses).count()
         return self._create_result(rows_affected=count)
 
@@ -99,6 +101,28 @@ class BuildConcurrentCourses(DataJob):
             .query('(crs_curric_abbr == @abbr) and (crs_number == @number)')
 
         return syskeys['system_key'].tolist()
+
+    def run_for_quarter(self, year, quarter, is_first=False):
+        db = get_db_implementation()
+        session = db.get_session()
+        try:
+            query = session.query(Registration) \
+                .filter(Registration.regis_yr == year,
+                        Registration.regis_qtr == quarter)
+            registrations = pd.read_sql(query.statement, query.session.bind)
+
+            courses = session.query(Registration.crs_curric_abbr,
+                                    Registration.crs_number) \
+                .filter(Registration.regis_yr == year,
+                        Registration.regis_qtr == quarter) \
+                .distinct(Registration.crs_curric_abbr,
+                          Registration.crs_number)
+            if is_first:
+                self.run_first_term(registrations, courses)
+            else:
+                self.run_subsequent_term(registrations, courses)
+        finally:
+            session.close()
 
     def run_first_term(self, registrations, courses):
         concurrent_course_objs = []
