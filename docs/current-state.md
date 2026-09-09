@@ -62,25 +62,22 @@ EDW query functions currently cover:
 
 ## Current Execution Model
 
-There is no unified command-line runner, Django management command, scheduler, or job queue in the current branch.
+The job system has been standardized during preflight cleanup:
 
-Known entry points are:
-
-- Tests instantiate job classes directly.
-- Legacy export modules expose top-level `run(file_path)` functions for pickle output.
-- JSON export classes expose `run(file_path)` methods.
-- The Django `PageView.get_context_data()` imports `fetch_course_data()` and runs `FetchCourseData().run()` while rendering `index.html`.
-
-The Django page-triggered course refresh is not production-safe. It means an HTTP page render can delete and reload course data.
+- All 25 job classes inherit from `DataJob` and expose a consistent `run()` method returning a structured `JobResult` object with `status`, `rows_affected`, and `metadata`.
+- Destructive single-table refresh jobs use `_atomic_replace()` to perform in-memory fetch/build before executing `DELETE` and `INSERT` within a single atomic SQLAlchemy transaction with automatic rollback on error.
+- Export jobs write to temporary `.tmp` files first and perform atomic `os.replace()` operations to prevent partially rendered files from being published.
+- The unsafe Django `PageView.get_context_data()` HTTP job trigger was removed.
 
 ## Validation Status
 
 Local validation performed on 2026-09-09:
 
-- `python -m compileall dawgpath_data_pipeline/`: passed.
-- `python dawgpath_data_pipeline/test.py -v`: failed before tests ran because `commonconf` was not installed in the active environment.
-
-That failure appears environmental because it occurs on import of `commonconf.backends`, before any test logic executes. The project dependency declarations include `commonconf~=1.1`, but the current active shell environment did not have it available.
+- Python 3.12 virtual environment configured with clean package installation via `pip install -e .`.
+- Full Python test suite (`python -m unittest discover -s dawgpath_data_pipeline/tests`): 72/72 passed (including job contract tests and export JSON/pickle snapshot tests).
+- Django admin test suite (`python -m unittest discover -s dawgpath_pipeline_admin/tests`): 3/3 passed.
+- Vue/Vitest frontend test suite (`npm run test -- --run`): 1/1 passed.
+- Frontend build (`npm run build`): passed.
 
 ## Deployment Fit
 

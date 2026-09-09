@@ -2,21 +2,21 @@
 
 Recommended approach: move DawgPath ETL toward a dedicated Python orchestration model, preferably Dagster, with object-storage artifact delivery. Do not reuse the existing Airflow Google Cloud project, but use it as a reference architecture for worker separation, scheduler behavior, logging, secrets, operational runbooks, and artifact delivery. Keep the current DataJob classes as the initial execution surface, but wrap them in explicit ops/assets, add run state and artifact metadata, and stop treating Django as the runner. Django can remain only if the admin UI is needed for app-specific controls.
 
-**Preflight Cleanup Before Runner Work**
-1. Remove the unsafe page-render execution path in `dawgpath_pipeline_admin/views/pages.py`; no HTTP request should delete/reload ETL tables.
-2. Get the test environment reproducible: clean virtualenv/container install, resolve missing `commonconf`, confirm declared package names, and run the existing compile/test commands.
-3. Reconcile packaging/runtime declarations before adding Dagster: ensure `setup.py`/requirements install both `dawgpath_data_pipeline` and any optional admin package correctly, and pick a supported Python/Django/container version.
-4. Normalize obvious public names that would leak into commands/assets/docs, especially `get_db_implemenation`, `build_major_dec_grade_ditro.py`, `major_courts`, and any misspelled job/export names.
-5. Split job concerns before orchestration: make each job expose a clear `run()` contract, row-count/result metadata, and no hidden saves of `None` such as `FetchSWSCourseData.run()`.
-6. Add fixture/snapshot coverage for current export outputs before changing delivery or internals.
-7. Identify destructive jobs and mark their safety strategy: transaction, staging table, run-versioned output, or deferred follow-up if too large for the first pass.
-8. Clean repository hygiene separately from code behavior: decide whether generated static assets, local virtualenv files, `.idea/`, and workspace files belong in git or ignores.
+**Preflight Cleanup Before Runner Work (COMPLETED)**
+1. [x] Remove the unsafe page-render execution path in `dawgpath_pipeline_admin/views/pages.py`; no HTTP request should delete/reload ETL tables.
+2. [x] Get the test environment reproducible: clean virtualenv/container install, resolve missing `commonconf`, confirm declared package names, and run the existing compile/test commands.
+3. [x] Reconcile packaging/runtime declarations before adding Dagster: ensure `setup.py`/requirements install both `dawgpath_data_pipeline` and any optional admin package correctly, and pick a supported Python/Django/container version.
+4. [x] Normalize obvious public names that would leak into commands/assets/docs, especially `get_db_implementation`, `build_major_dec_grade_distro.py`, `major_counts`, `test_gpa_distro.py`, and `test_utilities.py`.
+5. [x] Split job concerns before orchestration: make each job expose a clear `run()` contract returning `JobResult` with row-count/result metadata, and ensure no hidden saves of `None` in `FetchSWSCourseData.run()`.
+6. [x] Add fixture/snapshot coverage for current export outputs (`course_export.json`, `curric_export.json`, `major_export.json`, pickles) before changing delivery or internals.
+7. [x] Identify destructive jobs and mark their safety strategy: added `_atomic_replace()` for single-transaction table updates, atomic `.tmp` file replaces for exports, and documented staging table strategy in `docs/job-safety-audit.md`.
+8. [x] Clean repository hygiene separately from code behavior: updated `.gitignore` and removed generated static assets and `pyvenv.cfg` from git tracking.
 
 **Steps**
 
 
-1. Remove unsafe HTTP-triggered job execution from the Django page path before any deployment. The current `PageView.get_context_data()` path runs `FetchCourseData().run()` while rendering a page.
-2. Choose orchestration model and hosting model:
+1. [x] Remove unsafe HTTP-triggered job execution from the Django page path before any deployment. The current `PageView.get_context_data()` path runs `FetchCourseData().run()` while rendering a page. (Completed during Preflight 1).
+2. [ ] Choose orchestration model and hosting model:
    - Recommended: Dagster for DAG/assets, schedules, retries, run history, logs, and built-in web UI.
    - Host Dagster as its own Flux-managed workload set: webserver/control plane, daemon, run workers, Postgres metadata DB, and GCS/object-storage artifact target.
    - Model worker pod design after the existing UWDP Airflow/LRS pod templates where useful, especially EDW sidecars, worker sizing tiers, ServiceAccounts, ExternalSecrets, and network-access patterns; do not share its scheduler, workers, metadata DB, queues, or deployment lifecycle.

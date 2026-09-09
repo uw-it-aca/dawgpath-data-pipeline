@@ -85,9 +85,18 @@ db.sqlite
 db.sqlite3
 db.sqlite3-journal
 
+# Credentials / Certificates
+certs/
+*.cert
+*.key
+*.crt
+*.pem
+
 # Django stuff:
 *.log
 local_settings.py
+dawgpath_data_pipeline/conf/app.conf
+test_live_jobs.py
 
 # Flask stuff:
 instance/
