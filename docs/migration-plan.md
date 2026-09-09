@@ -16,7 +16,11 @@ Recommended approach: move DawgPath ETL toward a dedicated Python orchestration 
 
 
 1. [x] Remove unsafe HTTP-triggered job execution from the Django page path before any deployment. The current `PageView.get_context_data()` path runs `FetchCourseData().run()` while rendering a page. (Completed during Preflight 1).
-2. [ ] Choose orchestration model and hosting model:
+2. [x] Choose orchestration model and hosting model:
+   - Selected: Dagster for DAG/assets, schedules, retries, run history, logs, and built-in web UI.
+   - Self-hosted for free on GKE via official Helm charts and Flux under `gcp-flux-dev` / `gcp-flux-prod`.
+   - Documented in [docs/pipeline-runner-plan.md](pipeline-runner-plan.md).
+3. [ ] Define pipeline assets around current outputs:
    - Recommended: Dagster for DAG/assets, schedules, retries, run history, logs, and built-in web UI.
    - Host Dagster as its own Flux-managed workload set: webserver/control plane, daemon, run workers, Postgres metadata DB, and GCS/object-storage artifact target.
    - Model worker pod design after the existing UWDP Airflow/LRS pod templates where useful, especially EDW sidecars, worker sizing tiers, ServiceAccounts, ExternalSecrets, and network-access patterns; do not share its scheduler, workers, metadata DB, queues, or deployment lifecycle.
