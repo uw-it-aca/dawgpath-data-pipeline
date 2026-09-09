@@ -7,12 +7,6 @@ from django.views.generic import TemplateView
 class PageView(TemplateView):
     template_name = "index.html"
 
-    def get_context_data(self, **kwargs):
-        from dawgpath_pipeline_admin.job_dao.fetch_jobs import fetch_course_data
-        fetch_course_data()
-        context = super().get_context_data(**kwargs)
-        return context
-
 
 class DefaultPageView(PageView):
     template_name = "index.html"

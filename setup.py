@@ -1,5 +1,5 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 README = """
 See the README on `GitHub
@@ -19,7 +19,7 @@ url = "https://github.com/uw-it-aca/dawgpath-data-pipeline"
 setup(
     name="dawgpath_pipeline_admin",
     version=VERSION,
-    packages=["dawgpath_pipeline_admin"],
+    packages=find_packages(),
     author="UW-IT",
     author_email="aca-it@uw.edu",
     include_package_data=True,
