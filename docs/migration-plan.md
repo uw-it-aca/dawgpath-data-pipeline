@@ -27,11 +27,11 @@ Recommended approach: move DawgPath ETL toward a dedicated Python orchestration 
    - Use the shared `django-container` only for the SAML-authenticated admin/gateway if needed; do not force Dagster workers into the Django management-daemon pattern unless platform policy requires it.
    - Simpler fallback: Django management commands plus Kubernetes CronJobs if platform constraints reject Dagster.
    - Avoid: hand-rolled Django cron/status tracking as the primary design.
-3. Define pipeline assets around current outputs:
-   - source refreshes: course, curriculum, prereq, major, SR major, registration, regis-major, transcript, SWS course
-   - derived assets: prereq graphs, curriculum prereq lists/graphs, concurrent courses, student model, common courses/majors, GPA distributions
-   - exported artifacts: course JSON, curriculum JSON, major JSON, legacy pickle artifacts only while consumers still require them
-4. Add artifact delivery via Google Cloud Storage or equivalent object storage:
+3. [x] Define pipeline assets around current outputs:
+   - Created `dawgpath_data_pipeline/orchestration/assets.py` wrapping all 25 jobs as Dagster Software-Defined Assets.
+   - Defined 3 asset groups (`source_refreshes`, `derived_assets`, `published_artifacts`) with explicit dependencies, metadata returns (`rows_affected`, `bytes`, `file_path`), and pod sizing tags.
+   - Created job selection groups (`daily_catalog_refresh`, `full_pipeline_job`, `publish_artifacts_job`) and loaded into `Definitions` in `dawgpath_data_pipeline/orchestration/definitions.py`.
+4. [ ] Add artifact delivery via Google Cloud Storage or equivalent object storage:
    - write versioned artifacts under run IDs/timestamps
    - publish a small manifest with checksums, row counts, schema version, and current pointers
    - make consuming apps read `current` artifacts or a manifest URL instead of receiving committed files

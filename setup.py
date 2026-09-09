@@ -31,6 +31,7 @@ setup(
         "uw-restclients-sws~=2.4",
         "pymssql~=2.2",
         "alembic~=1.12",
+        "dagster>=1.6.0",
     ],
     license="Apache License, Version 2.0",
     description="",
