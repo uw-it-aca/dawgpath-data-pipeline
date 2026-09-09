@@ -32,6 +32,7 @@ setup(
         "pymssql~=2.2",
         "alembic~=1.12",
         "dagster>=1.6.0",
+        "google-cloud-storage>=2.0.0",
     ],
     license="Apache License, Version 2.0",
     description="",

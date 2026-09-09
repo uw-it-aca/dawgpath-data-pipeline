@@ -4,12 +4,14 @@ Wraps existing DataJob classes into three tier groups with explicit dependency g
 metadata logging, and Kubernetes worker sizing tags.
 """
 
-from dagster import asset, Output, MetadataValue
+import json
+from dagster import asset, Output, OpExecutionContext
 from dawgpath_data_pipeline.orchestration.tags import (
     TIER_1_K8S_TAGS,
     TIER_2_K8S_TAGS,
     TIER_3_K8S_TAGS,
 )
+from dawgpath_data_pipeline.utilities.artifact_publisher import ArtifactPublisher
 
 # --- Tier 1: Source Refreshes ---
 
@@ -376,20 +378,31 @@ from dawgpath_data_pipeline.jobs.export_prereq_data import ExportPrereqData
     description="Exports lower-division course JSON payload for DawgPath app.",
 )
 def export_course_data_json(
+    context: OpExecutionContext,
     build_course_prereq_graphs,
     build_concurrent_courses,
     build_course_gpa_distro,
     fetch_sws_course_data,
 ):
-    file_path = "artifacts/course_data.json"
-    res = ExportCourseData().run(file_path=file_path)
+    publisher = ArtifactPublisher()
+    job = ExportCourseData()
+    data_str = job.get_file_contents()
+    parsed = json.loads(data_str)
+    meta = publisher.publish_content(
+        filename="course_data.json",
+        content_bytes=data_str.encode("utf-8"),
+        run_id=context.run_id,
+        rows_affected=len(parsed),
+    )
     return Output(
-        res,
+        meta,
         metadata={
-            "job_name": res.job_name,
-            "file_path": file_path,
-            "rows_affected": res.rows_affected,
-            "bytes": res.get("bytes", 0),
+            "job_name": "ExportCourseData",
+            "version_path": meta["version_path"],
+            "latest_path": meta["latest_path"],
+            "rows_affected": meta["rows_affected"],
+            "bytes": meta["size_bytes"],
+            "checksum_sha256": meta["checksum_sha256"],
         },
     )
 
@@ -400,18 +413,29 @@ def export_course_data_json(
     description="Exports curriculum metadata and prereq graph JSON payload for DawgPath app.",
 )
 def export_curric_data_json(
+    context: OpExecutionContext,
     build_curric_prereq_lists,
     build_curric_prereq_graphs,
 ):
-    file_path = "artifacts/curric_data.json"
-    res = ExportCurricData().run(file_path=file_path)
+    publisher = ArtifactPublisher()
+    job = ExportCurricData()
+    data_str = job.get_file_contents()
+    parsed = json.loads(data_str)
+    meta = publisher.publish_content(
+        filename="curric_data.json",
+        content_bytes=data_str.encode("utf-8"),
+        run_id=context.run_id,
+        rows_affected=len(parsed),
+    )
     return Output(
-        res,
+        meta,
         metadata={
-            "job_name": res.job_name,
-            "file_path": file_path,
-            "rows_affected": res.rows_affected,
-            "bytes": res.get("bytes", 0),
+            "job_name": "ExportCurricData",
+            "version_path": meta["version_path"],
+            "latest_path": meta["latest_path"],
+            "rows_affected": meta["rows_affected"],
+            "bytes": meta["size_bytes"],
+            "checksum_sha256": meta["checksum_sha256"],
         },
     )
 
@@ -422,20 +446,31 @@ def export_curric_data_json(
     description="Exports major GPA distributions and common course JSON payload for DawgPath app.",
 )
 def export_major_data_json(
+    context: OpExecutionContext,
     fetch_major_data,
     fetch_sr_major_data,
     build_common_course_major,
     build_major_dec_grade_distro,
 ):
-    file_path = "artifacts/major_data.json"
-    res = ExportMajorData().run(file_path=file_path)
+    publisher = ArtifactPublisher()
+    job = ExportMajorData()
+    data_str = job.get_file_contents()
+    parsed = json.loads(data_str)
+    meta = publisher.publish_content(
+        filename="major_data.json",
+        content_bytes=data_str.encode("utf-8"),
+        run_id=context.run_id,
+        rows_affected=len(parsed),
+    )
     return Output(
-        res,
+        meta,
         metadata={
-            "job_name": res.job_name,
-            "file_path": file_path,
-            "rows_affected": res.rows_affected,
-            "bytes": res.get("bytes", 0),
+            "job_name": "ExportMajorData",
+            "version_path": meta["version_path"],
+            "latest_path": meta["latest_path"],
+            "rows_affected": meta["rows_affected"],
+            "bytes": meta["size_bytes"],
+            "checksum_sha256": meta["checksum_sha256"],
         },
     )
 
@@ -445,15 +480,28 @@ def export_major_data_json(
     op_tags=TIER_1_K8S_TAGS,
     description="Exports legacy course DataFrame pickle for Prereq Map.",
 )
-def export_course_prereq_pickle(fetch_course_data):
-    file_path = "artifacts/course_prereq_data.pkl"
-    res = ExportCoursePrereqData().run(file_path=file_path)
+def export_course_prereq_pickle(
+    context: OpExecutionContext,
+    fetch_course_data,
+):
+    publisher = ArtifactPublisher()
+    job = ExportCoursePrereqData()
+    pkl_bytes, row_count = job.get_pickle_bytes()
+    meta = publisher.publish_content(
+        filename="course_prereq_data.pkl",
+        content_bytes=pkl_bytes,
+        run_id=context.run_id,
+        rows_affected=row_count,
+    )
     return Output(
-        res,
+        meta,
         metadata={
-            "job_name": res.job_name,
-            "file_path": file_path,
-            "rows_affected": res.rows_affected,
+            "job_name": "ExportCoursePrereqData",
+            "version_path": meta["version_path"],
+            "latest_path": meta["latest_path"],
+            "rows_affected": meta["rows_affected"],
+            "bytes": meta["size_bytes"],
+            "checksum_sha256": meta["checksum_sha256"],
         },
     )
 
@@ -463,14 +511,27 @@ def export_course_prereq_pickle(fetch_course_data):
     op_tags=TIER_1_K8S_TAGS,
     description="Exports legacy prerequisite DataFrame pickle for Prereq Map.",
 )
-def export_prereq_pickle(fetch_prereq_data):
-    file_path = "artifacts/prereq_data.pkl"
-    res = ExportPrereqData().run(file_path=file_path)
+def export_prereq_pickle(
+    context: OpExecutionContext,
+    fetch_prereq_data,
+):
+    publisher = ArtifactPublisher()
+    job = ExportPrereqData()
+    pkl_bytes, row_count = job.get_pickle_bytes()
+    meta = publisher.publish_content(
+        filename="prereq_data.pkl",
+        content_bytes=pkl_bytes,
+        run_id=context.run_id,
+        rows_affected=row_count,
+    )
     return Output(
-        res,
+        meta,
         metadata={
-            "job_name": res.job_name,
-            "file_path": file_path,
-            "rows_affected": res.rows_affected,
+            "job_name": "ExportPrereqData",
+            "version_path": meta["version_path"],
+            "latest_path": meta["latest_path"],
+            "rows_affected": meta["rows_affected"],
+            "bytes": meta["size_bytes"],
+            "checksum_sha256": meta["checksum_sha256"],
         },
     )

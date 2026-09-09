@@ -10,6 +10,14 @@ Builds course data pkl files as currently used by prereq map
 
 
 class ExportCoursePrereqData(DataJob):
+    def get_pickle_bytes(self):
+        q = self.session.query(Course)
+        df = pd.read_sql(q.filter().statement, q.session.bind)
+        import io
+        buf = io.BytesIO()
+        df.to_pickle(buf)
+        return buf.getvalue(), len(df)
+
     def run(self, file_path):
         dir_name = os.path.dirname(os.path.abspath(file_path))
         os.makedirs(dir_name, exist_ok=True)

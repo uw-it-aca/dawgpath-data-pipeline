@@ -85,6 +85,9 @@ db.sqlite
 db.sqlite3
 db.sqlite3-journal
 
+# Output Artifacts
+artifacts/
+
 # Credentials / Certificates
 certs/
 *.cert

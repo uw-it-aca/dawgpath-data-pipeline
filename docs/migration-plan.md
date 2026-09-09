@@ -20,21 +20,14 @@ Recommended approach: move DawgPath ETL toward a dedicated Python orchestration 
    - Selected: Dagster for DAG/assets, schedules, retries, run history, logs, and built-in web UI.
    - Self-hosted for free on GKE via official Helm charts and Flux under `gcp-flux-dev` / `gcp-flux-prod`.
    - Documented in [docs/pipeline-runner-plan.md](pipeline-runner-plan.md).
-3. [ ] Define pipeline assets around current outputs:
-   - Recommended: Dagster for DAG/assets, schedules, retries, run history, logs, and built-in web UI.
-   - Host Dagster as its own Flux-managed workload set: webserver/control plane, daemon, run workers, Postgres metadata DB, and GCS/object-storage artifact target.
-   - Model worker pod design after the existing UWDP Airflow/LRS pod templates where useful, especially EDW sidecars, worker sizing tiers, ServiceAccounts, ExternalSecrets, and network-access patterns; do not share its scheduler, workers, metadata DB, queues, or deployment lifecycle.
-   - Use the shared `django-container` only for the SAML-authenticated admin/gateway if needed; do not force Dagster workers into the Django management-daemon pattern unless platform policy requires it.
-   - Simpler fallback: Django management commands plus Kubernetes CronJobs if platform constraints reject Dagster.
-   - Avoid: hand-rolled Django cron/status tracking as the primary design.
 3. [x] Define pipeline assets around current outputs:
    - Created `dawgpath_data_pipeline/orchestration/assets.py` wrapping all 25 jobs as Dagster Software-Defined Assets.
    - Defined 3 asset groups (`source_refreshes`, `derived_assets`, `published_artifacts`) with explicit dependencies, metadata returns (`rows_affected`, `bytes`, `file_path`), and pod sizing tags.
    - Created job selection groups (`daily_catalog_refresh`, `full_pipeline_job`, `publish_artifacts_job`) and loaded into `Definitions` in `dawgpath_data_pipeline/orchestration/definitions.py`.
-4. [ ] Add artifact delivery via Google Cloud Storage or equivalent object storage:
-   - write versioned artifacts under run IDs/timestamps
-   - publish a small manifest with checksums, row counts, schema version, and current pointers
-   - make consuming apps read `current` artifacts or a manifest URL instead of receiving committed files
+4. [x] Add artifact delivery via Google Cloud Storage or equivalent object storage:
+   - Implemented `ArtifactPublisher` in `dawgpath_data_pipeline/utilities/artifact_publisher.py` with support for GCS bucket publishing and local directory fallback.
+   - Writes run-versioned copies (`runs/{run_id}/{filename}`), latest copies (`latest/{filename}`), SHA-256 checksums, byte sizes, and an atomic `latest/manifest.json`.
+   - Updated published artifact assets (`export_course_data_json`, `export_curric_data_json`, `export_major_data_json`, `export_course_prereq_pickle`, `export_prereq_pickle`) to publish versioned artifacts and update `manifest.json`.
 5. Make destructive jobs production-safe:
    - use staging tables, run IDs, or transaction boundaries
    - avoid delete-then-load windows becoming visible to exports
