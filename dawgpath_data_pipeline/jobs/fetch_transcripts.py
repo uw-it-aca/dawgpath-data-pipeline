@@ -10,6 +10,7 @@ class FetchTranscriptData(DataJob):
         self._delete_transcripts()
         transcripts = self._get_transcripts()
         self._bulk_save_objects(transcripts)
+        return self._create_result(rows_affected=len(transcripts))
 
     # get transcript data
     def _get_transcripts(self):

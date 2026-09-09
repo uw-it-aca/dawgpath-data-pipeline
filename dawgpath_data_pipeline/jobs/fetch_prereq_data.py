@@ -8,6 +8,7 @@ class FetchPrereqData(DataJob):
         self._delete_prereqs()
         prereqs = self._get_prereqs()
         self._save_prereqs(prereqs)
+        return self._create_result(rows_affected=len(prereqs))
 
     # get prereq data
     def _get_prereqs(self):

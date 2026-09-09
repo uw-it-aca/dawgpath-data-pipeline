@@ -38,6 +38,7 @@ class BuildCoursePrereqGraphs(DataJob):
 
         self.session.bulk_save_objects(graphs)
         self.session.commit()
+        return self._create_result(rows_affected=len(graphs))
 
     def get_courses_with_prereqs(self):
         '''

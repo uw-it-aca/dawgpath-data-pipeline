@@ -10,7 +10,8 @@ SAVE_COUNT = 1000
 class BuildCourseGPADistro(DataJob):
     def run(self):
         self._delete_gpa_distros()
-        self.build_distros_for_courses()
+        saved_count = self.build_distros_for_courses()
+        return self._create_result(rows_affected=saved_count)
 
     def build_distros_for_courses(self):
         courses = self.session.query(Registration.crs_curric_abbr,
@@ -28,6 +29,8 @@ class BuildCourseGPADistro(DataJob):
                 distros.clear()
             count += 1
         self.session.bulk_save_objects(distros)
+        self.session.commit()
+        return len(courses)
         self.session.commit()
 
     def build_distro_for_course(self, curric, number):

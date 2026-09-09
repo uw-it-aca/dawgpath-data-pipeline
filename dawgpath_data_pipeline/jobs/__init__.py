@@ -1,12 +1,50 @@
 from dawgpath_data_pipeline.databases.implementation import get_db_implementation
 
 
+class JobResult:
+    def __init__(self, job_name, status="SUCCESS", rows_affected=0, metadata=None):
+        self.job_name = job_name
+        self.status = status
+        self.rows_affected = rows_affected
+        self.metadata = metadata if metadata is not None else {}
+
+    def __getitem__(self, item):
+        if hasattr(self, item):
+            return getattr(self, item)
+        return self.metadata[item]
+
+    def get(self, item, default=None):
+        if hasattr(self, item):
+            return getattr(self, item)
+        return self.metadata.get(item, default)
+
+    def to_dict(self):
+        return {
+            "job_name": self.job_name,
+            "status": self.status,
+            "rows_affected": self.rows_affected,
+            "metadata": self.metadata,
+        }
+
+    def __repr__(self):
+        return (f"JobResult(job_name='{self.job_name}', status='{self.status}', "
+                f"rows_affected={self.rows_affected}, metadata={self.metadata})")
+
+
 class DataJob:
     session = None
 
     def __init__(self):
         db = get_db_implementation()
         self.session = db.get_session()
+
+    def _create_result(self, rows_affected=0, status="SUCCESS", metadata=None):
+        return JobResult(
+            job_name=self.__class__.__name__,
+            status=status,
+            rows_affected=rows_affected,
+            metadata=metadata,
+        )
 
     def _bulk_save_objects(self, objects, chunk_size=10000):
         try:

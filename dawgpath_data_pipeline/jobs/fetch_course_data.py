@@ -8,6 +8,7 @@ class FetchCourseData(DataJob):
         self._delete_courses()
         courses = self._get_courses()
         self._save_courses(courses)
+        return self._create_result(rows_affected=len(courses))
 
     # get course data
     def _get_courses(self):

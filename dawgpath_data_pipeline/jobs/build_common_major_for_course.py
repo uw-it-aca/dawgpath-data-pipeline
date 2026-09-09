@@ -13,6 +13,7 @@ class BuildCommonMajorForCourse(DataJob):
         common_majors = self.build_common_majors()
         common_objs = self.create_common_maj_objects(common_majors)
         self._bulk_save_objects(common_objs)
+        return self._create_result(rows_affected=len(common_objs))
 
     def build_common_majors(self):
         counts = self.session.query(Registration.course_id,

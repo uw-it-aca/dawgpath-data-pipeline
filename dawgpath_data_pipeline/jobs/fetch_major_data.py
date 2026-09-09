@@ -9,6 +9,7 @@ class FetchMajorData(DataJob):
         self._delete_majors()
         majors = self._get_majors()
         self._save_majors(majors)
+        return self._create_result(rows_affected=len(majors))
 
     # get major data
     def _get_majors(self):

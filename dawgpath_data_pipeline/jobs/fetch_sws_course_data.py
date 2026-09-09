@@ -15,14 +15,15 @@ DELAY = 1/REQUESTS_PER_SECOND
 class FetchSWSCourseData(DataJob):
     def run(self):
         # self._delete_sws_courses()
-        courses = self._get_sws_courses()
-        self._save_sws_course(courses)
+        saved_count = self._get_sws_courses()
+        return self._create_result(rows_affected=saved_count)
 
     def _get_sws_courses(self):
         courses = self.session.query(Course).all()
         chunk_size = 10
         chunks = [courses[x:x + chunk_size] for x in
                   range(0, len(courses), chunk_size)]
+        saved_count = 0
         for chunk in chunks:
             sws_courses = []
             for course in chunk:
@@ -37,7 +38,10 @@ class FetchSWSCourseData(DataJob):
                     sws_course = self._get_sws_course(course)
                     if sws_course is not None:
                         sws_courses.append(sws_course)
-            self._save_sws_course(sws_courses)
+            if sws_courses:
+                self._save_sws_course(sws_courses)
+                saved_count += len(sws_courses)
+        return saved_count
 
     def _get_sws_course(self, course):
         registration = self.session.query(Registration) \
@@ -103,8 +107,9 @@ class FetchSWSCourseData(DataJob):
 
     # save sws_course data
     def _save_sws_course(self, sws_courses):
-        self._bulk_save_objects(sws_courses)
-        self.session.commit()
+        if sws_courses:
+            self._bulk_save_objects(sws_courses)
+            self.session.commit()
 
     # delete existing sws_course data
     def _delete_sws_courses(self):

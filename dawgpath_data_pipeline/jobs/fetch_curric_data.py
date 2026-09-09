@@ -8,6 +8,7 @@ class FetchCurricData(DataJob):
         self._delete_currics()
         currics = self._get_currics()
         self._save_currics(currics)
+        return self._create_result(rows_affected=len(currics))
 
     # get curric data
     def _get_currics(self):

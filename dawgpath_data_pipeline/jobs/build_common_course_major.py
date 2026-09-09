@@ -14,6 +14,7 @@ class BuildCommonCourseMajor(DataJob):
         self._delete_common_courses()
         common_courses = self.build_all_majors()
         self._bulk_save_objects(common_courses)
+        return self._create_result(rows_affected=len(common_courses))
 
     def build_all_majors(self):
         majors = RegisMajor().get_majors(self.session)

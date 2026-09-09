@@ -8,6 +8,7 @@ class FetchSRMajorData(DataJob):
         self._delete_sr_majors()
         majors = self._get_sr_majors()
         self._save_sr_majors(majors)
+        return self._create_result(rows_affected=len(majors))
 
     # get sr_major data
     def _get_sr_majors(self):

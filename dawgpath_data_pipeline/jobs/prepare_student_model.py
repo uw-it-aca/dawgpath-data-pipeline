@@ -16,6 +16,7 @@ class PrepareStudentModel(DataJob):
         self._delete_students()
         students = self.create_students()
         self._bulk_save_objects(students)
+        return self._create_result(rows_affected=len(students))
 
     def create_students(self):
         # doesn't work in postgres

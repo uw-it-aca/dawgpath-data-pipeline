@@ -30,6 +30,7 @@ class BuildCurricPrereqGraphs(DataJob):
 
         self.session.bulk_save_objects(graphs)
         self.session.commit()
+        return self._create_result(rows_affected=len(graphs))
 
     def get_currics(self):
         currics = self.session.query(Curriculum).all()

@@ -6,10 +6,14 @@ from sqlalchemy.orm.exc import NoResultFound
 
 
 class ExportCurricData(DataJob):
-    def run(self, file_path):
+    def run(self, file_path=None):
         data = self.get_file_contents()
-        with open(file_path, 'w') as fp:
-            fp.write(data)
+        parsed = json.loads(data)
+        if file_path:
+            with open(file_path, 'w') as fp:
+                fp.write(data)
+        return self._create_result(rows_affected=len(parsed),
+                                   metadata={"file_path": file_path, "bytes": len(data)})
 
     def get_file_contents(self):
         currics = self.get_currics()

@@ -14,6 +14,7 @@ class BuildCurricPrereqLists(DataJob):
             course_data = self.build_all_courses(curric)
             curric.course_data = json.dumps(course_data)
             self.session.commit()
+        return self._create_result(rows_affected=len(currics))
 
     def get_currics(self):
         currics = self.session.query(Curriculum).all()

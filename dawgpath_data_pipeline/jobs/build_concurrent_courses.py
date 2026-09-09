@@ -15,14 +15,21 @@ PREV_QTR_COUNT = 7
 
 
 class BuildConcurrentCourses(DataJob):
+    def run(self):
+        return self.run_for_all_registrations()
+
     def run_for_all_registrations(self):
         self._delete_concurrent()
         terms = self._get_terms_from_registrations()
+        if not terms:
+            return self._create_result(rows_affected=0)
 
         first_term = terms.pop()
         self.run_for_quarter(first_term[0], first_term[1], True)
         for term in terms:
             self.run_for_quarter(term[0], term[1], False)
+        count = self.session.query(ConcurrentCourses).count()
+        return self._create_result(rows_affected=count)
 
     def _get_terms_from_registrations(self):
         terms = []

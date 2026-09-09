@@ -18,6 +18,7 @@ class BuildMajorDecGradeDistro(DataJob):
         distros = self.build_gpa_distros()
 
         self._bulk_save_objects(distros)
+        return self._create_result(rows_affected=len(distros))
 
     def get_5yr_declarations(self, major, current_term):
         start_yr, start_qtr = get_previous_term((current_term[0] - 2,
