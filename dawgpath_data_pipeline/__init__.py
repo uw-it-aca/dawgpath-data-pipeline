@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 import logging
 import os
 from dawgpath_data_pipeline.conf.settings import AppSettings as settings  # noqa

@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Kubernetes Pod Sizing Tags for Dagster Executor.
 Allows GKE to launch dedicated worker pods sized appropriately for each job tier.

@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 sr_mock_data = [
  {"major_abbr": "MATH  ",
   "major_home_url": "www.uw.edu/math"},

@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 from unittest.mock import patch, mock_open
 import json
 import pandas as pd

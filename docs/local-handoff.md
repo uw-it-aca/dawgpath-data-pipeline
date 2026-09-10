@@ -3,7 +3,8 @@
 ## Current status
 - Dagster orchestration is implemented in `dawgpath_data_pipeline/orchestration/`.
 - Asset groups: `source_refreshes`, `derived_assets`, `published_artifacts`.
-- Job groups: `daily_catalog_refresh`, `full_pipeline_job`, `publish_artifacts_job`.
+- Job groups: `catalog_refresh`, `full_pipeline_job`, `sws_course_refresh`, `publish_artifacts_job`.
+- Schedules: `monthly_full_pipeline` (04:00 on the 1st) and `weekly_catalog_refresh` (05:00 Sundays), both shipped stopped.
 - Artifact versioning and manifest publishing are implemented via `dawgpath_data_pipeline/utilities/artifact_publisher.py`.
 - Local Dagster dev runner is validated; port 3000 responds with HTTP 200.
 - Deployment config is split into `docker/test-values.yml` and `docker/prod-values.yml`.
@@ -36,6 +37,6 @@
 ## Recommended next actions on resume
 1. Start the local Dagster dev runner and confirm status in the web UI.
 2. Re-run unit tests after checking out on another machine.
-3. Validate that Dagster job selection (`daily_catalog_refresh`, `full_pipeline_job`) still resolves correctly.
+3. Validate that Dagster job selection (`catalog_refresh`, `full_pipeline_job`) still resolves correctly.
 4. Review remaining TODOs for artifact publisher integration and metadata extraction if there are follow-up changes.
 5. Only then proceed to test/staging deployment and eventual production deploy.

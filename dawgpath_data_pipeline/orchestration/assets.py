@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Software-Defined Assets for DawgPath Data Pipeline.
 Wraps existing DataJob classes into three tier groups with explicit dependency graphs,
@@ -5,13 +8,24 @@ metadata logging, and Kubernetes worker sizing tags.
 """
 
 import json
-from dagster import asset, Output, OpExecutionContext
+from dagster import (
+    asset, Backoff, Jitter, Output, OpExecutionContext, RetryPolicy,
+)
 from dawgpath_data_pipeline.orchestration.tags import (
     TIER_1_K8S_TAGS,
     TIER_2_K8S_TAGS,
     TIER_3_K8S_TAGS,
 )
 from dawgpath_data_pipeline.utilities.artifact_publisher import ArtifactPublisher
+
+# EDW rejects connections during its nightly restricted window (SQL 923),
+# which starts at 01:59 and has run as late as ~03:10.
+UPSTREAM_RETRY_POLICY = RetryPolicy(
+    max_retries=3,
+    delay=300,
+    backoff=Backoff.EXPONENTIAL,
+    jitter=Jitter.PLUS_MINUS,
+)
 
 
 def _res_meta(res):
@@ -49,6 +63,7 @@ from dawgpath_data_pipeline.jobs.fetch_sws_course_data import FetchSWSCourseData
 @asset(
     group_name="source_refreshes",
     op_tags=TIER_1_K8S_TAGS,
+    retry_policy=UPSTREAM_RETRY_POLICY,
     description="Fetches course titles, credits, campus, and gen-ed flags from EDW.",
 )
 def fetch_course_data():
@@ -59,6 +74,7 @@ def fetch_course_data():
 @asset(
     group_name="source_refreshes",
     op_tags=TIER_1_K8S_TAGS,
+    retry_policy=UPSTREAM_RETRY_POLICY,
     description="Fetches curriculum code metadata from EDW.",
 )
 def fetch_curric_data():
@@ -69,6 +85,7 @@ def fetch_curric_data():
 @asset(
     group_name="source_refreshes",
     op_tags=TIER_1_K8S_TAGS,
+    retry_policy=UPSTREAM_RETRY_POLICY,
     description="Fetches raw course prerequisites from EDW.",
 )
 def fetch_prereq_data():
@@ -79,6 +96,7 @@ def fetch_prereq_data():
 @asset(
     group_name="source_refreshes",
     op_tags=TIER_1_K8S_TAGS,
+    retry_policy=UPSTREAM_RETRY_POLICY,
     description="Fetches major/program credential metadata from EDW.",
 )
 def fetch_major_data():
@@ -89,6 +107,7 @@ def fetch_major_data():
 @asset(
     group_name="source_refreshes",
     op_tags=TIER_1_K8S_TAGS,
+    retry_policy=UPSTREAM_RETRY_POLICY,
     description="Fetches Seattle non-pathway SDB major home URLs from EDW.",
 )
 def fetch_sr_major_data():
@@ -99,6 +118,7 @@ def fetch_sr_major_data():
 @asset(
     group_name="source_refreshes",
     op_tags=TIER_3_K8S_TAGS,
+    retry_policy=UPSTREAM_RETRY_POLICY,
     description="Fetches 10-year course registrations from EDW.",
 )
 def fetch_registration_data():
@@ -109,6 +129,7 @@ def fetch_registration_data():
 @asset(
     group_name="source_refreshes",
     op_tags=TIER_2_K8S_TAGS,
+    retry_policy=UPSTREAM_RETRY_POLICY,
     description="Fetches major declarations since 2016 from EDW.",
 )
 def fetch_regis_major_data():
@@ -119,6 +140,7 @@ def fetch_regis_major_data():
 @asset(
     group_name="source_refreshes",
     op_tags=TIER_2_K8S_TAGS,
+    retry_policy=UPSTREAM_RETRY_POLICY,
     description="Fetches transcript GPA-attempt rows since 2016 from EDW.",
 )
 def fetch_transcript_data():
@@ -129,6 +151,7 @@ def fetch_transcript_data():
 @asset(
     group_name="source_refreshes",
     op_tags=TIER_1_K8S_TAGS,
+    retry_policy=UPSTREAM_RETRY_POLICY,
     description="Fetches SWS course descriptions and parsed prerequisite strings.",
 )
 def fetch_sws_course_data(fetch_course_data, fetch_registration_data):

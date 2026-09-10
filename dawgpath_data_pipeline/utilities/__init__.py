@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 def get_combined_term(year, quarter):
     # Convert decimal year/qtr into int year+qtr, eg 20204
     return int(str(int(year)) + str(int(quarter)))

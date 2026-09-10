@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 import unittest
 from dawgpath_data_pipeline.models.course import Course
 from dawgpath_data_pipeline.utilities import get_course_abbr_title_dict

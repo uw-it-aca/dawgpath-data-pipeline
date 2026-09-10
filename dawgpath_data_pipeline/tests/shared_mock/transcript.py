@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 tran_mock_data = [
     {"system_key": 5743972.0,
      "tran_yr": 2020.0,

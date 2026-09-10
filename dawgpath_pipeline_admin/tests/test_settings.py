@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 SECRET_KEY = "test-secret-key-for-admin-tests"
 ROOT_URLCONF = "dawgpath_pipeline_admin.urls"
 LOGIN_URL = "/saml/login"

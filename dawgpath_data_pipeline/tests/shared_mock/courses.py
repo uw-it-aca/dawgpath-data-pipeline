@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 course_mock_data = [
  {'department_abbrev': 'CSE',
   'course_number': 142,

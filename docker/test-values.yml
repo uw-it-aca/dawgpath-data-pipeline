@@ -3,8 +3,8 @@
 #
 # The main deployment is the SAML gateway, which reverse-proxies /dagster to a
 # Dagster webserver sidecar bound to loopback in the same pod. The dagster-daemon
-# workload runs schedules and sensors; none are defined in code yet, so it
-# currently only serves manually launched runs.
+# workload runs the monthly full refresh and weekly catalog refresh; both ship
+# stopped and must be started from the Dagster UI.
 
 repo: dawgpath-data-pipeline
 instance: test

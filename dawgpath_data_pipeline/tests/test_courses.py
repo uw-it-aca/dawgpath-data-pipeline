@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 import os
 from unittest.mock import patch
 from dawgpath_data_pipeline.jobs.fetch_course_data import FetchCourseData

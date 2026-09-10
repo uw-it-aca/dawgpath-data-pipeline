@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 from collections import Counter
 from dawgpath_data_pipeline.models.gpa_distro import MajorDecGPADistribution
 from dawgpath_data_pipeline.models.regis_major import RegisMajor

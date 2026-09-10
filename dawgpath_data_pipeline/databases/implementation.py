@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 from commonconf import settings
 from dawgpath_data_pipeline.databases.sqlite3 import Sqlite3
 from dawgpath_data_pipeline.databases.postgres import Postgres

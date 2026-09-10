@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 from dawgpath_data_pipeline.dao.edw import get_curric_info
 from dawgpath_data_pipeline.models.curriculum import Curriculum
 from dawgpath_data_pipeline.jobs import DataJob

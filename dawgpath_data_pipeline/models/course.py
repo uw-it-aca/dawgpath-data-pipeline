@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 from dawgpath_data_pipeline.models.base import Base
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, SmallInteger, String, Boolean, Float

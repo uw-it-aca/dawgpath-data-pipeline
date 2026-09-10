@@ -23,7 +23,7 @@ Recommended approach: move DawgPath ETL toward a dedicated Python orchestration 
 3. [x] Define pipeline assets around current outputs:
    - Created `dawgpath_data_pipeline/orchestration/assets.py` wrapping all 25 jobs as Dagster Software-Defined Assets.
    - Defined 3 asset groups (`source_refreshes`, `derived_assets`, `published_artifacts`) with explicit dependencies, metadata returns (`rows_affected`, `bytes`, `file_path`), and pod sizing tags.
-   - Created job selection groups (`daily_catalog_refresh`, `full_pipeline_job`, `publish_artifacts_job`) and loaded into `Definitions` in `dawgpath_data_pipeline/orchestration/definitions.py`.
+   - Created job selection groups (`catalog_refresh`, `full_pipeline_job`, `sws_course_refresh`, `publish_artifacts_job`) and loaded into `Definitions` in `dawgpath_data_pipeline/orchestration/definitions.py`.
 4. [x] Add artifact delivery via Google Cloud Storage or equivalent object storage:
    - Implemented `ArtifactPublisher` in `dawgpath_data_pipeline/utilities/artifact_publisher.py` with support for GCS bucket publishing and local directory fallback.
    - Writes run-versioned copies (`runs/{run_id}/{filename}`), latest copies (`latest/{filename}`), SHA-256 checksums, byte sizes, and an atomic `latest/manifest.json`.

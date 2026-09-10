@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 from dawgpath_data_pipeline.dao.edw import get_registrations_in_year_quarter
 from dawgpath_data_pipeline.models.registration import Registration
 from dawgpath_data_pipeline.utilities import get_combined_term

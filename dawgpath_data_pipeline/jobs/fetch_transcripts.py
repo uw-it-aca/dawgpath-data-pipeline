@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 from dawgpath_data_pipeline.dao.edw import get_transcripts_since_year
 from dawgpath_data_pipeline.models.transcript import Transcript
 from dawgpath_data_pipeline.utilities import get_combined_term
