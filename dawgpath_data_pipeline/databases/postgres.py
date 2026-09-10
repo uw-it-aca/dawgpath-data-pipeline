@@ -14,7 +14,7 @@ NUMPY_SCALAR_TYPES = (
 
 
 def _adapt_numpy_scalar(value):
-    # NumPy 2 reprs scalars as "np.float64(1.0)", which psycopg2 would emit as SQL.
+    # NumPy 2 reprs scalars as "np.float64(1.0)", which psycopg2 emits as SQL.
     return adapt(value.item())
 
 

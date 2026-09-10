@@ -23,7 +23,7 @@ class AppSettings:
     RESTCLIENTS_SWS_VERIFY_HTTPS = False
 
     def get(self, attr, default=None):
-        # deployed environments inject config as env vars; local dev uses app.conf
+        # deployed environments inject config as env vars; local uses app.conf
         if attr in os.environ:
             return os.environ[attr]
         return getattr(AppSettings, attr)

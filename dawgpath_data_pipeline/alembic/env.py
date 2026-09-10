@@ -1,6 +1,3 @@
-from commonconf.backends import use_configparser_backend
-use_configparser_backend("conf/app.conf", "PDP-Settings")
-
 from logging.config import fileConfig # nopep8
 from alembic import context # nopep8
 from dawgpath_data_pipeline.databases.implementation import get_db_implementation # nopep8

@@ -142,9 +142,10 @@ class DataJob:
     def _atomic_replace_stream(self, model_cls, mapping_batches,
                                chunk_size=10000):
         """
-        Atomically replaces all rows for model_cls from an iterable of column-mapping
-        batches. Rows are inserted without building ORM instances, so tables too large
-        to materialize at once stay within memory. Returns the number of rows inserted.
+        Atomically replaces all rows for model_cls from an iterable of
+        column-mapping batches. Rows are inserted without building ORM
+        instances, so tables too large to materialize at once stay within
+        memory. Returns the number of rows inserted.
         """
         rows_affected = 0
         try:
