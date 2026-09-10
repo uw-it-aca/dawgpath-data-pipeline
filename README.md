@@ -14,6 +14,7 @@ This repository is currently in an in-progress refactor from manually run ETL sc
 - [Job safety and transaction audit](docs/job-safety-audit.md): destructive execution audit, transaction strategies, and staging table plan.
 - [Privacy & data release policy](docs/privacy-data-release.md): `MINIMUM_DATA_COUNT = 8` privacy threshold rules and enforcement.
 - [Operations and deployment notes](docs/operations.md): local operation, cluster fit, and suggested lockdown plan.
+- [Dagster UI WebSocket plan](docs/dagster-websocket-plan.md): proposed nginx `auth_request` approach for live log streaming behind SAML.
 - [Known issues and immediate fixes](docs/known-issues.md): items to address before deployment or deeper refactoring.
 
 ## Current Validation Snapshot

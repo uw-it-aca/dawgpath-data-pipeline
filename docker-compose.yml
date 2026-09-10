@@ -30,6 +30,7 @@ services:
       - ./dawgpath_data_pipeline:/app/dawgpath_data_pipeline
       - ./workspace.yaml:/app/workspace.yaml
       - ./dagster.yaml:/app/dagster.yaml
+      - ./certs:/secrets:ro
     ports:
       - "3000:3000"
     command: /app/bin/dagster dev -h 0.0.0.0 -p 3000 -w /app/workspace.yaml
@@ -52,6 +53,6 @@ services:
         max-size: 10m
         max-file: "3"
     ports:
-      - '5432:5432'
+      - "${POSTGRES_PORT:-5433}:5432"
 volumes:
   statics-volume:

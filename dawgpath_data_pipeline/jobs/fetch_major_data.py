@@ -1,7 +1,15 @@
 from dawgpath_data_pipeline.dao.edw import get_majors
 from dawgpath_data_pipeline.models.major import Major
 from dawgpath_data_pipeline.jobs import DataJob
-from distutils.util import strtobool
+
+
+def parse_boolean(value):
+    normalized_value = value.lower()
+    if normalized_value in ("y", "yes", "t", "true", "on", "1"):
+        return True
+    if normalized_value in ("n", "no", "f", "false", "off", "0"):
+        return False
+    raise ValueError(f"invalid truth value {value!r}")
 
 
 class FetchMajorData(DataJob):
@@ -20,7 +28,7 @@ class FetchMajorData(DataJob):
         for index, major in majors.iterrows():
             soc = major['program_school_or_college'].strip()
             try:
-                no_publish = strtobool(major['DoNotPublish'].strip())
+                no_publish = parse_boolean(major['DoNotPublish'].strip())
             except ValueError as ex:
                 if(len(major['DoNotPublish'].strip()) == 0):
                     no_publish = False

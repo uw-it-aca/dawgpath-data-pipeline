@@ -1,0 +1,271 @@
+# DawgPath Data Pipeline deployment values for production environment.
+# Rendered by CI through uw-it-aca/django-production-chart.
+#
+# The main deployment is the SAML gateway, which reverse-proxies /dagster to a
+# Dagster webserver sidecar bound to loopback in the same pod. The dagster-daemon
+# workload runs schedules and sensors; none are defined in code yet, so it
+# currently only serves manually launched runs.
+
+repo: dawgpath-data-pipeline
+instance: prod
+
+namespace:
+  enabled: true
+
+image:
+  repository: us-west1-docker.pkg.dev/uwit-mci-axdd/dawgpath-images/dawgpath-data-pipeline
+  tag: latest
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 768Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+lifecycle:
+  enabled: true
+  preStop:
+    enabled: true
+
+readiness:
+  enabled: true
+
+securityPolicy:
+  enabled: true
+
+affinity:
+  podsSpanNodes: true
+
+gateway:
+  enabled: true
+  hostnames:
+    - pipeline.dawgpath.uw.edu
+  requestTimeouts:
+    frontEnd: 90s
+    backEnd: 90s
+
+# TODO: confirm the provisioned Cloud SQL instance with platform owners and
+# add the matching externalService serviceAddress/servicePort.
+database:
+  engine: postgres
+  name: dawgpath-pipeline-prod
+  hostname: dawgpath-pipeline-db-service
+  secretName: pipeline.dawgpath.uw.edu-sql-secrets
+
+gcsCredentials:
+  mounted: true
+  secretName: pipeline.dawgpath.uw.edu-gcs-credentials
+
+certs:
+  mounted: true
+  certPath: /certs/pipeline.dawgpath.uw.edu-uwca.cert
+  keyPath: /certs/pipeline.dawgpath.uw.edu-uwca.key
+  secretName: pipeline.dawgpath.uw.edu-uwca-certs
+
+environmentVariables:
+  - name: ENV
+    value: prod
+  - name: GCS_BUCKET_NAME
+    value: uw-dawgpath-pipeline-artifacts-prod
+
+  - name: AUTH
+    value: SAML
+  - name: SAML_ENTITY_ID
+    value: https://pipeline.dawgpath.uw.edu/saml2
+  - name: SAML_FORCE_AUTHN
+    value: "True"
+  - name: SP_USE_2FA
+    value: "True"
+  - name: CLUSTER_CNAME
+    value: pipeline.dawgpath.uw.edu
+
+  - name: DAGSTER_HOME
+    value: /app
+
+  - name: DB_CLASS
+    value: postgres
+  - name: DB_HOST
+    value: dawgpath-pipeline-db-service
+  - name: DB_PORT
+    value: "5432"
+  - name: DB_DATABASE
+    value: dawgpath-pipeline-prod
+
+  - name: RESTCLIENTS_SWS_DAO_CLASS
+    value: Live
+  - name: RESTCLIENTS_SWS_VERIFY_HTTPS
+    value: "True"
+  - name: RESTCLIENTS_SWS_CERT_FILE
+    value: /certs/pipeline.dawgpath.uw.edu-uwca.cert
+  - name: RESTCLIENTS_SWS_KEY_FILE
+    value: /certs/pipeline.dawgpath.uw.edu-uwca.key
+
+externalSecrets:
+  enabled: true
+  secrets:
+    - name: pipeline.dawgpath.uw.edu-secrets
+      externalKey: dawgpath/prod/secrets
+      data:
+        - name: django-secret
+          property: django-secret
+        - name: edw-server
+          property: edw-server
+        - name: edw-user
+          property: edw-user
+        - name: edw-password
+          property: edw-password
+        - name: sws-host
+          property: sws-host
+        - name: dagster-access-group
+          property: dagster-access-group
+    - name: pipeline.dawgpath.uw.edu-uw-idp-cert
+      externalKey: idp-cert
+      data:
+        - name: uw-idp-cert
+          property: cert
+    - name: pipeline.dawgpath.uw.edu-sql-secrets
+      externalKey: dawgpath/shared/sql-secrets
+      data:
+        - name: username
+          property: username
+        - name: password
+          property: password
+    - name: pipeline.dawgpath.uw.edu-gcs-credentials
+      externalKey: dawgpath/shared/gcs-credentials
+      data:
+        - name: credentials.json
+          property: credentials.json
+    - name: pipeline.dawgpath.uw.edu-uwca-certs
+      externalKey: dawgpath/prod/uwca-certs
+      data:
+        - name: pipeline.dawgpath.uw.edu-uwca.cert
+          property: pipeline.dawgpath.uw.edu-uwca.cert
+        - name: pipeline.dawgpath.uw.edu-uwca.key
+          property: pipeline.dawgpath.uw.edu-uwca.key
+
+environmentVariablesSecrets:
+  djangoSecret:
+    name: DJANGO_SECRET
+    secretName: pipeline.dawgpath.uw.edu-secrets
+    secretKey: django-secret
+  edwServer:
+    name: EDW_SERVER
+    secretName: pipeline.dawgpath.uw.edu-secrets
+    secretKey: edw-server
+  edwUser:
+    name: EDW_USER
+    secretName: pipeline.dawgpath.uw.edu-secrets
+    secretKey: edw-user
+  edwPassword:
+    name: EDW_PASSWORD
+    secretName: pipeline.dawgpath.uw.edu-secrets
+    secretKey: edw-password
+  swsHost:
+    name: RESTCLIENTS_SWS_HOST
+    secretName: pipeline.dawgpath.uw.edu-secrets
+    secretKey: sws-host
+  dagsterAccessGroup:
+    name: DAGSTER_ACCESS_GROUP
+    secretName: pipeline.dawgpath.uw.edu-secrets
+    secretKey: dagster-access-group
+  samlSPCert:
+    name: SP_CERT
+    secretName: pipeline.dawgpath.uw.edu-uwca-certs
+    secretKey: pipeline.dawgpath.uw.edu-uwca.cert
+  samlIDPCert:
+    name: IDP_CERT
+    secretName: pipeline.dawgpath.uw.edu-uw-idp-cert
+    secretKey: uw-idp-cert
+  dbUser:
+    name: DB_USER
+    secretName: pipeline.dawgpath.uw.edu-sql-secrets
+    secretKey: username
+  dbPassword:
+    name: DB_PASSWORD
+    secretName: pipeline.dawgpath.uw.edu-sql-secrets
+    secretKey: password
+
+# Durable Dagster run/event storage, replacing the image's local dagster.yaml.
+configmaps:
+  dagster-instance:
+    dagster.yaml: |
+      telemetry:
+        enabled: false
+      storage:
+        postgres:
+          postgres_db:
+            username:
+              env: DB_USER
+            password:
+              env: DB_PASSWORD
+            hostname:
+              env: DB_HOST
+            db_name:
+              env: DB_DATABASE
+            port: 5432
+
+podVolumes:
+  dagster-instance:
+    volume:
+      configMap:
+        name: dagster-instance
+    mount:
+      mountPath: /app/dagster.yaml
+      subPath: dagster.yaml
+    containers: [ base, dagster-webserver ]
+
+# Bound to loopback so the SAML gateway in this pod is its only entrance.
+sidecarContainers:
+  dagster-webserver:
+    image: us-west1-docker.pkg.dev/uwit-mci-axdd/dawgpath-images/dawgpath-data-pipeline:latest
+    command:
+      - "/app/bin/dagster-webserver"
+      - "-h"
+      - "127.0.0.1"
+      - "-p"
+      - "3000"
+      - "-w"
+      - "/app/workspace.yaml"
+      - "--path-prefix"
+      - "/dagster"
+    environmentVariables:
+      - name: DAGSTER_HOME
+        value: /app
+      - name: DB_HOST
+        value: dawgpath-pipeline-db-service
+      - name: DB_DATABASE
+        value: dawgpath-pipeline-prod
+      - name: DB_USER
+        valueFrom:
+          secretKeyRef:
+            name: pipeline.dawgpath.uw.edu-sql-secrets
+            key: username
+      - name: DB_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: pipeline.dawgpath.uw.edu-sql-secrets
+            key: password
+
+# Runs execute inside this pod under the default run launcher, so it is sized
+# for the heaviest asset (registration refresh) rather than for the daemon.
+daemon:
+  enabled: true
+  daemons:
+    - name: dagster-daemon
+      replicaCount: 1
+      command: ["/app/bin/dagster-daemon"]
+      args: ["run"]
+      resources:
+        limits:
+          cpu: 2000m
+          memory: 8192Mi
+        requests:
+          cpu: 500m
+          memory: 2048Mi

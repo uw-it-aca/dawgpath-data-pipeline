@@ -35,7 +35,7 @@ Jobs are classified into three safety tiers:
 | `FetchRegisMajorData` | **Strategy A** | `_get_regis_majors()` called first; then `_atomic_replace(RegisMajor, regis_majors)` | No deletion if EDW `sec.registration_regis_col_major` fails. |
 | `FetchSRMajorData` | **Strategy A** | `_get_sr_majors()` called first; then `_atomic_replace(SRMajor, sr_majors)` | No deletion if EDW `sec.sr_major_code` query fails. |
 | `FetchTranscriptData` | **Strategy A** | `_get_transcripts()` called first; then `_atomic_replace(Transcript, transcripts)` | No deletion if EDW `sec.transcript` query fails. |
-| `FetchRegistrationData` | **Strategy B** | Chunked multi-year fetch with quarter-by-quarter bulk saves. | Staging table swap required for multi-quarter fetch resilience. |
+| `FetchRegistrationData` | **Strategy A** | `_atomic_replace_stream(Registration, ...)` inserts quarter-by-quarter column mappings inside one transaction. | Rolled back if any quarter's EDW fetch or insert fails; avoids materializing 10 years of rows in memory. |
 | `FetchSWSCourseData` | **Strategy A** | Incremental; queries missing courses and saves non-empty chunks. | Does not delete existing `SWSCourse` records. |
 | `BuildCommonCourseMajor` | **Strategy A** | `build_all_majors()` called first; then `_atomic_replace(CommonCourseMajor, ...)` | No deletion if declaration query or course calculation fails. |
 | `BuildCommonMajorForCourse` | **Strategy A** | `build_common_majors()` called first; then `_atomic_replace(CommonMajorForCourse, ...)` | No deletion if student-course grouping fails. |
@@ -62,4 +62,4 @@ Jobs are classified into three safety tiers:
 2. **Atomic File Swaps (Completed in Preflight Task 7):**
    All 5 export jobs use `os.replace` to guarantee atomic artifact publishing.
 3. **Staging Table Integration (Deferred to Orchestrator Phase):**
-   `FetchRegistrationData` and `BuildConcurrentCourses` will write to run-versioned staging schemas or tables in Dagster before swapping pointers.
+   `BuildConcurrentCourses` will write to run-versioned staging schemas or tables in Dagster before swapping pointers.

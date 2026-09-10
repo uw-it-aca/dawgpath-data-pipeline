@@ -46,3 +46,5 @@ db.sqlite3
 [Ss]cripts
 
 docker/*-values.yml
+dawgpath_data_pipeline/conf/app.conf
+certs/

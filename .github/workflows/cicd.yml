@@ -106,7 +106,7 @@ jobs:
 
       - name: Run Admin Tests
         run: |
-          DJANGO_SETTINGS_MODULE=dawgpath_pipeline_admin.tests.test_settings python -m unittest discover -s dawgpath_pipeline_admin/tests
+          DJANGO_SETTINGS_MODULE=dawgpath_pipeline_admin.test_settings python -m django test dawgpath_pipeline_admin.tests
 
       - name: Run Tests in Image
         id: tests
