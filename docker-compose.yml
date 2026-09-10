@@ -53,24 +53,5 @@ services:
         max-file: "3"
     ports:
       - '5432:5432'
-  node-bundler:
-    build:
-      context: .
-      target: node-bundler
-    restart: always
-    container_name: dawgpath_pipeline_admin_node
-    ports:
-      - "${BUNDLE_ANALYZER_PORT:-8888}:8888" # Required when environment.BUNDLE_ANALYZER is true
-    environment:
-      NODE_ENV: "development"
-      VUE_DEVTOOLS: "True"
-      BUNDLE_ANALYZER: "True"
-    volumes:
-      - ./dawgpath_pipeline_admin:/app/dawgpath_pipeline_admin # expose main django app so vite can output bundles here
-      - ./dawgpath_pipeline_admin_vue:/app/dawgpath_pipeline_admin_vue
-      - statics-volume:/static
-    command: npm run watch
-    stdin_open: true
-    tty: true
 volumes:
   statics-volume:

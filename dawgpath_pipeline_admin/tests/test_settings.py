@@ -1,8 +1,3 @@
-import os
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-
 SECRET_KEY = "test-secret-key-for-admin-tests"
 DATABASES = {
     "default": {
@@ -24,6 +19,3 @@ TEMPLATES = [
         },
     }
 ]
-VITE_MANIFEST_PATH = os.path.join(
-    BASE_DIR, "dawgpath_pipeline_admin", "static", "manifest.json"
-)

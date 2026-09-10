@@ -46,15 +46,7 @@ MANIFEST
 *~
 *.code-workspace
 
-# Node / JS / Vite / Frontend
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.vite/
 coverage/
-dawgpath_pipeline_admin/static/manifest.json
-dawgpath_pipeline_admin/static/dawgpath_pipeline_admin/assets/
 
 # PyInstaller
 *.manifest
@@ -176,14 +168,6 @@ dmypy.json
 
 # private connection settings
 constring.txt
-
-# node
-node_modules/
-package-lock.json
-
-# vite bundle
-assets/
-manifest.json
 
 # cypress image snapshots diffs
 screenshots/

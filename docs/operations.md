@@ -20,7 +20,6 @@ The Docker Compose file defines:
 
 - `app`: Django app container built from the `app-container` target.
 - `postgres`: local Postgres 13.4.
-- `node-bundler`: Vite watch container for frontend assets.
 
 The Compose app service only passes `GOOGLE_ANALYTICS_KEY` explicitly. ETL database and EDW/SWS configuration still need to be provided through the app's settings mechanism before live fetch jobs can run.
 

@@ -18,21 +18,7 @@ RUN chmod u+x /scripts/app_start.sh /scripts/app_deploy.sh
 RUN /app/bin/pip install -r requirements.txt
 RUN /app/bin/pip install psycopg2 dagster dagster-webserver google-cloud-storage
 
-FROM node:lts-bullseye AS node-bundler
-
-ADD ./package.json /app/
-WORKDIR /app/
-RUN npm install .
-
-ADD . /app/
-
-ARG VUE_DEVTOOLS
-ENV VUE_DEVTOOLS=$VUE_DEVTOOLS
-RUN npm run build
-
 FROM app-prebundler-container AS app-container
-
-COPY --chown=acait:acait --from=node-bundler /app/dawgpath_pipeline_admin/static /app/dawgpath_pipeline_admin/static
 
 RUN /app/bin/python manage.py collectstatic --noinput
 

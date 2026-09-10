@@ -4,7 +4,7 @@
 from django.conf import settings
 from django.urls import re_path
 from django.views.generic import TemplateView
-from dawgpath_pipeline_admin.views.pages import DefaultPageView
+from dawgpath_pipeline_admin.views.pages import PageView
 
 
 # start with an empty url array
@@ -26,8 +26,5 @@ if settings.DEBUG:
     ]
 
 urlpatterns += [
-    # add api endpoints here
-    # add default Vue page routes here
-    re_path(r"^(customize|page2|page3)$", DefaultPageView.as_view()),
-    re_path(r"^$", DefaultPageView.as_view()),
+    re_path(r"^$", PageView.as_view()),
 ]
