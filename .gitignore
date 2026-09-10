@@ -88,6 +88,16 @@ db.sqlite3-journal
 # Output Artifacts
 artifacts/
 
+# Dagster local runtime state
+.tmp_dagster_home*/
+.dagster/
+.history/
+history/
+storage/
+schedules/
+*.sqlite
+*.db
+
 # Credentials / Certificates
 certs/
 *.cert

@@ -1,0 +1,12 @@
+telemetry:
+  enabled: false
+
+local_artifact_storage:
+  module: dagster.core.storage.root
+  class: LocalArtifactStorage
+  config:
+    base_dir: "./artifacts/dagster"
+
+run_launcher:
+  module: dagster.core.launcher
+  class: DefaultRunLauncher

@@ -1,29 +1,12 @@
-#
-# Example GitHub Actions config for UW-IT AXD2 app testing and publishing to PyPi
-#
-# Preconditions:
-#
-#  1) Application test suite is kicked off by APP_NAME/test.py
-#
-#  2) Application contains a setup.py file
-#
-#  3) Application repo has access to the required secret
-#     at https://github.com/organizations/uw-it-aca/settings/secrets:
-#
-#     PYPI_API_TOKEN
-#
-# To adapt this config to a specific Python app:
-#
-#  1) Set APP_NAME to the name of the package name/directory.
-#
-#  2) Verify that the lists of branches for push/pull_request is appropriate,
-#     and add other branch names if needed.
-#
+# Modern UW-IT ACA pattern based on the current Compass-style workflow.
+# Deployment is intentionally gated to merge branches only; local development
+# branches can continue working without triggering cluster deployment.
 ---
-name: tests
+name: Build, Test and Deploy
 
 env:
-  APP_NAME: dawgpath_data_pipeline
+  RELEASE_NAME: dawgpath-data-pipeline
+  DJANGO_APP: dawgpath_data_pipeline
 
 on:
   push:
@@ -31,69 +14,164 @@ on:
   pull_request:
     branches: [main, master, qa, develop]
     types: [opened, reopened, synchronize]
-  release:
-    branches: [main, master]
-    types: [published]
 
 jobs:
-  test:
-    runs-on: ubuntu-18.04
+  context:
+    runs-on: ubuntu-24.04
+    outputs:
+      commit_hash: ${{ steps.context.outputs.commit_hash }}
+      git_repo_branch: ${{ steps.context.outputs.git_repo_branch }}
+      image_tag: ${{ steps.context.outputs.image_tag }}
+    steps:
+      - name: Set up Context
+        id: context
+        uses: uw-it-aca/actions/cicd-context@main
+        with:
+          release_name: ${{ env.RELEASE_NAME }}
+
+  build:
+    runs-on: ubuntu-24.04
+    needs: context
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
 
-      - name: Setup Python
-        uses: actions/setup-python@v2
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
-          python-version: 3.6
+          python-version: '3.12'
 
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install -e .
-          pip install commonconf nose2 coverage coveralls==2.2.0
-
-      - name: Setup App
-        run: |
-           cp conf/test.conf conf/app.conf
-           alembic upgrade head
+          pip install ruff coverage
 
       - name: Run Python Linters
         uses: uw-it-aca/actions/python-linters@main
         with:
-          app_name: ${APP_NAME}
+          app_name: ${{ env.DJANGO_APP }}
+          exclude_paths: migrations
+          ignore: BLE001,S110
 
-      - name: Run Tests
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Cache Docker layers
+        uses: actions/cache@v5
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ hashFiles('Dockerfile') }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build App Image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: app-container
+          tags: ${{ needs.context.outputs.image_tag }}
+          push: false
+          load: true
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+      - name: Build Test Image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: app-test-container
+          tags: app-test-container
+          push: false
+          load: true
+
+      - name: Run Pipeline Tests
         run: |
-          python -m compileall ${APP_NAME}/
-          coverage run ${APP_NAME}/test.py -v
+          python -m unittest discover -s dawgpath_data_pipeline/tests
 
-      - name: Report Test Coverage
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run Admin Tests
+        run: |
+          DJANGO_SETTINGS_MODULE=dawgpath_pipeline_admin.tests.test_settings python -m unittest discover -s dawgpath_pipeline_admin/tests
+
+      - name: Run Tests in Image
+        id: tests
         shell: bash
-        run: coveralls
+        run: >-
+          docker run -u root -t --network ${{ job.container.network }}
+          -v ${{ github.workspace }}:/coverage
+          -e DJANGO_APP="${{ env.DJANGO_APP }}"
+          -e "ENV=localdev"
+          -e "AUTH=SAML_MOCK"
+          app-test-container
+          bash -c ". ./docker/test.sh"
 
-  publish:
-    if: github.event_name == 'release' && startsWith(github.ref, 'refs/tags')
+      - name: Push Image to Repository
+        if: github.event_name == 'push'
+        uses: uw-it-aca/actions/gcr-push@main
+        with:
+          image_tag: ${{ needs.context.outputs.image_tag }}
+          gcp_json_key: ${{ secrets.GCP_JSON_KEY }}
 
-    needs: test
-
-    runs-on: ubuntu-18.04
-
+  deploy:
+    if: github.event_name == 'push'
+    needs: [context, build]
+    outputs:
+      context: ${{ steps.context.outputs.context }}
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
 
-      - name: Setup Python
-        uses: actions/setup-python@v2
+      - name: Deployment Pipeline
+        if: >-
+          contains(fromJSON('["main","master","develop","qa"]'),
+          needs.context.outputs.git_repo_branch)
+        uses: uw-it-aca/actions/cicd-deploy@main
         with:
-          python-version: '3.x'
+          release_name: ${{ env.RELEASE_NAME }}
+          commit_hash: ${{ needs.context.outputs.commit_hash }}
+          git_repo_branch: ${{ needs.context.outputs.git_repo_branch }}
+          gh_auth_token: ${{ secrets.GH_AUTH_TOKEN }}
 
-      - name: Publish to PyPi
-        uses: uw-it-aca/actions/publish-pypi@main
+      - name: Deploy Evaluation Branch
+        if: needs.context.outputs.git_repo_branch == 'feature/eval-me'
+        uses: uw-it-aca/actions/cicd-deploy@main
         with:
-          app_name: ${APP_NAME}
-          tag_name: ${{ github.event.release.tag_name }}
-          api_token: ${{ secrets.PYPI_API_TOKEN }}
+          release_name: ${{ env.RELEASE_NAME }}
+          commit_hash: ${{ needs.context.outputs.commit_hash }}
+          git_repo_branch: ${{ needs.context.outputs.git_repo_branch }}
+          gh_auth_token: ${{ secrets.GH_AUTH_TOKEN }}
+          app_instance: eval
+
+      - name: Surface context from executed build step
+        id: context
+        shell: bash
+        run: echo "context=$(<${CONTEXT_FILENAME})" >> $GITHUB_OUTPUT
+
+  housekeeping:
+    if: github.event_name == 'push'
+    needs: [context, build, deploy]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: House Keeping
+        uses: uw-it-aca/actions/cicd-housekeeping@main
+        with:
+          release_name: ${{ env.RELEASE_NAME }}
+          gh_auth_token: ${{ secrets.GH_AUTH_TOKEN }}
+          registry_password: ${{ secrets.GCP_JSON_KEY }}
+          context: ${{ needs.deploy.outputs.context }}

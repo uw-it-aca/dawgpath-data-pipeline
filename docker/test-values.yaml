@@ -1,0 +1,88 @@
+# DawgPath Data Pipeline deployment values for test environment
+# This file follows the repo's environment-specific value pattern.
+
+appName: dawgpath-data-pipeline
+instanceName: test
+
+ingress:
+  enabled: true
+  hosts:
+    - dawgpath-pipeline.test.uw.edu
+  tls:
+    - secretName: dawgpath-pipeline-test-cert
+      hosts:
+        - dawgpath-pipeline.test.uw.edu
+
+image:
+  repository: us-west1-docker.pkg.dev/uwit-mci-axdd/dawgpath-images/dawgpath-data-pipeline
+  tag: latest
+
+environmentVariables:
+  - name: ENV
+    value: test
+  - name: GCS_BUCKET_NAME
+    value: uw-dawgpath-pipeline-artifacts-test
+  - name: RESTCLIENTS_SWS_DAO_CLASS
+    value: Live
+  - name: RESTCLIENTS_SWS_VERIFY_HTTPS
+    value: "True"
+
+externalSecrets:
+  - name: dawgpath-secrets
+    vaultPath: secret/data/dawgpath/test
+    secrets:
+      - secretKey: EDW_SERVER
+        remoteRef:
+          key: secret/data/dawgpath/test
+          property: EDW_SERVER
+      - secretKey: EDW_USER
+        remoteRef:
+          key: secret/data/dawgpath/test
+          property: EDW_USER
+      - secretKey: EDW_PASSWORD
+        remoteRef:
+          key: secret/data/dawgpath/test
+          property: EDW_PASSWORD
+      - secretKey: RESTCLIENTS_SWS_HOST
+        remoteRef:
+          key: secret/data/dawgpath/test
+          property: RESTCLIENTS_SWS_HOST
+      - secretKey: SWS_CERT
+        remoteRef:
+          key: secret/data/dawgpath/test
+          property: SWS_CERT
+      - secretKey: SWS_KEY
+        remoteRef:
+          key: secret/data/dawgpath/test
+          property: SWS_KEY
+
+dagster:
+  enabled: true
+  webserver:
+    replicaCount: 1
+    port: 3000
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+  daemon:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+  schedules:
+    dailyCatalogRefresh:
+      enabled: true
+      cron: "0 1 * * *"
+      jobName: daily_catalog_refresh
+    weeklyPipelineJob:
+      enabled: true
+      cron: "0 2 * * 0"
+      jobName: full_pipeline_job
