@@ -5,6 +5,7 @@ from dawgpath_data_pipeline.jobs import DataJob
 
 
 class FetchTranscriptData(DataJob):
+    upstream_sources = ["EDW: sec.transcript"]
 
     def run(self):
         transcripts = self._get_transcripts()

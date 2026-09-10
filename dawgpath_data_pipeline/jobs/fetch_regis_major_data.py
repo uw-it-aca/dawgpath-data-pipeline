@@ -5,6 +5,8 @@ from dawgpath_data_pipeline.jobs import DataJob
 
 
 class FetchRegisMajorData(DataJob):
+    upstream_sources = ["EDW: sec.registration_regis_col_major"]
+
     def run(self):
         regis_majors = self._get_regis_majors()
         self._atomic_replace(RegisMajor, regis_majors)

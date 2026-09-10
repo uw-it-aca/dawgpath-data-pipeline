@@ -4,6 +4,8 @@ from dawgpath_data_pipeline.jobs import DataJob
 
 
 class FetchCourseData(DataJob):
+    upstream_sources = ["EDW: sec.sr_course_titles"]
+
     def run(self):
         courses = self._get_courses()
         self._atomic_replace(Course, courses)

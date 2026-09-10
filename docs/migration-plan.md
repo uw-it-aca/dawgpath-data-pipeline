@@ -33,10 +33,11 @@ Recommended approach: move DawgPath ETL toward a dedicated Python orchestration 
    - Updated `FetchRegistrationData` to perform full in-memory fetch across 10 years before replacing `Registration` table atomically in a single transaction.
    - Verified transaction boundaries and `.tmp` -> `os.replace` atomic file writes across all export jobs.
    - Documented staging table & transaction strategy in `docs/job-safety-audit.md`.
-6. [ ] Add operational metadata:
-   - per-job status, start/end time, row counts, upstream source, output artifact URI, exception details
-   - preserve `MINIMUM_DATA_COUNT = 8` behavior and document it as a privacy/data-release rule
-7. Deploy in phases:
+6. [x] Add operational metadata:
+   - Enhanced `JobResult` in `DataJob` to track per-job status, start/end ISO timestamps, duration in seconds, upstream data sources, output artifact URIs, exception details, and privacy threshold.
+   - Formatted all Dagster Software-Defined Assets to record complete operational metadata on every run.
+   - Documented `MINIMUM_DATA_COUNT = 8` privacy threshold rules and enforcement in `docs/privacy-data-release.md`.
+7. [ ] Deploy in phases:
    - keep `dawgpath-data-pipeline` as the application/source repo that builds the Dagster code image and optional Django admin/gateway image
    - prefer adding DawgPath Dagster infrastructure under the existing Flux desired-state repos/paths, likely `gcp-flux-dev` and `gcp-flux-prod`, because creating a dedicated Flux repo such as `gcp-flux-dawgpath` would likely require platform/GKE tenant wiring by the team that owns the cluster integration; only pursue a new Flux repo if platform owners require isolation
    - use the shared `django-container` as the natural base for the SAML-authenticated Django admin/gateway because it already matches UW-IT ACA auth, static, Nginx/Gunicorn, Vault/External Secrets, and Flux deployment patterns

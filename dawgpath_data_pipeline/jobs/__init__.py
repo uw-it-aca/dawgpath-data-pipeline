@@ -1,11 +1,35 @@
 from dawgpath_data_pipeline.databases.implementation import get_db_implementation
 
 
+import time
+from datetime import datetime, timezone
+from dawgpath_data_pipeline.databases.implementation import get_db_implementation
+from dawgpath_data_pipeline import MINIMUM_DATA_COUNT
+
+
 class JobResult:
-    def __init__(self, job_name, status="SUCCESS", rows_affected=0, metadata=None):
+    def __init__(
+        self,
+        job_name,
+        status="SUCCESS",
+        rows_affected=0,
+        start_time=None,
+        end_time=None,
+        duration_seconds=0.0,
+        upstream_sources=None,
+        output_artifact_uri=None,
+        exception_details=None,
+        metadata=None,
+    ):
         self.job_name = job_name
         self.status = status
         self.rows_affected = rows_affected
+        self.start_time = start_time
+        self.end_time = end_time
+        self.duration_seconds = duration_seconds
+        self.upstream_sources = upstream_sources if upstream_sources is not None else []
+        self.output_artifact_uri = output_artifact_uri
+        self.exception_details = exception_details
         self.metadata = metadata if metadata is not None else {}
 
     def __getitem__(self, item):
@@ -15,7 +39,9 @@ class JobResult:
 
     def get(self, item, default=None):
         if hasattr(self, item):
-            return getattr(self, item)
+            val = getattr(self, item)
+            if val is not None:
+                return val
         return self.metadata.get(item, default)
 
     def to_dict(self):
@@ -23,27 +49,60 @@ class JobResult:
             "job_name": self.job_name,
             "status": self.status,
             "rows_affected": self.rows_affected,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "duration_seconds": self.duration_seconds,
+            "upstream_sources": self.upstream_sources,
+            "output_artifact_uri": self.output_artifact_uri,
+            "exception_details": self.exception_details,
+            "privacy_threshold": MINIMUM_DATA_COUNT,
             "metadata": self.metadata,
         }
 
     def __repr__(self):
-        return (f"JobResult(job_name='{self.job_name}', status='{self.status}', "
-                f"rows_affected={self.rows_affected}, metadata={self.metadata})")
+        return (
+            f"JobResult(job_name='{self.job_name}', status='{self.status}', "
+            f"rows_affected={self.rows_affected}, duration_seconds={self.duration_seconds:.2f}s, "
+            f"metadata={self.metadata})"
+        )
 
 
 class DataJob:
     session = None
+    upstream_sources = []
 
     def __init__(self):
         db = get_db_implementation()
         self.session = db.get_session()
+        self._start_time_iso = datetime.now(timezone.utc).isoformat()
+        self._start_time_ticks = time.time()
 
-    def _create_result(self, rows_affected=0, status="SUCCESS", metadata=None):
+    def _create_result(
+        self,
+        rows_affected=0,
+        status="SUCCESS",
+        output_artifact_uri=None,
+        exception_details=None,
+        metadata=None,
+    ):
+        end_time_ticks = time.time()
+        end_time_iso = datetime.now(timezone.utc).isoformat()
+        duration = end_time_ticks - self._start_time_ticks
+
+        meta_dict = metadata.copy() if metadata is not None else {}
+        meta_dict["privacy_threshold"] = MINIMUM_DATA_COUNT
+
         return JobResult(
             job_name=self.__class__.__name__,
             status=status,
             rows_affected=rows_affected,
-            metadata=metadata,
+            start_time=self._start_time_iso,
+            end_time=end_time_iso,
+            duration_seconds=duration,
+            upstream_sources=getattr(self, "upstream_sources", []),
+            output_artifact_uri=output_artifact_uri,
+            exception_details=exception_details,
+            metadata=meta_dict,
         )
 
     def _bulk_save_objects(self, objects, chunk_size=10000):

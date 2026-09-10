@@ -5,6 +5,8 @@ from distutils.util import strtobool
 
 
 class FetchMajorData(DataJob):
+    upstream_sources = ["EDW: sec.CM_Credentials", "EDW: sec.CM_Programs"]
+
     def run(self):
         majors = self._get_majors()
         self._atomic_replace(Major, majors)

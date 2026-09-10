@@ -13,6 +13,26 @@ from dawgpath_data_pipeline.orchestration.tags import (
 )
 from dawgpath_data_pipeline.utilities.artifact_publisher import ArtifactPublisher
 
+
+def _res_meta(res):
+    meta = {
+        "job_name": res.job_name,
+        "status": res.status,
+        "rows_affected": res.rows_affected,
+        "start_time": res.start_time,
+        "end_time": res.end_time,
+        "duration_seconds": round(res.duration_seconds, 3),
+        "privacy_threshold": res.get("privacy_threshold", 8),
+    }
+    if res.upstream_sources:
+        meta["upstream_sources"] = ", ".join(res.upstream_sources)
+    if res.output_artifact_uri:
+        meta["output_artifact_uri"] = res.output_artifact_uri
+    if res.exception_details:
+        meta["exception_details"] = str(res.exception_details)
+    return meta
+
+
 # --- Tier 1: Source Refreshes ---
 
 from dawgpath_data_pipeline.jobs.fetch_course_data import FetchCourseData
@@ -33,14 +53,7 @@ from dawgpath_data_pipeline.jobs.fetch_sws_course_data import FetchSWSCourseData
 )
 def fetch_course_data():
     res = FetchCourseData().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -50,14 +63,7 @@ def fetch_course_data():
 )
 def fetch_curric_data():
     res = FetchCurricData().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -67,14 +73,7 @@ def fetch_curric_data():
 )
 def fetch_prereq_data():
     res = FetchPrereqData().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -84,14 +83,7 @@ def fetch_prereq_data():
 )
 def fetch_major_data():
     res = FetchMajorData().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -101,14 +93,7 @@ def fetch_major_data():
 )
 def fetch_sr_major_data():
     res = FetchSRMajorData().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -118,14 +103,7 @@ def fetch_sr_major_data():
 )
 def fetch_registration_data():
     res = FetchRegistrationData().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -135,14 +113,7 @@ def fetch_registration_data():
 )
 def fetch_regis_major_data():
     res = FetchRegisMajorData().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -152,14 +123,7 @@ def fetch_regis_major_data():
 )
 def fetch_transcript_data():
     res = FetchTranscriptData().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -169,14 +133,7 @@ def fetch_transcript_data():
 )
 def fetch_sws_course_data(fetch_course_data, fetch_registration_data):
     res = FetchSWSCourseData().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 # --- Tier 2: Derived Local Assets ---
@@ -200,14 +157,7 @@ from dawgpath_data_pipeline.jobs.build_major_dec_grade_distro import BuildMajorD
 )
 def build_course_prereq_graphs(fetch_course_data, fetch_prereq_data):
     res = BuildCoursePrereqGraphs().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -217,14 +167,7 @@ def build_course_prereq_graphs(fetch_course_data, fetch_prereq_data):
 )
 def build_curric_prereq_lists(fetch_curric_data, fetch_course_data, fetch_prereq_data):
     res = BuildCurricPrereqLists().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -234,14 +177,7 @@ def build_curric_prereq_lists(fetch_curric_data, fetch_course_data, fetch_prereq
 )
 def build_curric_prereq_graphs(fetch_curric_data, fetch_course_data, fetch_prereq_data):
     res = BuildCurricPrereqGraphs().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -251,14 +187,7 @@ def build_curric_prereq_graphs(fetch_curric_data, fetch_course_data, fetch_prere
 )
 def build_concurrent_courses(fetch_registration_data):
     res = BuildConcurrentCourses().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -268,14 +197,7 @@ def build_concurrent_courses(fetch_registration_data):
 )
 def prepare_student_model(fetch_regis_major_data):
     res = PrepareStudentModel().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -285,14 +207,7 @@ def prepare_student_model(fetch_regis_major_data):
 )
 def build_common_major_for_course(fetch_registration_data, prepare_student_model):
     res = BuildCommonMajorForCourse().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -302,14 +217,7 @@ def build_common_major_for_course(fetch_registration_data, prepare_student_model
 )
 def build_common_course_major(fetch_regis_major_data, fetch_registration_data, fetch_course_data):
     res = BuildCommonCourseMajor().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -319,14 +227,7 @@ def build_common_course_major(fetch_regis_major_data, fetch_registration_data, f
 )
 def build_concurrent_courses_major(fetch_regis_major_data, fetch_registration_data):
     res = BuildConcurrentCoursesMajor().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -336,14 +237,7 @@ def build_concurrent_courses_major(fetch_regis_major_data, fetch_registration_da
 )
 def build_course_gpa_distro(fetch_registration_data):
     res = BuildCourseGPADistro().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 @asset(
@@ -353,14 +247,7 @@ def build_course_gpa_distro(fetch_registration_data):
 )
 def build_major_dec_grade_distro(fetch_regis_major_data, fetch_transcript_data):
     res = BuildMajorDecGradeDistro().run()
-    return Output(
-        res,
-        metadata={
-            "job_name": res.job_name,
-            "status": res.status,
-            "rows_affected": res.rows_affected,
-        },
-    )
+    return Output(res, metadata=_res_meta(res))
 
 
 # --- Tier 3: Published Artifact Exports ---

@@ -4,6 +4,8 @@ from dawgpath_data_pipeline.jobs import DataJob
 
 
 class FetchCurricData(DataJob):
+    upstream_sources = ["EDW: sec.sr_curric_code"]
+
     def run(self):
         currics = self._get_currics()
         self._atomic_replace(Curriculum, currics)

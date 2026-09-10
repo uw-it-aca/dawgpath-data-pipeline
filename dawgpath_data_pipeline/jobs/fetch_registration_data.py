@@ -9,6 +9,8 @@ REG_QUARTERS = [1, 2, 3, 4]
 
 
 class FetchRegistrationData(DataJob):
+    upstream_sources = ["EDW: sec.registration_courses"]
+
     def run(self):
         # Gather all registration objects across all years/quarters in memory first
         all_registrations = self.get_all_years()

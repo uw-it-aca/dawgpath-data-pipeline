@@ -32,7 +32,9 @@ class TestJobContracts(DBTest):
         self.assertEqual(res.rows_affected, 42)
         self.assertEqual(res["rows_affected"], 42)
         self.assertEqual(res.get("key"), "val")
-        self.assertEqual(res.to_dict()["rows_affected"], 42)
+        dict_rep = res.to_dict()
+        self.assertEqual(dict_rep["rows_affected"], 42)
+        self.assertEqual(dict_rep["privacy_threshold"], 8)
 
     def test_fetch_sws_course_data_no_none_save(self):
         with patch.object(FetchSWSCourseData, '_get_sws_courses', return_value=0):
@@ -40,6 +42,10 @@ class TestJobContracts(DBTest):
             self.assertIsInstance(res, JobResult)
             self.assertEqual(res.job_name, "FetchSWSCourseData")
             self.assertEqual(res.rows_affected, 0)
+            self.assertIsNotNone(res.start_time)
+            self.assertIsNotNone(res.end_time)
+            self.assertGreaterEqual(res.duration_seconds, 0.0)
+            self.assertEqual(res.get("privacy_threshold"), 8)
 
     def test_build_concurrent_courses_has_run_contract(self):
         with patch.object(BuildConcurrentCourses, '_get_terms_from_registrations', return_value=[]):

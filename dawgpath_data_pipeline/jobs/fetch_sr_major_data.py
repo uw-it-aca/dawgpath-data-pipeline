@@ -4,6 +4,8 @@ from dawgpath_data_pipeline.jobs import DataJob
 
 
 class FetchSRMajorData(DataJob):
+    upstream_sources = ["EDW: sec.sr_major_code"]
+
     def run(self):
         majors = self._get_sr_majors()
         self._atomic_replace(SRMajor, majors)

@@ -13,6 +13,8 @@ DELAY = 1/REQUESTS_PER_SECOND
 
 
 class FetchSWSCourseData(DataJob):
+    upstream_sources = ["Local: Course", "Local: Registration", "SWS: get_course_by_label"]
+
     def run(self):
         # self._delete_sws_courses()
         saved_count = self._get_sws_courses()

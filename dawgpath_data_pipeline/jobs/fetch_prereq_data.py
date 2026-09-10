@@ -4,6 +4,8 @@ from dawgpath_data_pipeline.jobs import DataJob
 
 
 class FetchPrereqData(DataJob):
+    upstream_sources = ["EDW: sec.sr_course_prereq"]
+
     def run(self):
         prereqs = self._get_prereqs()
         self._atomic_replace(Prereq, prereqs)
