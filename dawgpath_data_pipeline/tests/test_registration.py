@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from unittest.mock import patch
+
 import pandas as pd
+
+from dawgpath_data_pipeline.jobs.fetch_registration_data import FetchRegistrationData
 from dawgpath_data_pipeline.models.registration import Registration
 from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.jobs.fetch_registration_data import \
-    FetchRegistrationData
-from dawgpath_data_pipeline.tests.shared_mock.registration import \
-    registration_mock_data
+from dawgpath_data_pipeline.tests.shared_mock.registration import registration_mock_data
 
 
 class TestRegistrations(DBTest):
@@ -17,7 +17,7 @@ class TestRegistrations(DBTest):
     @patch('dawgpath_data_pipeline.jobs.'
            'fetch_registration_data.get_registrations_in_year_quarter')
     def setUp(self, get_reg_mock):
-        super(TestRegistrations, self).setUp()
+        super().setUp()
 
         mock_df = pd.DataFrame.from_dict(registration_mock_data,
                                          orient='columns')

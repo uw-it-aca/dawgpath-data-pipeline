@@ -1,15 +1,16 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-import os
+import json
 from unittest.mock import patch
-from dawgpath_data_pipeline.jobs.fetch_course_data import FetchCourseData
+
 import pandas as pd
+
+from dawgpath_data_pipeline.jobs.export_course_data import ExportCourseData
+from dawgpath_data_pipeline.jobs.fetch_course_data import FetchCourseData
 from dawgpath_data_pipeline.models.course import Course
 from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.jobs.export_course_data import ExportCourseData
 from dawgpath_data_pipeline.tests.shared_mock.courses import course_mock_data
-import json
 
 
 class TestCourses(DBTest):
@@ -17,7 +18,7 @@ class TestCourses(DBTest):
 
     @patch('dawgpath_data_pipeline.jobs.fetch_course_data.get_course_titles')
     def setUp(self, get_course_info_mock):
-        super(TestCourses, self).setUp()
+        super().setUp()
         mock_df = pd.DataFrame(course_mock_data)
         get_course_info_mock.return_value = mock_df
         self.mock_courses = FetchCourseData()._get_courses()

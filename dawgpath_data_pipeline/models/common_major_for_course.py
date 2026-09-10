@@ -1,8 +1,9 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+from sqlalchemy import Column, PickleType, SmallInteger, String
+
 from dawgpath_data_pipeline.models.base import Base
-from sqlalchemy import Column, String, PickleType, SmallInteger
 
 
 class CommonMajorForCourse(Base):
@@ -24,4 +25,4 @@ class CommonMajorForCourse(Base):
         '''
         :return: The course id "{crs_curric_abbr} {crs_number}"
         '''
-        return "%s %s" % (self.crs_curric_abbr, self.crs_number)
+        return f"{self.crs_curric_abbr} {self.crs_number}"

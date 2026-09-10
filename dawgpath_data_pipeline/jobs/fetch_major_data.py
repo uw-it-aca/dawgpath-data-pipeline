@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from dawgpath_data_pipeline.dao.edw import get_majors
-from dawgpath_data_pipeline.models.major import Major
 from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.models.major import Major
 
 
 def parse_boolean(value):
@@ -32,7 +32,7 @@ class FetchMajorData(DataJob):
             soc = major['program_school_or_college'].strip()
             try:
                 no_publish = parse_boolean(major['DoNotPublish'].strip())
-            except ValueError as ex:
+            except ValueError:
                 if(len(major['DoNotPublish'].strip()) == 0):
                     no_publish = False
                 else:

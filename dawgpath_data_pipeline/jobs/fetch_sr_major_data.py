@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from dawgpath_data_pipeline.dao.edw import get_sr_majors
-from dawgpath_data_pipeline.models.sr_major import SRMajor
 from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.models.sr_major import SRMajor
 
 
 class FetchSRMajorData(DataJob):

@@ -2,10 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from unittest.mock import patch
+
 import pandas as pd
+
+from dawgpath_data_pipeline.jobs.fetch_major_data import FetchMajorData
 from dawgpath_data_pipeline.models.major import Major
 from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.jobs.fetch_major_data import FetchMajorData
 
 
 class TestMajors(DBTest):
@@ -14,7 +16,7 @@ class TestMajors(DBTest):
     @patch('dawgpath_data_pipeline.jobs.'
            'fetch_major_data.get_majors')
     def setUp(self, get_major_mock):
-        super(TestMajors, self).setUp()
+        super().setUp()
         mock_data = [
             {"program_verdep_id": "fea9cb9a-677f-4be5-89c5-4ffc095bc9ab",
              "program_verind_id": "4kicZWD9l",

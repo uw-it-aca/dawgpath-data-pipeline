@@ -4,9 +4,9 @@
 from django.conf import settings
 from django.urls import re_path
 from django.views.generic import TemplateView
-from dawgpath_pipeline_admin.views.pages import PageView
-from dawgpath_pipeline_admin.views.dagster import DagsterProxyView
 
+from dawgpath_pipeline_admin.views.dagster import DagsterProxyView
+from dawgpath_pipeline_admin.views.pages import PageView
 
 # start with an empty url array
 urlpatterns = []

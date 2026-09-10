@@ -1,8 +1,9 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+from sqlalchemy import Column, SmallInteger, String
+
 from dawgpath_data_pipeline.models.base import Base
-from sqlalchemy import Column, String, SmallInteger
 
 
 class Prereq(Base):
@@ -24,11 +25,11 @@ class Prereq(Base):
         '''
         :return: The course id "{department_abbrev} {course_number}"
         '''
-        return "%s %s" % (self.department_abbrev, self.course_number)
+        return f"{self.department_abbrev} {self.course_number}"
 
     @property
     def from_course_id(self):
         '''
         :return: The course id "{pr_curric_abbr} {pr_course_no}"
         '''
-        return "%s %s" % (self.pr_curric_abbr, self.pr_course_no)
+        return f"{self.pr_curric_abbr} {self.pr_course_no}"

@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from commonconf import settings
-from dawgpath_data_pipeline.databases.sqlite3 import Sqlite3
+
 from dawgpath_data_pipeline.databases.postgres import Postgres
+from dawgpath_data_pipeline.databases.sqlite3 import Sqlite3
 
 
 def get_db_implementation():

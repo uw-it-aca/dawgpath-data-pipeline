@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 """rebuild tables
 
 Revision ID: 6aa5ec118959
@@ -5,9 +8,8 @@ Revises:
 Create Date: 2021-10-27 20:50:09.912274+00:00
 
 """
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = '6aa5ec118959'

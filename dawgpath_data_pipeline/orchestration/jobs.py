@@ -9,7 +9,7 @@ asset tier, so the cheap catalog refresh does not drag the full EDW re-fetch
 with it.
 """
 
-from dagster import define_asset_job, AssetSelection
+from dagster import AssetSelection, define_asset_job
 
 # EDW catalog metadata plus everything derived only from it.
 CATALOG_ASSETS = [

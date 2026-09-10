@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 """Add SWS Course Model
 
 Revision ID: c98bd76d5ea3
@@ -5,9 +8,8 @@ Revises: 2c188851747d
 Create Date: 2021-11-09 01:37:16.973274+00:00
 
 """
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = 'c98bd76d5ea3'

@@ -8,9 +8,16 @@ metadata logging, and Kubernetes worker sizing tags.
 """
 
 import json
+
 from dagster import (
-    asset, Backoff, Jitter, Output, OpExecutionContext, RetryPolicy,
+    Backoff,
+    Jitter,
+    OpExecutionContext,
+    Output,
+    RetryPolicy,
+    asset,
 )
+
 from dawgpath_data_pipeline.orchestration.tags import (
     TIER_1_K8S_TAGS,
     TIER_2_K8S_TAGS,
@@ -53,11 +60,11 @@ from dawgpath_data_pipeline.jobs.fetch_course_data import FetchCourseData
 from dawgpath_data_pipeline.jobs.fetch_curric_data import FetchCurricData
 from dawgpath_data_pipeline.jobs.fetch_major_data import FetchMajorData
 from dawgpath_data_pipeline.jobs.fetch_prereq_data import FetchPrereqData
-from dawgpath_data_pipeline.jobs.fetch_sr_major_data import FetchSRMajorData
-from dawgpath_data_pipeline.jobs.fetch_registration_data import FetchRegistrationData
 from dawgpath_data_pipeline.jobs.fetch_regis_major_data import FetchRegisMajorData
-from dawgpath_data_pipeline.jobs.fetch_transcripts import FetchTranscriptData
+from dawgpath_data_pipeline.jobs.fetch_registration_data import FetchRegistrationData
+from dawgpath_data_pipeline.jobs.fetch_sr_major_data import FetchSRMajorData
 from dawgpath_data_pipeline.jobs.fetch_sws_course_data import FetchSWSCourseData
+from dawgpath_data_pipeline.jobs.fetch_transcripts import FetchTranscriptData
 
 
 @asset(
@@ -161,16 +168,22 @@ def fetch_sws_course_data(fetch_course_data, fetch_registration_data):
 
 # --- Tier 2: Derived Local Assets ---
 
-from dawgpath_data_pipeline.jobs.build_course_graphs import BuildCoursePrereqGraphs
-from dawgpath_data_pipeline.jobs.build_curric_prereq_list import BuildCurricPrereqLists
-from dawgpath_data_pipeline.jobs.build_curric_graphs import BuildCurricPrereqGraphs
-from dawgpath_data_pipeline.jobs.build_concurrent_courses import BuildConcurrentCourses
-from dawgpath_data_pipeline.jobs.prepare_student_model import PrepareStudentModel
-from dawgpath_data_pipeline.jobs.build_common_major_for_course import BuildCommonMajorForCourse
 from dawgpath_data_pipeline.jobs.build_common_course_major import BuildCommonCourseMajor
-from dawgpath_data_pipeline.jobs.build_concurrent_courses_major import BuildConcurrentCoursesMajor
+from dawgpath_data_pipeline.jobs.build_common_major_for_course import (
+    BuildCommonMajorForCourse,
+)
+from dawgpath_data_pipeline.jobs.build_concurrent_courses import BuildConcurrentCourses
+from dawgpath_data_pipeline.jobs.build_concurrent_courses_major import (
+    BuildConcurrentCoursesMajor,
+)
 from dawgpath_data_pipeline.jobs.build_course_gpa_distro import BuildCourseGPADistro
-from dawgpath_data_pipeline.jobs.build_major_dec_grade_distro import BuildMajorDecGradeDistro
+from dawgpath_data_pipeline.jobs.build_course_graphs import BuildCoursePrereqGraphs
+from dawgpath_data_pipeline.jobs.build_curric_graphs import BuildCurricPrereqGraphs
+from dawgpath_data_pipeline.jobs.build_curric_prereq_list import BuildCurricPrereqLists
+from dawgpath_data_pipeline.jobs.build_major_dec_grade_distro import (
+    BuildMajorDecGradeDistro,
+)
+from dawgpath_data_pipeline.jobs.prepare_student_model import PrepareStudentModel
 
 
 @asset(
@@ -276,9 +289,9 @@ def build_major_dec_grade_distro(fetch_regis_major_data, fetch_transcript_data):
 # --- Tier 3: Published Artifact Exports ---
 
 from dawgpath_data_pipeline.jobs.export_course_data import ExportCourseData
+from dawgpath_data_pipeline.jobs.export_course_prereq_data import ExportCoursePrereqData
 from dawgpath_data_pipeline.jobs.export_curric_data import ExportCurricData
 from dawgpath_data_pipeline.jobs.export_major_data import ExportMajorData
-from dawgpath_data_pipeline.jobs.export_course_prereq_data import ExportCoursePrereqData
 from dawgpath_data_pipeline.jobs.export_prereq_data import ExportPrereqData
 
 

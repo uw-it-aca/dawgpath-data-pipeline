@@ -1,11 +1,12 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+from datetime import date
+
 from dawgpath_data_pipeline.dao.edw import get_registrations_in_year_quarter
+from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.registration import Registration
 from dawgpath_data_pipeline.utilities import get_combined_term
-from dawgpath_data_pipeline.jobs import DataJob
-from datetime import date
 
 REGISTRATION_START_YEAR = 2016
 REG_QUARTERS = [1, 2, 3, 4]
@@ -22,7 +23,8 @@ class FetchRegistrationData(DataJob):
 
     # yield a quarter at a time so a full 10-year fetch is never held in memory
     def _iter_registration_mappings(self):
-        current_year = date.today().year
+        # local date is intentional; EDW registration years are UW-local
+        current_year = date.today().year  # noqa: DTZ011
         reg_year = REGISTRATION_START_YEAR
         while reg_year <= current_year:
             for quarter in REG_QUARTERS:

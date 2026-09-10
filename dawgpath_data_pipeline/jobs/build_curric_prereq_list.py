@@ -1,11 +1,12 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from dawgpath_data_pipeline.jobs import DataJob
-from dawgpath_data_pipeline.models.curriculum import Curriculum
-from dawgpath_data_pipeline.models.course import Course
-from dawgpath_data_pipeline.models.prereq import Prereq
 import json
+
+from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.models.course import Course
+from dawgpath_data_pipeline.models.curriculum import Curriculum
+from dawgpath_data_pipeline.models.prereq import Prereq
 
 
 class BuildCurricPrereqLists(DataJob):
@@ -47,8 +48,7 @@ class BuildCurricPrereqLists(DataJob):
         prereq_body = []
         for req in prereqs:
             try:
-                course_str = "%s %s" % (req.pr_curric_abbr,
-                                        int(req.pr_course_no))
+                course_str = f"{req.pr_curric_abbr} {int(req.pr_course_no)}"
                 prereq_body.append({'course_id': course_str})
             except ValueError:
                 # ignore "1**" style prereqs
@@ -61,6 +61,7 @@ class BuildCurricPrereqLists(DataJob):
             .filter(Prereq.pr_course_no == str(course.course_number)).all()
         postreq_body = []
         for req in postreqs:
-            postreq_body.append({'course_id': "%s %s" % (req.department_abbrev,
-                                                         req.course_number)})
+            postreq_body.append(
+                {'course_id':
+                 f"{req.department_abbrev} {req.course_number}"})
         return postreq_body

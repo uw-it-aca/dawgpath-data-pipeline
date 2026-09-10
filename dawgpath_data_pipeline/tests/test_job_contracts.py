@@ -1,29 +1,30 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.jobs import JobResult, DataJob
+from unittest.mock import patch
+
+from dawgpath_data_pipeline.jobs import JobResult
+from dawgpath_data_pipeline.jobs.build_common_course_major import BuildCommonCourseMajor
+from dawgpath_data_pipeline.jobs.build_common_major_for_course import (
+    BuildCommonMajorForCourse,
+)
+from dawgpath_data_pipeline.jobs.build_concurrent_courses import BuildConcurrentCourses
+from dawgpath_data_pipeline.jobs.build_concurrent_courses_major import (
+    BuildConcurrentCoursesMajor,
+)
+from dawgpath_data_pipeline.jobs.build_course_gpa_distro import BuildCourseGPADistro
+from dawgpath_data_pipeline.jobs.build_curric_prereq_list import BuildCurricPrereqLists
+from dawgpath_data_pipeline.jobs.build_major_dec_grade_distro import (
+    BuildMajorDecGradeDistro,
+)
 from dawgpath_data_pipeline.jobs.fetch_course_data import FetchCourseData
 from dawgpath_data_pipeline.jobs.fetch_curric_data import FetchCurricData
 from dawgpath_data_pipeline.jobs.fetch_major_data import FetchMajorData
 from dawgpath_data_pipeline.jobs.fetch_prereq_data import FetchPrereqData
 from dawgpath_data_pipeline.jobs.fetch_sr_major_data import FetchSRMajorData
 from dawgpath_data_pipeline.jobs.fetch_sws_course_data import FetchSWSCourseData
-from dawgpath_data_pipeline.jobs.build_common_course_major import BuildCommonCourseMajor
-from dawgpath_data_pipeline.jobs.build_common_major_for_course import BuildCommonMajorForCourse
-from dawgpath_data_pipeline.jobs.build_concurrent_courses import BuildConcurrentCourses
-from dawgpath_data_pipeline.jobs.build_concurrent_courses_major import BuildConcurrentCoursesMajor
-from dawgpath_data_pipeline.jobs.build_course_gpa_distro import BuildCourseGPADistro
-from dawgpath_data_pipeline.jobs.build_curric_prereq_list import BuildCurricPrereqLists
-from dawgpath_data_pipeline.jobs.build_major_dec_grade_distro import BuildMajorDecGradeDistro
 from dawgpath_data_pipeline.jobs.prepare_student_model import PrepareStudentModel
-from dawgpath_data_pipeline.jobs.export_course_data import ExportCourseData
-from dawgpath_data_pipeline.jobs.export_curric_data import ExportCurricData
-from dawgpath_data_pipeline.jobs.export_major_data import ExportMajorData
-from dawgpath_data_pipeline.jobs.export_course_prereq_data import ExportCoursePrereqData
-from dawgpath_data_pipeline.jobs.export_prereq_data import ExportPrereqData
-from unittest.mock import patch
-import pandas as pd
+from dawgpath_data_pipeline.tests import DBTest
 
 
 class TestJobContracts(DBTest):
@@ -51,11 +52,14 @@ class TestJobContracts(DBTest):
             self.assertEqual(res.get("privacy_threshold"), 8)
 
     def test_build_concurrent_courses_has_run_contract(self):
-        with patch.object(BuildConcurrentCourses, '_get_terms_from_registrations', return_value=[]):
-            with patch.object(BuildConcurrentCourses, '_delete_concurrent'):
-                res = BuildConcurrentCourses().run()
-                self.assertIsInstance(res, JobResult)
-                self.assertEqual(res.job_name, "BuildConcurrentCourses")
+        with (
+            patch.object(BuildConcurrentCourses,
+                         '_get_terms_from_registrations', return_value=[]),
+            patch.object(BuildConcurrentCourses, '_delete_concurrent'),
+        ):
+            res = BuildConcurrentCourses().run()
+            self.assertIsInstance(res, JobResult)
+            self.assertEqual(res.job_name, "BuildConcurrentCourses")
 
     def test_job_contracts_return_job_result(self):
         jobs = [

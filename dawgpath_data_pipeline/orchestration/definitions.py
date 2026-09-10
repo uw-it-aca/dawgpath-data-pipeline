@@ -7,6 +7,7 @@ Loads assets and jobs into a unified Dagster Definitions object.
 """
 
 from dagster import Definitions, load_assets_from_modules
+
 from dawgpath_data_pipeline.orchestration import assets
 from dawgpath_data_pipeline.orchestration.jobs import (
     catalog_refresh_job,

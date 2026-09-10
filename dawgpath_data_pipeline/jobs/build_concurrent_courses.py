@@ -1,17 +1,18 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from dawgpath_data_pipeline.dao.edw import get_registrations_since_year
-from dawgpath_data_pipeline.models.registration import Registration
-from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCourses
-from dawgpath_data_pipeline.databases.implementation import get_db_implementation
 import operator
-import pandas as pd
 from collections import Counter
-from sqlalchemy.orm.exc import NoResultFound
-from dawgpath_data_pipeline.jobs import DataJob
-from dawgpath_data_pipeline.utilities import get_previous_term
+
+import pandas as pd
 from sqlalchemy import func
+from sqlalchemy.orm.exc import NoResultFound
+
+from dawgpath_data_pipeline.databases.implementation import get_db_implementation
+from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCourses
+from dawgpath_data_pipeline.models.registration import Registration
+from dawgpath_data_pipeline.utilities import get_previous_term
 
 TOP_CONCURRENT_COURSE_COUNT = 10
 PREV_QTR_COUNT = 7
@@ -46,26 +47,6 @@ class BuildConcurrentCourses(DataJob):
             terms.append(get_previous_term(terms[-1]))
         return sorted(terms, key=lambda term: (term[0], term[1]))
 
-    def run_for_quarter(self, year, quarter, is_first=False):
-        db = get_db_implementation()
-        session = db.get_session()
-
-        query = session.query(Registration) \
-            .filter(Registration.regis_yr == year,
-                    Registration.regis_qtr == quarter)
-        registrations = pd.read_sql(query.statement, query.session.bind)
-
-        courses = session.query(Registration.crs_curric_abbr,
-                                Registration.crs_number) \
-            .filter(Registration.regis_yr == year,
-                    Registration.regis_qtr == quarter) \
-            .distinct(Registration.crs_curric_abbr,
-                      Registration.crs_number)
-        if is_first:
-            self.run_first_term(registrations, courses)
-        else:
-            self.run_subsequent_term(registrations, courses)
-
     def get_concurrent_courses_from_course(self, registrations, course):
         # get current courses for a given course data
         course_id = course[0] + " " + str(course[1])
@@ -99,7 +80,8 @@ class BuildConcurrentCourses(DataJob):
         return len(syskeys)
 
     def get_students_for_course(self, registrations, course):
-        abbr, number = course
+        # abbr/number are resolved by pandas query() via the @ prefix
+        abbr, number = course  # noqa: RUF059
         syskeys = registrations\
             .query('(crs_curric_abbr == @abbr) and (crs_number == @number)')
 

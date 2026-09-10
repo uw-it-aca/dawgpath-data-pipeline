@@ -2,11 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from unittest.mock import patch
+
 import pandas as pd
+
+from dawgpath_data_pipeline.jobs.fetch_sr_major_data import FetchSRMajorData
 from dawgpath_data_pipeline.models.sr_major import SRMajor
 from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.jobs.fetch_sr_major_data \
-    import FetchSRMajorData
 from dawgpath_data_pipeline.tests.shared_mock.sr_major import sr_mock_data
 
 
@@ -16,7 +17,7 @@ class TestSRMajors(DBTest):
     @patch('dawgpath_data_pipeline.jobs.'
            'fetch_sr_major_data.get_sr_majors')
     def setUp(self, get_sr_major_mock):
-        super(TestSRMajors, self).setUp()
+        super().setUp()
         mock_df = pd.DataFrame.from_dict(sr_mock_data,
                                          orient='columns')
         get_sr_major_mock.return_value = mock_df

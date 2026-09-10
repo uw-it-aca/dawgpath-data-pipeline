@@ -2,20 +2,19 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from unittest.mock import patch
+
 import pandas as pd
-from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.jobs.fetch_regis_major_data import \
-    FetchRegisMajorData
-from dawgpath_data_pipeline.jobs.fetch_registration_data import \
-    FetchRegistrationData
-from dawgpath_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
-from dawgpath_data_pipeline.tests.shared_mock.registration import \
-    registration_mock_data
-from dawgpath_data_pipeline.jobs.build_concurrent_courses_major import \
-    BuildConcurrentCoursesMajor
+
+from dawgpath_data_pipeline.jobs.build_concurrent_courses_major import (
+    BuildConcurrentCoursesMajor,
+)
+from dawgpath_data_pipeline.jobs.fetch_regis_major_data import FetchRegisMajorData
+from dawgpath_data_pipeline.jobs.fetch_registration_data import FetchRegistrationData
+from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCoursesMajor
 from dawgpath_data_pipeline.models.regis_major import RegisMajor
-from dawgpath_data_pipeline.models.concurrent_courses import \
-    ConcurrentCoursesMajor
+from dawgpath_data_pipeline.tests import DBTest
+from dawgpath_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
+from dawgpath_data_pipeline.tests.shared_mock.registration import registration_mock_data
 
 
 class TestConcurrentCoursesMajor(DBTest):
@@ -44,7 +43,7 @@ class TestConcurrentCoursesMajor(DBTest):
         FetchRegistrationData()._bulk_save_objects(self.mock_registrations)
 
     def setUp(self):
-        super(TestConcurrentCoursesMajor, self).setUp()
+        super().setUp()
         self._save_regis_majors()
         self._save_registration_data()
         BuildConcurrentCoursesMajor().delete_concurrent_courses()

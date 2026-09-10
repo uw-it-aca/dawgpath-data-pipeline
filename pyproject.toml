@@ -1,0 +1,11 @@
+[tool.ruff.lint]
+ignore = [
+    "BLE001",  # allow broad Exception catches
+    "S110",    # allow try-except-pass for graceful degradation
+    "RUF012",  # Django/Dagster class attributes are conventionally mutable
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Models are imported for their side effects, not for direct use.
+"dawgpath_data_pipeline/alembic/env.py" = ["F401"]
+"dawgpath_data_pipeline/models/__init__.py" = ["F401"]

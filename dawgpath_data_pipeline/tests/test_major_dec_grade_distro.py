@@ -2,17 +2,19 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from unittest.mock import patch
+
 import pandas as pd
-from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.jobs.build_major_dec_grade_distro import \
-    BuildMajorDecGradeDistro
-from dawgpath_data_pipeline.jobs.fetch_regis_major_data import \
-    FetchRegisMajorData
+
+from dawgpath_data_pipeline.jobs.build_major_dec_grade_distro import (
+    BuildMajorDecGradeDistro,
+)
+from dawgpath_data_pipeline.jobs.fetch_regis_major_data import FetchRegisMajorData
 from dawgpath_data_pipeline.jobs.fetch_transcripts import FetchTranscriptData
-from dawgpath_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
-from dawgpath_data_pipeline.tests.shared_mock.transcript import tran_mock_data
 from dawgpath_data_pipeline.models.gpa_distro import MajorDecGPADistribution
 from dawgpath_data_pipeline.models.regis_major import RegisMajor
+from dawgpath_data_pipeline.tests import DBTest
+from dawgpath_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
+from dawgpath_data_pipeline.tests.shared_mock.transcript import tran_mock_data
 
 
 class TestMajorDecGradeDistro(DBTest):
@@ -40,7 +42,7 @@ class TestMajorDecGradeDistro(DBTest):
         FetchTranscriptData()._bulk_save_objects(self.mock_transcripts)
 
     def setUp(self,):
-        super(TestMajorDecGradeDistro, self).setUp()
+        super().setUp()
         self._save_regis_majors()
         self._save_transcript_data()
         BuildMajorDecGradeDistro()._delete_major_dec_distros()
@@ -122,6 +124,7 @@ class TestMajorDecGradeDistro(DBTest):
             28: 0, 29: 0, 30: 0, 31: 0, 32: 0, 33: 0, 34: 0, 35: 0, 36: 0,
             37: 0, 38: 0, 39: 0, 40: 0
         }
+        self.assertDictEqual(distro, expected_distro)
 
     def test_build_distros(self):
         distros = BuildMajorDecGradeDistro().build_gpa_distros()

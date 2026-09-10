@@ -1,15 +1,16 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-import os
 import json
+import os
 from unittest.mock import patch
-from dawgpath_data_pipeline.jobs.fetch_curric_data import FetchCurricData
+
 import pandas as pd
+
+from dawgpath_data_pipeline.jobs.export_curric_data import ExportCurricData
+from dawgpath_data_pipeline.jobs.fetch_curric_data import FetchCurricData
 from dawgpath_data_pipeline.models.curriculum import Curriculum
 from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.jobs.export_curric_data \
-    import ExportCurricData
 
 
 class TestCurrics(DBTest):
@@ -17,7 +18,7 @@ class TestCurrics(DBTest):
 
     @patch('dawgpath_data_pipeline.jobs.fetch_curric_data.get_curric_info')
     def setUp(self, get_curric_info_mock):
-        super(TestCurrics, self).setUp()
+        super().setUp()
         mock_data = [
             {'curric_abbr': 'TWRT',
              'curric_name': "Tacoma Writing",
@@ -72,8 +73,8 @@ class TestCurrics(DBTest):
         ExportCurricData().run(curric_path)
         self.assertTrue(os.path.exists(curric_path))
 
-        file = open(curric_path)
-        data = json.load(file)
+        with open(curric_path) as file:
+            data = json.load(file)
 
         self.assertEqual(len(data), curric_count)
         # clean up file

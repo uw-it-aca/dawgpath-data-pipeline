@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 """update curric
 
 Revision ID: 2c188851747d
@@ -5,9 +8,8 @@ Revises: 18ed3c223e3d
 Create Date: 2021-11-04 23:18:44.255088+00:00
 
 """
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = '2c188851747d'

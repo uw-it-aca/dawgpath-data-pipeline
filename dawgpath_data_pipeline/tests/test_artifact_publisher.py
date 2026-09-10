@@ -1,15 +1,16 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-import os
 import json
+import os
 import tempfile
-import unittest
-from dawgpath_data_pipeline.utilities.artifact_publisher import ArtifactPublisher
-from dawgpath_data_pipeline.tests import DBTest
+
+from dagster import build_op_context
+
 from dawgpath_data_pipeline.models.course import Course
-from dagster import materialize_to_memory, build_op_context
 from dawgpath_data_pipeline.orchestration.assets import export_course_prereq_pickle
+from dawgpath_data_pipeline.tests import DBTest
+from dawgpath_data_pipeline.utilities.artifact_publisher import ArtifactPublisher
 
 
 class TestArtifactPublisher(DBTest):

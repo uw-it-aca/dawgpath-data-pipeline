@@ -2,21 +2,19 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from unittest.mock import patch
+
 import pandas as pd
-from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.jobs.fetch_regis_major_data import \
-    FetchRegisMajorData
-from dawgpath_data_pipeline.jobs.fetch_registration_data import \
-    FetchRegistrationData
-from dawgpath_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
-from dawgpath_data_pipeline.tests.shared_mock.registration import \
-    registration_mock_data
-from dawgpath_data_pipeline.tests.shared_mock.courses import course_mock_data
-from dawgpath_data_pipeline.jobs.build_common_course_major import \
-    BuildCommonCourseMajor
-from dawgpath_data_pipeline.models.regis_major import RegisMajor
-from dawgpath_data_pipeline.models.common_course_major import CommonCourseMajor
+
+from dawgpath_data_pipeline.jobs.build_common_course_major import BuildCommonCourseMajor
 from dawgpath_data_pipeline.jobs.fetch_course_data import FetchCourseData
+from dawgpath_data_pipeline.jobs.fetch_regis_major_data import FetchRegisMajorData
+from dawgpath_data_pipeline.jobs.fetch_registration_data import FetchRegistrationData
+from dawgpath_data_pipeline.models.common_course_major import CommonCourseMajor
+from dawgpath_data_pipeline.models.regis_major import RegisMajor
+from dawgpath_data_pipeline.tests import DBTest
+from dawgpath_data_pipeline.tests.shared_mock.courses import course_mock_data
+from dawgpath_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
+from dawgpath_data_pipeline.tests.shared_mock.registration import registration_mock_data
 
 
 class TestCommonCourse(DBTest):
@@ -53,7 +51,7 @@ class TestCommonCourse(DBTest):
         FetchCourseData()._save_courses(self.mock_courses)
 
     def setUp(self):
-        super(TestCommonCourse, self).setUp()
+        super().setUp()
         self._save_regis_majors()
         self._save_registration_data()
         self._save_course_data()

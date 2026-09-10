@@ -1,30 +1,34 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from logging.config import fileConfig # nopep8
-from alembic import context # nopep8
-from dawgpath_data_pipeline.databases.implementation import get_db_implementation # nopep8
+from logging.config import fileConfig  # nopep8
+
+from alembic import context  # nopep8
+
+from dawgpath_data_pipeline.databases.implementation import (
+    get_db_implementation,  # nopep8
+)
 from dawgpath_data_pipeline.models.base import Base
+from dawgpath_data_pipeline.models.common_course_major import CommonCourseMajor
+from dawgpath_data_pipeline.models.common_major_for_course import CommonMajorForCourse
+from dawgpath_data_pipeline.models.concurrent_courses import (
+    ConcurrentCourses,
+    ConcurrentCoursesMajor,
+)
+from dawgpath_data_pipeline.models.course import Course
 
 # models must me imported for autogenerate to detect changes
 from dawgpath_data_pipeline.models.curriculum import Curriculum
-from dawgpath_data_pipeline.models.course import Course
-from dawgpath_data_pipeline.models.prereq import Prereq
-from dawgpath_data_pipeline.models.graph import Graph
-from dawgpath_data_pipeline.models.registration import Registration
-from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCourses
 from dawgpath_data_pipeline.models.gpa_distro import GPADistribution
+from dawgpath_data_pipeline.models.graph import Graph
 from dawgpath_data_pipeline.models.major import Major
-from dawgpath_data_pipeline.models.transcript import Transcript
+from dawgpath_data_pipeline.models.prereq import Prereq
 from dawgpath_data_pipeline.models.regis_major import RegisMajor
-from dawgpath_data_pipeline.models.common_course_major import CommonCourseMajor
-from dawgpath_data_pipeline.models.concurrent_courses import \
-    ConcurrentCoursesMajor
-from dawgpath_data_pipeline.models.student import Student
-from dawgpath_data_pipeline.models.common_major_for_course import \
-    CommonMajorForCourse
+from dawgpath_data_pipeline.models.registration import Registration
 from dawgpath_data_pipeline.models.sr_major import SRMajor
+from dawgpath_data_pipeline.models.student import Student
 from dawgpath_data_pipeline.models.sws_course import SWSCourse
+from dawgpath_data_pipeline.models.transcript import Transcript
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -70,7 +74,7 @@ def run_migrations_offline():
     #     context.run_migrations()
 
     # not sure we want/need this
-    raise NotImplemented()
+    raise NotImplementedError()
 
 
 

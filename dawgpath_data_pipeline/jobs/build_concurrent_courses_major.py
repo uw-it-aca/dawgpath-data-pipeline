@@ -1,14 +1,15 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+from collections import Counter
+
+import pandas as pd
+
 from dawgpath_data_pipeline.jobs import DataJob
-from dawgpath_data_pipeline.models.concurrent_courses import \
-    ConcurrentCoursesMajor
+from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCoursesMajor
 from dawgpath_data_pipeline.models.regis_major import RegisMajor
 from dawgpath_data_pipeline.models.registration import Registration
 from dawgpath_data_pipeline.utilities import get_combined_term
-import pandas as pd
-from collections import Counter
 
 
 class BuildConcurrentCoursesMajor(DataJob):
@@ -56,11 +57,11 @@ class BuildConcurrentCoursesMajor(DataJob):
         concurrency = Counter()
         course_labels = []
         for idx, course in registrations.iterrows():
-            course_labels.append("%s-%s" % (course['crs_curric_abbr'],
-                                            course['crs_number']))
+            course_labels.append(
+                f"{course['crs_curric_abbr']}-{course['crs_number']}")
         for i in range(len(course_labels)):
-            for j in range(i+1, len(course_labels)):
-                key = "%s|%s" % (course_labels[i], course_labels[j])
+            for j in range(i + 1, len(course_labels)):
+                key = f"{course_labels[i]}|{course_labels[j]}"
                 concurrency[key] = 1
         return concurrency
 

@@ -2,13 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from unittest.mock import patch
+
 import pandas as pd
+
+from dawgpath_data_pipeline.jobs.fetch_regis_major_data import FetchRegisMajorData
 from dawgpath_data_pipeline.jobs.prepare_student_model import PrepareStudentModel
-from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.jobs.fetch_regis_major_data \
-    import FetchRegisMajorData
-from dawgpath_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
 from dawgpath_data_pipeline.models.student import Student
+from dawgpath_data_pipeline.tests import DBTest
+from dawgpath_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
 
 
 class TestPrepareStudent(DBTest):
@@ -17,7 +18,7 @@ class TestPrepareStudent(DBTest):
     @patch('dawgpath_data_pipeline.jobs.'
            'fetch_regis_major_data.get_regis_majors_since_year')
     def setUp(self, get_regis_major_mock):
-        super(TestPrepareStudent, self).setUp()
+        super().setUp()
         mock_df = pd.DataFrame.from_dict(regis_mock_data,
                                          orient='columns')
         get_regis_major_mock.return_value = mock_df

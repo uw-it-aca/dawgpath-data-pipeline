@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from uw_sws.course import get_course_by_label
-from uw_sws.exceptions import InvalidSectionID, InvalidCourseID
+from uw_sws.exceptions import InvalidCourseID, InvalidSectionID
 
 QTR_LABELS = ["winter", "spring", "summer", "autumn"]
 
 
 def get_course(year, quarter, abbr, number):
-    label = "%s,%s,%s,%s" % (year, QTR_LABELS[quarter-1], abbr, number)
+    label = f"{year},{QTR_LABELS[quarter - 1]},{abbr},{number}"
     try:
         return get_course_by_label(label)
     except (InvalidSectionID, InvalidCourseID) as ex:

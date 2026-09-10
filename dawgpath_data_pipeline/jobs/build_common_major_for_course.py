@@ -1,12 +1,12 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+from sqlalchemy import func
+
+from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.models.common_major_for_course import CommonMajorForCourse
 from dawgpath_data_pipeline.models.registration import Registration
 from dawgpath_data_pipeline.models.student import Student
-from dawgpath_data_pipeline.models.common_major_for_course import \
-    CommonMajorForCourse
-from sqlalchemy import func
-from dawgpath_data_pipeline.jobs import DataJob
 
 
 class BuildCommonMajorForCourse(DataJob):
@@ -27,7 +27,7 @@ class BuildCommonMajorForCourse(DataJob):
         common_maj = {}
         for course, major, count in counts:
             if course not in common_maj:
-                abbr, split, number = course.rpartition(' ')
+                abbr, _split, number = course.rpartition(' ')
                 number = int(number)
                 data = {'crs_curric_abbr': abbr,
                         'crs_number': number,
@@ -41,7 +41,7 @@ class BuildCommonMajorForCourse(DataJob):
 
     def create_common_maj_objects(self, common):
         objects = []
-        for id, course in common.items():
+        for course in common.values():
             cmc = CommonMajorForCourse(
                 crs_curric_abbr=course['crs_curric_abbr'],
                 crs_number=course['crs_number'],

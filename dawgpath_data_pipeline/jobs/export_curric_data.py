@@ -1,14 +1,15 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from dawgpath_data_pipeline.models.curriculum import Curriculum
-from dawgpath_data_pipeline.models.graph import CurricGraph
-from dawgpath_data_pipeline.jobs import DataJob
 import json
+import os
+
 from sqlalchemy.orm.exc import NoResultFound
 
+from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.models.curriculum import Curriculum
+from dawgpath_data_pipeline.models.graph import CurricGraph
 
-import os
 
 class ExportCurricData(DataJob):
     def run(self, file_path=None):
@@ -46,4 +47,3 @@ class ExportCurricData(DataJob):
             return prereqs.graph_json
         except NoResultFound:
             print("no prereq graph", curric.abbrev)
-            pass

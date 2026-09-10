@@ -1,15 +1,17 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+import multiprocessing
+from itertools import chain
+from logging import getLogger
+
+from sqlalchemy.orm.exc import NoResultFound
+
+from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.course import Course
 from dawgpath_data_pipeline.models.graph import Graph
 from dawgpath_data_pipeline.models.prereq import Prereq
 from dawgpath_data_pipeline.utilities.graphs import GraphFactory
-from sqlalchemy.orm.exc import NoResultFound
-import multiprocessing
-from itertools import chain
-from logging import getLogger
-from dawgpath_data_pipeline.jobs import DataJob
 
 logger = getLogger(__name__)
 
@@ -71,7 +73,7 @@ class BuildCoursePrereqGraphs(DataJob):
 
         # These generally appear to be courses listed as prereqs that are no
         # longer offered (ie last_eff_yr != 9999)
-        logger.info("Missing Courses: ", missing_courses)
+        logger.info("Missing Courses: %s", missing_courses)
         return courses
 
     def get_course(self, dept, id):

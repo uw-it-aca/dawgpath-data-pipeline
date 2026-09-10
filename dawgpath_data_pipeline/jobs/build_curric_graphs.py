@@ -1,17 +1,13 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+from logging import getLogger
+
+from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.jobs.build_course_graphs import BuildCoursePrereqGraphs
 from dawgpath_data_pipeline.models.curriculum import Curriculum
 from dawgpath_data_pipeline.models.graph import CurricGraph
-from dawgpath_data_pipeline.jobs.build_course_graphs import \
-    BuildCoursePrereqGraphs
-from dawgpath_data_pipeline.models.prereq import Prereq
 from dawgpath_data_pipeline.utilities.graphs import GraphFactory
-from sqlalchemy.orm.exc import NoResultFound
-import multiprocessing
-from itertools import chain
-from logging import getLogger
-from dawgpath_data_pipeline.jobs import DataJob
 
 logger = getLogger(__name__)
 

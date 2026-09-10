@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import datetime
-from dawgpath_data_pipeline.models.base import Base
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, Text, ForeignKey, Integer, DateTime, String
+
+from dawgpath_data_pipeline.models.base import Base
 
 
 class Graph(Base):

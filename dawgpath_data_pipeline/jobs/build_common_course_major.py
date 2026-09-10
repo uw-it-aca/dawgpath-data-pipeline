@@ -1,14 +1,16 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from dawgpath_data_pipeline.models.common_course_major import CommonCourseMajor
-from dawgpath_data_pipeline.models.regis_major import RegisMajor
-from dawgpath_data_pipeline.utilities import get_previous_combined,\
-    get_course_abbr_title_dict
-from dawgpath_data_pipeline.models.registration import Registration
-from dawgpath_data_pipeline.models.course import Course
-from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline import MINIMUM_DATA_COUNT
+from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.models.common_course_major import CommonCourseMajor
+from dawgpath_data_pipeline.models.course import Course
+from dawgpath_data_pipeline.models.regis_major import RegisMajor
+from dawgpath_data_pipeline.models.registration import Registration
+from dawgpath_data_pipeline.utilities import (
+    get_course_abbr_title_dict,
+    get_previous_combined,
+)
 
 
 class BuildCommonCourseMajor(DataJob):
@@ -75,7 +77,7 @@ class BuildCommonCourseMajor(DataJob):
                 title = title_dict[course[0]]
             except KeyError:
                 title = ""
-            percent = int(round((course[1]/total_students)*100))
+            percent = round((course[1] / total_students) * 100)
             if course[1] >= MINIMUM_DATA_COUNT:
                 common_percents[course[0]] = {"percent": percent,
                                               "title": title}

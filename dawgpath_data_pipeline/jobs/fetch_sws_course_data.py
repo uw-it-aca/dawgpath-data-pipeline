@@ -1,15 +1,16 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from dawgpath_data_pipeline.dao.sws import get_course
-from dawgpath_data_pipeline.models.sws_course import SWSCourse
-from dawgpath_data_pipeline.models.course import Course
-from dawgpath_data_pipeline.models.registration import Registration
-from dawgpath_data_pipeline.jobs import DataJob
 import re
 import time
+
 from sqlalchemy.orm.exc import NoResultFound
 
+from dawgpath_data_pipeline.dao.sws import get_course
+from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.models.course import Course
+from dawgpath_data_pipeline.models.registration import Registration
+from dawgpath_data_pipeline.models.sws_course import SWSCourse
 
 REQUESTS_PER_SECOND = 1
 DELAY = 1/REQUESTS_PER_SECOND
@@ -55,7 +56,7 @@ class FetchSWSCourseData(DataJob):
             .order_by(Registration.regis_term.desc()) \
             .first()
         if registration is None:
-            print("Missing: %s" % course.course_id)
+            print(f"Missing: {course.course_id}")
             return None
 
         try:
@@ -89,21 +90,21 @@ class FetchSWSCourseData(DataJob):
     def _get_prereq_string(self, course_desc):
         if "Prerequisite" in course_desc:
             try:
-                desc, details = course_desc.split("Prerequisite: ")
+                _desc, details = course_desc.split("Prerequisite: ")
             except ValueError:
                 try:
-                    desc, details = course_desc.split("Prerequisite ")
+                    _desc, details = course_desc.split("Prerequisite ")
                 except ValueError:
                     try:
-                        desc, dupe_prereq, details = course_desc.split(
+                        _desc, _dupe_prereq, details = course_desc.split(
                             "Prerequisite: ")
                     except ValueError:
                         return None
             if " Offered" in details:
-                details, offered = details.split(" Offered")
+                details, _offered = details.split(" Offered")
             if " Instructors: " in details:
                 try:
-                    details, offered = details.split(" Instructors: ")
+                    details, _instructors = details.split(" Instructors: ")
                 except ValueError:
                     print(details)
             prereqs = details.replace("Credit/no-credit only.", "")

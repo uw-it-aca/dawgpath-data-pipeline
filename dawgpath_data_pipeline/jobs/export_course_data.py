@@ -1,17 +1,18 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from dawgpath_data_pipeline.jobs import DataJob
 import json
+import os
+
+from sqlalchemy.orm.exc import NoResultFound
+
+from dawgpath_data_pipeline import MINIMUM_DATA_COUNT
+from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCourses
 from dawgpath_data_pipeline.models.course import Course
 from dawgpath_data_pipeline.models.gpa_distro import GPADistribution
-from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCourses
 from dawgpath_data_pipeline.models.sws_course import SWSCourse
-from sqlalchemy.orm.exc import NoResultFound
-from dawgpath_data_pipeline import MINIMUM_DATA_COUNT
 
-
-import os
 
 class ExportCourseData(DataJob):
     def run(self, file_path=None):
@@ -79,7 +80,7 @@ class ExportCourseData(DataJob):
     def get_credits_for_course(self, course):
         try:
             if course.max_credits > 0:
-                return "%s - %s" % (course.min_credits, course.max_credits)
+                return f"{course.min_credits} - {course.max_credits}"
             else:
                 return course.min_credits
         except TypeError:
@@ -95,7 +96,6 @@ class ExportCourseData(DataJob):
             return distro.gpa_distro
         except NoResultFound:
             print("no gpa distro", course.course_id)
-            pass
 
     def get_concurrent_for_course(self, course):
         try:
@@ -108,9 +108,9 @@ class ExportCourseData(DataJob):
             # Convert concurrent counts to percentages
             course_data = conc.concurrent_courses
             proc_courses = {}
-            for course in course_data:
-                if course_data[course] >= MINIMUM_DATA_COUNT:
-                    proc_courses[course] = course_data[course] \
+            for course_key in course_data:
+                if course_data[course_key] >= MINIMUM_DATA_COUNT:
+                    proc_courses[course_key] = course_data[course_key] \
                                           / conc.registration_count
 
             return proc_courses

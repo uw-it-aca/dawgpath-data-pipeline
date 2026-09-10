@@ -1,10 +1,8 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from sqlalchemy.ext.declarative import as_declarative
-from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy import Column
-from sqlalchemy import Integer
+from sqlalchemy import Column, Integer
+from sqlalchemy.ext.declarative import as_declarative, declared_attr
 
 
 def todict(obj):
@@ -17,7 +15,7 @@ def todict(obj):
 
 
 @as_declarative()
-class Base(object):
+class Base:
 
     @declared_attr
     def __tablename__(cls):

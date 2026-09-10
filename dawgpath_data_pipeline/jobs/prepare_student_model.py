@@ -1,12 +1,12 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+import multiprocessing
+from itertools import chain
+
+from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.regis_major import RegisMajor
 from dawgpath_data_pipeline.models.student import Student
-from sqlalchemy import func
-from dawgpath_data_pipeline.jobs import DataJob
-from itertools import chain
-import multiprocessing
 
 
 def worker(syskeys):
@@ -29,7 +29,6 @@ class PrepareStudentModel(DataJob):
         syskeys = self.session.query(RegisMajor.system_key)\
             .group_by(RegisMajor.system_key).all()
 
-        syskeys = syskeys
         chunk_size = 10000
         chunks = [syskeys[x:x + chunk_size] for x in
                   range(0, len(syskeys), chunk_size)]

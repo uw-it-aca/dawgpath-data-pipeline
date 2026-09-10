@@ -1,8 +1,9 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+from sqlalchemy import Column, Integer, Numeric, SmallInteger
+
 from dawgpath_data_pipeline.models.base import Base
-from sqlalchemy import Column, Numeric, SmallInteger, Integer
 
 
 class Transcript(Base):

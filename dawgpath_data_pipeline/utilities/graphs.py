@@ -1,15 +1,17 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from dawgpath_data_pipeline.models.course import Course
-from dawgpath_data_pipeline.models.graph import Graph, CurricGraph
-from dawgpath_data_pipeline.models.prereq import Prereq
-from dawgpath_data_pipeline.databases.implementation import get_db_implementation
 import json
+
 import pandas as pd
 
+from dawgpath_data_pipeline.databases.implementation import get_db_implementation
+from dawgpath_data_pipeline.models.course import Course
+from dawgpath_data_pipeline.models.graph import CurricGraph, Graph
+from dawgpath_data_pipeline.models.prereq import Prereq
 
-class GraphFactory():
+
+class GraphFactory:
     CURRIC_BLACKLIST = ["TRAIN", "TTRAIN"]
     prereq_data = None
     course_data = None
@@ -168,7 +170,7 @@ class GraphFactory():
 
         # Remove 'retired' courses
         self.course_data = \
-            self.course_data[self.course_data.course_cat_omit == False]  # noqa
+            self.course_data[self.course_data.course_cat_omit == False]
 
         # remove inactive courses from self.prereq_data
         # (keep them in the from field)

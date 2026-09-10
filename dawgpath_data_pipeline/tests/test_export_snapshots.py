@@ -4,26 +4,29 @@
 import json
 import os
 import tempfile
+
 import pandas as pd
-from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.models.course import Course
-from dawgpath_data_pipeline.models.curriculum import Curriculum
-from dawgpath_data_pipeline.models.major import Major
-from dawgpath_data_pipeline.models.sr_major import SRMajor
-from dawgpath_data_pipeline.models.sws_course import SWSCourse
-from dawgpath_data_pipeline.models.gpa_distro import GPADistribution, MajorDecGPADistribution
-from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCourses
-from dawgpath_data_pipeline.models.common_course_major import CommonCourseMajor
-from dawgpath_data_pipeline.models.graph import Graph, CurricGraph
-from dawgpath_data_pipeline.models.prereq import Prereq
 
 from dawgpath_data_pipeline.jobs.export_course_data import ExportCourseData
+from dawgpath_data_pipeline.jobs.export_course_prereq_data import ExportCoursePrereqData
 from dawgpath_data_pipeline.jobs.export_curric_data import ExportCurricData
 from dawgpath_data_pipeline.jobs.export_major_data import ExportMajorData
-from dawgpath_data_pipeline.jobs.export_course_prereq_data import ExportCoursePrereqData
 from dawgpath_data_pipeline.jobs.export_prereq_data import ExportPrereqData
-
 from dawgpath_data_pipeline.models.base import Base
+from dawgpath_data_pipeline.models.common_course_major import CommonCourseMajor
+from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCourses
+from dawgpath_data_pipeline.models.course import Course
+from dawgpath_data_pipeline.models.curriculum import Curriculum
+from dawgpath_data_pipeline.models.gpa_distro import (
+    GPADistribution,
+    MajorDecGPADistribution,
+)
+from dawgpath_data_pipeline.models.graph import CurricGraph, Graph
+from dawgpath_data_pipeline.models.major import Major
+from dawgpath_data_pipeline.models.prereq import Prereq
+from dawgpath_data_pipeline.models.sr_major import SRMajor
+from dawgpath_data_pipeline.models.sws_course import SWSCourse
+from dawgpath_data_pipeline.tests import DBTest
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures", "snapshots")
 
@@ -59,7 +62,7 @@ class TestExportSnapshots(DBTest):
             min_credits=1,
             max_credits=5,
         )
-        gpa_dict = {key: 0 for key in range(0, 41)}
+        gpa_dict = {key: 0 for key in range(41)}
         gpa_dict[40] = 10
         gpa_dist = GPADistribution(crs_curric_abbr="CSE", crs_number=142, gpa_distro=gpa_dict)
         conc = ConcurrentCourses(
@@ -134,8 +137,8 @@ class TestExportSnapshots(DBTest):
             major="INFO_0_1_1",
             course_counts={"CSE 142": {"percent": 85, "title": "Fundamentals of Programming"}},
         )
-        distro_2y_dict = {key: 0 for key in range(0, 41)}
-        distro_5y_dict = {key: 0 for key in range(0, 41)}
+        distro_2y_dict = {key: 0 for key in range(41)}
+        distro_5y_dict = {key: 0 for key in range(41)}
         for k in range(35, 41):
             distro_2y_dict[k] = k - 34
             distro_5y_dict[k] = (k - 34) * 2

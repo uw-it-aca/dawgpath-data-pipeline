@@ -44,7 +44,7 @@ def get_transcripts_since_year(year):
 
 
 def get_majors():
-    db_query = f"""
+    db_query = """
             SELECT
                 *
             FROM sec.CM_Credentials c
@@ -59,7 +59,7 @@ def get_majors():
 
 
 def get_sr_majors():
-    db_query = f"""
+    db_query = """
             SELECT
                 major_abbr,
                 major_home_url

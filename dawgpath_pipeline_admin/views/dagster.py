@@ -60,7 +60,7 @@ class DagsterProxyView(LoginRequiredMixin, View):
 
         upstream = requests.request(
             method=request.method,
-            url="{}{}".format(base_url, request.get_full_path()),
+            url=f"{base_url}{request.get_full_path()}",
             headers=headers,
             data=request.body or None,
             allow_redirects=False,

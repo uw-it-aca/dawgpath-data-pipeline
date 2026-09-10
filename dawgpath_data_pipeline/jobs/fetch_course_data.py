@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from dawgpath_data_pipeline.dao.edw import get_course_titles
-from dawgpath_data_pipeline.models.course import Course
 from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.models.course import Course
 
 
 class FetchCourseData(DataJob):

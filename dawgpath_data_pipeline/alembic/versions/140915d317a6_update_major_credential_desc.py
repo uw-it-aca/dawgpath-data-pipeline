@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 """update major credential desc
 
 Revision ID: 140915d317a6
@@ -5,8 +8,6 @@ Revises: 8cf3c0cf9e93
 Create Date: 2021-12-17 23:58:35.199438+00:00
 
 """
-from alembic import op
-import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.

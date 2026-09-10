@@ -1,9 +1,10 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from dawgpath_data_pipeline.models.base import Base
+from sqlalchemy import Boolean, Column, Float, SmallInteger, String
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, SmallInteger, String, Boolean, Float
+
+from dawgpath_data_pipeline.models.base import Base
 
 
 class Course(Base):
@@ -29,4 +30,4 @@ class Course(Base):
         '''
         :return: The course id "{department_abbrev} {course_number}"
         '''
-        return "%s %s" % (self.department_abbrev, self.course_number)
+        return f"{self.department_abbrev} {self.course_number}"

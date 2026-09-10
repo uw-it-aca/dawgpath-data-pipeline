@@ -4,6 +4,7 @@
 import os
 import unittest
 from os.path import abspath, dirname
+
 from commonconf.backends import use_configparser_backend
 
 path = abspath(os.path.join(dirname(__file__), "..", "conf", "test.conf"))

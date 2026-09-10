@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 """Adds credential fields to major
 
 Revision ID: 8cf3c0cf9e93
@@ -5,9 +8,8 @@ Revises: c98bd76d5ea3
 Create Date: 2021-12-17 23:41:34.284301+00:00
 
 """
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = '8cf3c0cf9e93'

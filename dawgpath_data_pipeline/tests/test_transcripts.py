@@ -2,10 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from unittest.mock import patch
+
 import pandas as pd
+
+from dawgpath_data_pipeline.jobs.fetch_transcripts import FetchTranscriptData
 from dawgpath_data_pipeline.models.transcript import Transcript
 from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.jobs.fetch_transcripts import FetchTranscriptData
 from dawgpath_data_pipeline.tests.shared_mock.transcript import tran_mock_data
 
 
@@ -15,7 +17,7 @@ class TestTranscripts(DBTest):
     @patch('dawgpath_data_pipeline.jobs.'
            'fetch_transcripts.get_transcripts_since_year')
     def setUp(self, get_tran_mock):
-        super(TestTranscripts, self).setUp()
+        super().setUp()
         mock_df = pd.DataFrame.from_dict(tran_mock_data,
                                          orient='columns')
         get_tran_mock.return_value = mock_df

@@ -1,16 +1,17 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-import unittest
+from unittest.mock import patch
+
 from dagster import DefaultScheduleStatus, materialize_to_memory
-from dawgpath_data_pipeline.orchestration.definitions import defs
+
+from dawgpath_data_pipeline.jobs.fetch_curric_data import FetchCurricData
+from dawgpath_data_pipeline.jobs.fetch_sr_major_data import FetchSRMajorData
 from dawgpath_data_pipeline.orchestration.assets import (
     fetch_curric_data,
     fetch_sr_major_data,
 )
-from unittest.mock import patch
-from dawgpath_data_pipeline.jobs.fetch_curric_data import FetchCurricData
-from dawgpath_data_pipeline.jobs.fetch_sr_major_data import FetchSRMajorData
+from dawgpath_data_pipeline.orchestration.definitions import defs
 from dawgpath_data_pipeline.tests import DBTest
 
 
@@ -59,7 +60,10 @@ class TestDagsterDefinitions(DBTest):
         self.assertEqual(fetch_curric_data.op.retry_policy.max_retries, 3)
 
     def test_materialize_light_assets(self):
-        with patch.object(FetchCurricData, '_get_currics', return_value=[]):
-            with patch.object(FetchSRMajorData, '_get_sr_majors', return_value=[]):
-                res = materialize_to_memory([fetch_curric_data, fetch_sr_major_data])
-                self.assertTrue(res.success)
+        with (
+            patch.object(FetchCurricData, '_get_currics', return_value=[]),
+            patch.object(FetchSRMajorData, '_get_sr_majors', return_value=[]),
+        ):
+            res = materialize_to_memory(
+                [fetch_curric_data, fetch_sr_major_data])
+            self.assertTrue(res.success)

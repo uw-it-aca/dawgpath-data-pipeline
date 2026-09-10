@@ -4,7 +4,7 @@
 from sqlalchemy.orm import Session
 
 
-class Database(object):
+class Database:
     engine = None
     session = None
 

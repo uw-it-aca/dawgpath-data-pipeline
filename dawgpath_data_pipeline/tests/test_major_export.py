@@ -1,22 +1,23 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from unittest.mock import patch, mock_open
 import json
+from unittest.mock import patch
+
 import pandas as pd
-from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.jobs.build_major_dec_grade_distro import \
-    BuildMajorDecGradeDistro
-from dawgpath_data_pipeline.jobs.fetch_regis_major_data import \
-    FetchRegisMajorData
-from dawgpath_data_pipeline.jobs.fetch_transcripts import FetchTranscriptData
-from dawgpath_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
-from dawgpath_data_pipeline.tests.shared_mock.transcript import tran_mock_data
-from dawgpath_data_pipeline.tests.shared_mock.sr_major import sr_mock_data
-from dawgpath_data_pipeline.jobs.export_major_data import\
-    ExportMajorData
+
+from dawgpath_data_pipeline.jobs.build_major_dec_grade_distro import (
+    BuildMajorDecGradeDistro,
+)
+from dawgpath_data_pipeline.jobs.export_major_data import ExportMajorData
 from dawgpath_data_pipeline.jobs.fetch_major_data import FetchMajorData
+from dawgpath_data_pipeline.jobs.fetch_regis_major_data import FetchRegisMajorData
 from dawgpath_data_pipeline.jobs.fetch_sr_major_data import FetchSRMajorData
+from dawgpath_data_pipeline.jobs.fetch_transcripts import FetchTranscriptData
+from dawgpath_data_pipeline.tests import DBTest
+from dawgpath_data_pipeline.tests.shared_mock.regis_major import regis_mock_data
+from dawgpath_data_pipeline.tests.shared_mock.sr_major import sr_mock_data
+from dawgpath_data_pipeline.tests.shared_mock.transcript import tran_mock_data
 
 
 class TestMajorGPAExport(DBTest):
@@ -100,7 +101,7 @@ class TestMajorGPAExport(DBTest):
         FetchMajorData()._save_majors(self.mock_majors)
 
     def setUp(self,):
-        super(TestMajorGPAExport, self).setUp()
+        super().setUp()
         self._save_regis_majors()
         self._save_transcript_data()
         self._save_major_data()

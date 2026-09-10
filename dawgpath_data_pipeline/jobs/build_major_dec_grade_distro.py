@@ -1,16 +1,15 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from collections import Counter
+from sqlalchemy import func
+from sqlalchemy.orm.exc import NoResultFound
+
+from dawgpath_data_pipeline import MINIMUM_DATA_COUNT
+from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.gpa_distro import MajorDecGPADistribution
 from dawgpath_data_pipeline.models.regis_major import RegisMajor
 from dawgpath_data_pipeline.models.transcript import Transcript
-from dawgpath_data_pipeline.utilities import get_previous_term, get_combined_term
-from sqlalchemy import func
-from sqlalchemy.orm.exc import NoResultFound
-from dawgpath_data_pipeline.jobs import DataJob
-from dawgpath_data_pipeline import MINIMUM_DATA_COUNT
-
+from dawgpath_data_pipeline.utilities import get_combined_term, get_previous_term
 
 START_YEAR_QUARTER = 20163
 
@@ -88,14 +87,14 @@ class BuildMajorDecGradeDistro(DataJob):
         return latest_dec
 
     def _build_distro_from_declarations(self, declarations):
-        gpa_distro = {key: 0 for key in range(0, 41)}
+        gpa_distro = {key: 0 for key in range(41)}
         if declarations:
             for declaration in declarations:
                 try:
                     gpa = self._get_gpa_by_declaration(declaration)
                     if gpa is not None:
                         gpa_distro[gpa] += 1
-                except ValueError as ex:
+                except ValueError:
                     pass
         return gpa_distro
 

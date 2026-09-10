@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 """add prereq field to course descriptions
 
 Revision ID: f31ddd9f5ced
@@ -5,9 +8,8 @@ Revises: 140915d317a6
 Create Date: 2022-10-14 23:07:25.181299+00:00
 
 """
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = 'f31ddd9f5ced'

@@ -1,19 +1,21 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from dawgpath_data_pipeline.jobs import DataJob
-from dawgpath_data_pipeline.models.gpa_distro import MajorDecGPADistribution
-from dawgpath_data_pipeline.models.major import Major
-from dawgpath_data_pipeline.models.sr_major import SRMajor
-from dawgpath_data_pipeline.models.common_course_major import CommonCourseMajor
-from dawgpath_data_pipeline.utilities import get_SDB_credential_code, \
-    MAJOR_CODE_PREFIX, MAJOR_CODE_SUFFIX
 import json
+import os
+
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import false, true
 
+from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.models.common_course_major import CommonCourseMajor
+from dawgpath_data_pipeline.models.gpa_distro import MajorDecGPADistribution
+from dawgpath_data_pipeline.models.major import Major
+from dawgpath_data_pipeline.models.sr_major import SRMajor
+from dawgpath_data_pipeline.utilities import (
+    get_SDB_credential_code,
+)
 
-import os
 
 class ExportMajorData(DataJob):
     """

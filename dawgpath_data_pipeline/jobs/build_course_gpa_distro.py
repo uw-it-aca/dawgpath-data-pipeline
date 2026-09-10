@@ -1,11 +1,12 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from dawgpath_data_pipeline.models.registration import Registration
-from dawgpath_data_pipeline.models.gpa_distro import GPADistribution
 from sqlalchemy import func
-from dawgpath_data_pipeline.jobs import DataJob
+
 from dawgpath_data_pipeline import MINIMUM_DATA_COUNT
+from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.models.gpa_distro import GPADistribution
+from dawgpath_data_pipeline.models.registration import Registration
 
 SAVE_COUNT = 1000
 
@@ -33,14 +34,14 @@ class BuildCourseGPADistro(DataJob):
             .filter(Registration.crs_curric_abbr == curric,
                     Registration.crs_number == number) \
             .group_by(Registration.gpa).all()
-        distro = {key: 0 for key in range(0, 41)}
+        distro = {key: 0 for key in range(41)}
         data_points = 0
         for gpa, count in gpa_data:
             data_points += count
             distro[gpa] = count
 
         if data_points < MINIMUM_DATA_COUNT:
-            distro = {key: 0 for key in range(0, 41)}
+            distro = {key: 0 for key in range(41)}
         gpa_distro = GPADistribution(crs_curric_abbr=curric,
                                      crs_number=number,
                                      gpa_distro=distro)

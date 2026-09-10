@@ -3,11 +3,13 @@
 
 import os
 from unittest.mock import patch
-from dawgpath_data_pipeline.jobs.fetch_prereq_data import FetchPrereqData
+
 import pandas as pd
+
+from dawgpath_data_pipeline.jobs.export_prereq_data import run as export_pd
+from dawgpath_data_pipeline.jobs.fetch_prereq_data import FetchPrereqData
 from dawgpath_data_pipeline.models.prereq import Prereq
 from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.jobs.export_prereq_data import run as export_pd
 
 
 class TestPrereqs(DBTest):
@@ -15,7 +17,7 @@ class TestPrereqs(DBTest):
 
     @patch('dawgpath_data_pipeline.jobs.fetch_prereq_data.get_prereqs')
     def setUp(self, get_prereq_mock):
-        super(TestPrereqs, self).setUp()
+        super().setUp()
         mock_data = [
             {"pr_and_or": "O",
              "pr_concurrency": "N",

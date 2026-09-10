@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 """adding curric graph
 
 Revision ID: e042f20f1db2
@@ -5,9 +8,8 @@ Revises: 6aa5ec118959
 Create Date: 2021-10-29 22:12:40.026272+00:00
 
 """
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = 'e042f20f1db2'

@@ -1,17 +1,19 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+from dawgpath_data_pipeline.jobs.build_course_graphs import (
+    BuildCoursePrereqGraphs,
+    get_graphs,
+)
 from dawgpath_data_pipeline.models.course import Course
 from dawgpath_data_pipeline.models.prereq import Prereq
 from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.jobs.build_course_graphs import \
-    BuildCoursePrereqGraphs, get_graphs
 
 
 class TestBuildGraphs(DBTest):
 
     def setUp(self):
-        super(TestBuildGraphs, self).setUp()
+        super().setUp()
         # Clean DB
         q = self.session.query(Course)
         q.delete()
@@ -50,32 +52,6 @@ class TestBuildGraphs(DBTest):
                 qsr=True,
                 vis_lit_perf_arts=False,
                 writing_crs=False
-            )
-        info_471 = Course(
-                department_abbrev="INFO",
-                course_number=471,
-                course_college="S",
-                long_course_title="Advanced Methods in Data Science",
-                course_branch=0,
-                course_cat_omit=False,
-                diversity_crs=False,
-                english_comp=False,
-                indiv_society=False,
-                natural_world=False,
-                qsr=True,
-                vis_lit_perf_arts=False,
-                writing_crs=False
-            )
-
-        prereq_forward = Prereq(
-                pr_concurrency="N",
-                pr_cr_s="Y",
-                pr_group_no=1,
-                pr_seq_no=100,
-                department_abbrev="INFO",
-                course_number=370,
-                pr_curric_abbr="INFO",
-                pr_course_no="371"
             )
         prereq = Prereq(
             pr_concurrency="N",

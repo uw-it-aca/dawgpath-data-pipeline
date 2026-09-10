@@ -1,14 +1,13 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from dawgpath_data_pipeline.databases.implementation import get_db_implementation
-
-
 import time
 from datetime import datetime, timezone
+
 from sqlalchemy import insert
-from dawgpath_data_pipeline.databases.implementation import get_db_implementation
+
 from dawgpath_data_pipeline import MINIMUM_DATA_COUNT
+from dawgpath_data_pipeline.databases.implementation import get_db_implementation
 
 
 class JobResult:

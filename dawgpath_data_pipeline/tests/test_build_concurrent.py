@@ -2,15 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from unittest.mock import patch
+
 import pandas as pd
+
+from dawgpath_data_pipeline.jobs.build_concurrent_courses import BuildConcurrentCourses
+from dawgpath_data_pipeline.jobs.fetch_registration_data import FetchRegistrationData
 from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCourses
 from dawgpath_data_pipeline.tests import DBTest
-from dawgpath_data_pipeline.jobs.fetch_registration_data import \
-    FetchRegistrationData
-from dawgpath_data_pipeline.jobs.build_concurrent_courses import \
-    BuildConcurrentCourses
-from dawgpath_data_pipeline.tests.shared_mock.registration import \
-    registration_mock_data
+from dawgpath_data_pipeline.tests.shared_mock.registration import registration_mock_data
 
 
 class TestBuildConcurrent(DBTest):
@@ -20,7 +19,7 @@ class TestBuildConcurrent(DBTest):
     @patch('dawgpath_data_pipeline.jobs.'
            'fetch_registration_data.get_registrations_in_year_quarter')
     def setUp(self, get_reg_mock):
-        super(TestBuildConcurrent, self).setUp()
+        super().setUp()
         self.mock_df = pd.DataFrame.from_dict(registration_mock_data,
                                               orient='columns')
         get_reg_mock.return_value = self.mock_df

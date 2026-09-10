@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from dawgpath_data_pipeline.dao.edw import get_transcripts_since_year
+from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.transcript import Transcript
 from dawgpath_data_pipeline.utilities import get_combined_term
-from dawgpath_data_pipeline.jobs import DataJob
 
 
 class FetchTranscriptData(DataJob):

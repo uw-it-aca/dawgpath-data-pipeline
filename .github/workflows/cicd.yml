@@ -67,7 +67,14 @@ jobs:
         with:
           app_name: ${{ env.DJANGO_APP }}
           exclude_paths: migrations
-          ignore: BLE001,S110
+          ignore: BLE001,S110,RUF012
+
+      - name: Run Python Linters (admin gateway)
+        uses: uw-it-aca/actions/python-linters@main
+        with:
+          app_name: dawgpath_pipeline_admin
+          exclude_paths: migrations
+          ignore: BLE001,S110,RUF012
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v4

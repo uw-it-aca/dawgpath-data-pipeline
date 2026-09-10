@@ -1,11 +1,12 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+import os
+
+import pandas as pd
+
 from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.prereq import Prereq
-from dawgpath_data_pipeline.databases.implementation import get_db_implementation
-import pandas as pd
-import os
 
 """
 Builds prereq data pkl files as currently used by prereq map
