@@ -102,3 +102,34 @@ class TestBuildConcurrent(DBTest):
                           'BIOL 140': 1,
                           'PHYS 301': 1,
                           'BIO 103': 1})
+
+    def test_duplicate_section_registrations_same_term_deduplicated(self):
+        # A student taking multiple sections of the same course in one term
+        # (e.g. CHEM 241 lecture + lab) should only count ONCE towards co-occurrence
+        df_dups = pd.DataFrame([
+            {"system_key": 901, "crs_curric_abbr": "CHEM", "crs_number": 241},
+            {"system_key": 901, "crs_curric_abbr": "CHEM", "crs_number": 241}, # duplicate section
+            {"system_key": 901, "crs_curric_abbr": "BIOL", "crs_number": 180},
+        ])
+        counts = BuildConcurrentCourses().get_concurrent_courses_from_course(df_dups, ("BIOL", 180))
+        # CHEM 241 co-occurs with BIOL 180 for student 901 exactly ONCE, not twice
+        self.assertEqual(counts.get("CHEM 241"), 1)
+
+    def test_top_10_concurrent_courses_cap(self):
+        # If a course co-occurs with 15 other courses, only the top 10 highest-count courses are kept
+        rows = []
+        for i in range(15):
+            # course_i co-occurs with TARGET 100 for (i+1) students
+            crs_abbr = f"CRS{i:02d}"
+            for student_id in range(i + 1):
+                rows.append({"system_key": f"s_{i}_{student_id}", "crs_curric_abbr": "TARGET", "crs_number": 100})
+                rows.append({"system_key": f"s_{i}_{student_id}", "crs_curric_abbr": crs_abbr, "crs_number": 100})
+
+        df_15 = pd.DataFrame(rows)
+        counts = BuildConcurrentCourses().get_concurrent_courses_from_course(df_15, ("TARGET", 100))
+        # Top 10 cap
+        self.assertEqual(len(counts), 10)
+        # Lowest count kept should be CRS05 (5 co-occurrences), CRS00..CRS04 omitted
+        self.assertNotIn("CRS04 100", counts)
+        self.assertIn("CRS14 100", counts)
+        self.assertEqual(counts["CRS14 100"], 15)
