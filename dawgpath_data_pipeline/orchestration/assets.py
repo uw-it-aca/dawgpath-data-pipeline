@@ -214,7 +214,7 @@ def build_curric_prereq_graphs(fetch_curric_data, fetch_course_data, fetch_prere
 
 @asset(
     group_name="derived_assets",
-    op_tags=TIER_3_K8S_TAGS,
+    op_tags=TIER_2_K8S_TAGS,
     description="Calculates concurrent course registration counts for the last 8 quarters.",
 )
 def build_concurrent_courses(fetch_registration_data):
