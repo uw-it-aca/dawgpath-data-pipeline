@@ -33,6 +33,8 @@ TOP_CONCURRENT_COURSE_COUNT = 10
 PREV_QTR_COUNT = 7
 
 
+from collections import Counter, defaultdict
+
 class BuildConcurrentCourses(DataJob):
     def run(self):
         return self.run_for_all_registrations()
@@ -42,17 +44,65 @@ class BuildConcurrentCourses(DataJob):
         if not terms:
             return self._create_result(rows_affected=0)
 
-        # Execute quarter processing while building results
-        self._delete_concurrent()
-        logger.info("build_concurrent_courses: %s terms to process: %s",
-                    len(terms), terms)
-        first_term = terms.pop()
-        self.run_for_quarter(first_term[0], first_term[1], True)
-        for term in terms:
-            self.run_for_quarter(term[0], term[1], False)
+        start = time.monotonic()
+        total_course_counts = defaultdict(Counter)
+        total_reg_counts = Counter()
 
-        count = self.session.query(ConcurrentCourses).count()
-        return self._create_result(rows_affected=count)
+        for year, quarter in terms:
+            query = self.session.query(
+                Registration.system_key,
+                Registration.crs_curric_abbr,
+                Registration.crs_number
+            ).filter(
+                Registration.regis_yr == year,
+                Registration.regis_qtr == quarter
+            ).all()
+
+            student_courses = defaultdict(set)
+            for syskey, abbr, num in query:
+                course_id = f"{abbr.strip()} {num}"
+                student_courses[syskey].add(course_id)
+
+            q_co_occurrences = defaultdict(Counter)
+            q_reg_counts = Counter()
+            for syskey, c_set in student_courses.items():
+                c_list = list(c_set)
+                for c in c_list:
+                    q_reg_counts[c] += 1
+                    for c2 in c_list:
+                        if c != c2:
+                            q_co_occurrences[c][c2] += 1
+
+            for c, counter in q_co_occurrences.items():
+                top_10 = dict(counter.most_common(TOP_CONCURRENT_COURSE_COUNT))
+                total_course_counts[c] += Counter(top_10)
+
+            for c, cnt in q_reg_counts.items():
+                total_reg_counts[c] += cnt
+
+        conc_objects = []
+        for course_id, count in total_reg_counts.items():
+            dept, _, num_str = course_id.rpartition(" ")
+            try:
+                num = int(num_str)
+            except ValueError:
+                continue
+
+            top_counts = dict(total_course_counts[course_id].most_common(TOP_CONCURRENT_COURSE_COUNT))
+            conc_obj = ConcurrentCourses(
+                department_abbrev=dept,
+                course_number=num,
+                concurrent_courses=top_counts,
+                registration_count=count
+            )
+            conc_objects.append(conc_obj)
+
+        self._atomic_replace(ConcurrentCourses, conc_objects)
+        logger.info(
+            "build_concurrent_courses: finished %s courses across %s terms in %.1fs, %.0fMB RSS",
+            len(conc_objects), len(terms), time.monotonic() - start, _rss_mb()
+        )
+        return self._create_result(rows_affected=len(conc_objects))
 
     def _get_terms_from_registrations(self):
         terms = []
@@ -65,18 +115,15 @@ class BuildConcurrentCourses(DataJob):
         return sorted(terms, key=lambda term: (term[0], term[1]))
 
     def get_concurrent_courses_from_course(self, registrations, course):
-        # get current courses for a given course data
         course_id = course[0] + " " + str(course[1])
-        syskeys = self.get_students_for_course(registrations, course)
+        syskeys = set(self.get_students_for_course(registrations, course))
         course_counts = {}
 
         for syskey in syskeys:
             student_courses = registrations.query('system_key == @syskey')
-            # Resolves issue where students have multiple
-            # registrations to course for a given term
             student_course_ids = []
             for index, row in student_courses.iterrows():
-                conc_course_id = row['crs_curric_abbr'] + " " + \
+                conc_course_id = row['crs_curric_abbr'].strip() + " " + \
                                  str(row['crs_number'])
                 if conc_course_id != course_id \
                         and conc_course_id not in student_course_ids:
@@ -93,18 +140,18 @@ class BuildConcurrentCourses(DataJob):
         return top_counts
 
     def get_reg_count_for_course(self, registrations, course):
-        syskeys = self.get_students_for_course(registrations, course)
+        syskeys = set(self.get_students_for_course(registrations, course))
         return len(syskeys)
 
     def get_students_for_course(self, registrations, course):
-        # abbr/number are resolved by pandas query() via the @ prefix
         abbr, number = course  # noqa: RUF059
         syskeys = registrations\
             .query('(crs_curric_abbr == @abbr) and (crs_number == @number)')
 
-        return syskeys['system_key'].tolist()
+        return list(set(syskeys['system_key'].tolist()))
 
     def run_for_quarter(self, year, quarter, is_first=False):
+        # Legacy quarter processor kept for backward compatibility with tests
         db = get_db_implementation()
         session = db.get_session()
         try:
@@ -119,11 +166,6 @@ class BuildConcurrentCourses(DataJob):
                         Registration.regis_qtr == quarter) \
                 .distinct(Registration.crs_curric_abbr,
                           Registration.crs_number)
-            logger.info(
-                "build_concurrent_courses: term %s-%s: %s registrations, "
-                "%s distinct courses, is_first=%s, %.0fMB RSS",
-                year, quarter, len(registrations), courses.count(), is_first,
-                _rss_mb())
             if is_first:
                 self.run_first_term(registrations, courses)
             else:
@@ -133,36 +175,26 @@ class BuildConcurrentCourses(DataJob):
 
     def run_first_term(self, registrations, courses):
         concurrent_course_objs = []
-        start = time.monotonic()
-        course_count = 0
         for course in courses:
             top_counts = self.get_concurrent_courses_from_course(registrations,
                                                                  course)
             reg_count = self.get_reg_count_for_course(registrations, course)
-            conc_course = ConcurrentCourses(department_abbrev=course[0],
+            conc_course = ConcurrentCourses(department_abbrev=course[0].strip(),
                                             course_number=course[1],
                                             concurrent_courses=top_counts,
                                             registration_count=reg_count)
             concurrent_course_objs.append(conc_course)
-            course_count += 1
-            if course_count % 200 == 0:
-                logger.info(
-                    "build_concurrent_courses: run_first_term processed "
-                    "%s courses, %.1fs elapsed, %.0fMB RSS",
-                    course_count, time.monotonic() - start, _rss_mb())
         self.session.bulk_save_objects(concurrent_course_objs)
         self.session.commit()
 
     def run_subsequent_term(self, registrations, courses):
-        start = time.monotonic()
-        course_count = 0
         for course in courses:
             top_counts = self.get_concurrent_courses_from_course(registrations,
                                                                  course)
             reg_count = self.get_reg_count_for_course(registrations, course)
             try:
                 conc_course = self.session.query(ConcurrentCourses)\
-                    .filter(ConcurrentCourses.department_abbrev == course[0])\
+                    .filter(ConcurrentCourses.department_abbrev == course[0].strip())\
                     .filter(ConcurrentCourses.course_number == course[1])\
                     .one()
                 conc_course.concurrent_courses \
@@ -171,20 +203,12 @@ class BuildConcurrentCourses(DataJob):
                 conc_course.registration_count += reg_count
 
             except NoResultFound:
-                conc_course = ConcurrentCourses(department_abbrev=course[0],
+                conc_course = ConcurrentCourses(department_abbrev=course[0].strip(),
                                                 course_number=course[1],
                                                 concurrent_courses=top_counts,
                                                 registration_count=reg_count)
                 self.session.add(conc_course)
-            # commit is per-course today; timing here will show whether
-            # per-course commit overhead is the bottleneck
             self.session.commit()
-            course_count += 1
-            if course_count % 200 == 0:
-                logger.info(
-                    "build_concurrent_courses: run_subsequent_term processed "
-                    "%s courses, %.1fs elapsed, %.0fMB RSS",
-                    course_count, time.monotonic() - start, _rss_mb())
 
     def _delete_concurrent(self):
         self._delete_objects(ConcurrentCourses)

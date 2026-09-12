@@ -56,6 +56,8 @@ class TestArtifactPublisher(DBTest):
             self.assertEqual(manifest["artifacts"]["test1.json"]["rows_affected"], 5)
 
     def test_dagster_pickle_export_with_publisher(self):
+        self.session.query(Course).delete()
+        self.session.commit()
         course = Course(
             department_abbrev="CSE",
             course_number=142,

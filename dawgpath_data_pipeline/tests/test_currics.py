@@ -7,9 +7,12 @@ from unittest.mock import patch
 
 import pandas as pd
 
+from dawgpath_data_pipeline.jobs.build_curric_prereq_list import BuildCurricPrereqLists
 from dawgpath_data_pipeline.jobs.export_curric_data import ExportCurricData
 from dawgpath_data_pipeline.jobs.fetch_curric_data import FetchCurricData
+from dawgpath_data_pipeline.models.course import Course
 from dawgpath_data_pipeline.models.curriculum import Curriculum
+from dawgpath_data_pipeline.models.prereq import Prereq
 from dawgpath_data_pipeline.tests import DBTest
 
 
@@ -79,3 +82,59 @@ class TestCurrics(DBTest):
         self.assertEqual(len(data), curric_count)
         # clean up file
         os.remove(curric_path)
+
+    def test_build_curric_prereq_lists_and_filtering(self):
+        curric = Curriculum(abbrev="TEST", name="Test Curric", campus=0)
+        c_undergrad = Course(
+            department_abbrev="TEST",
+            course_number=100,
+            long_course_title="Intro Test"
+        )
+        c_grad = Course(
+            department_abbrev="TEST",
+            course_number=500,
+            long_course_title="Grad Test"
+        )
+        # Prereq 1: Numeric prereq "MATH 124"
+        p_valid = Prereq(
+            department_abbrev="TEST",
+            course_number=100,
+            pr_curric_abbr="MATH",
+            pr_course_no="124"
+        )
+        # Prereq 2: Wildcard non-numeric prereq "MATH 1**" (should be ignored without raising ValueError)
+        p_wildcard = Prereq(
+            department_abbrev="TEST",
+            course_number=100,
+            pr_curric_abbr="MATH",
+            pr_course_no="1**"
+        )
+        # Postreq: "TEST 100" is a prereq for "PHYS 121"
+        p_post = Prereq(
+            department_abbrev="PHYS",
+            course_number=121,
+            pr_curric_abbr="TEST",
+            pr_course_no="100"
+        )
+
+        self.session.add_all([curric, c_undergrad, c_grad, p_valid, p_wildcard, p_post])
+        self.session.commit()
+
+        BuildCurricPrereqLists().run()
+
+        saved_curric = self.session.query(Curriculum).filter(Curriculum.abbrev == "TEST").one()
+        course_data = json.loads(saved_curric.course_data)
+
+        # Only undergrad course (100) should be included, 500 level omitted
+        self.assertEqual(len(course_data), 1)
+        self.assertEqual(course_data[0]["course_id"], "TEST 100")
+
+        # Prereqs should include MATH 124, while "1**" was safely skipped
+        prereqs = course_data[0]["prereqs"]
+        self.assertEqual(len(prereqs), 1)
+        self.assertEqual(prereqs[0]["course_id"], "MATH 124")
+
+        # Postreqs should include PHYS 121
+        postreqs = course_data[0]["postreqs"]
+        self.assertEqual(len(postreqs), 1)
+        self.assertEqual(postreqs[0]["course_id"], "PHYS 121")

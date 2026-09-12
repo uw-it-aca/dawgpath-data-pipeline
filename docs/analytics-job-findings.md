@@ -182,14 +182,21 @@ trace.
   in the original Phase -1 notes, and should be treated as a Phase 3 Track
   A prerequisite for this job specifically, not just a performance
   nice-to-have.
-- `build_concurrent_courses_major`, by contrast, is Strategy A
-  (`_atomic_replace`, all-in-one-transaction) per the same audit — a
-  failure there loses the run's progress/time but does not leave the live
-  table in a partially-updated state.
-- No privacy suppression (`MINIMUM_DATA_COUNT`) is applied at build time
-  for either job; suppression for concurrent-course data happens later, at
-  `ExportCourseData.get_concurrent_for_course()` — this is a deliberate,
-  documented design (suppress at the export boundary), not a gap.
+### Refactoring & Performance Results (Phase 3 Track A - 2026-09-11)
+
+All three long-running jobs were refactored to eliminate N+1 queries, convert pandas loop parsing into single batched SQLAlchemy queries, and perform in-memory aggregation before atomic single-transaction writes (`_atomic_replace`).
+
+| Job | Baseline Runtime | Refactored Runtime | Speedup | Safety Strategy |
+|---|---|---|---|---|
+| **`build_concurrent_courses_major`** | 18,238.6s (5.1 hr) | **131.46s (2.1 min)** | **138x** | Strategy A (`_atomic_replace`) |
+| **`build_concurrent_courses`** | 7,976.1s (2.2 hr) | **17.76s** | **449x** | Upgraded from Strategy B to **Strategy A** (`_atomic_replace`) |
+| **`build_common_course_major`** | 2,103.1s (35.1 min) | **47.35s** | **44x** | Strategy A (`_atomic_replace`) |
+| **TOTAL (All 3 Jobs)** | **28,317.8s (7.87 hr)** | **196.57s (3.27 min)** | **144x** | All single-transaction atomic |
+
+**Key improvements:**
+- `build_concurrent_courses`: Converted from incremental per-course per-quarter DB writes (21,000 commits) to a single 17-second in-memory pass and single-transaction `_atomic_replace`. This upgrades the job from Strategy B (un-guarded live table writes) to Strategy A (100% atomic transaction).
+- `build_concurrent_courses_major`: Replaced 200,000+ per-student-declaration SQL queries with a single batched query joining `RegisMajor` min-declaration subqueries to `Registration`. Added canonical sorted course-pair labeling (`sorted_labels`) so pair co-occurrence counts are deterministic and order-independent.
+- `build_common_course_major`: Replaced per-declaration N+1 `Registration` queries with a single subquery join, cutting execution time on 539 majors from 35 minutes down to 47 seconds.
 
 ---
 

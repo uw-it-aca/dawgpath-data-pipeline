@@ -6,7 +6,7 @@ import resource
 from collections import Counter
 from logging import INFO, StreamHandler, getLogger
 
-import pandas as pd
+from sqlalchemy import func
 
 from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCoursesMajor
@@ -29,76 +29,81 @@ def _rss_mb():
 
 class BuildConcurrentCoursesMajor(DataJob):
     def run(self):
-        majors = RegisMajor().get_majors(self.session)
-        logger.info("build_concurrent_courses_major: %s majors to process",
-                    len(majors))
-        cc_objects = self.get_concurrent_courses_for_all_majors(majors)
+        cc_objects = self.get_concurrent_courses_for_all_majors()
         self._atomic_replace(ConcurrentCoursesMajor, cc_objects)
         return self._create_result(rows_affected=len(cc_objects))
 
-    def get_concurrent_courses_for_all_majors(self, majors):
-        cc_objects = []
+    def get_concurrent_courses_for_all_majors(self, majors=None):
         start = time.monotonic()
-        for major_idx, major in enumerate(majors):
-            cc = self.get_concurrent_courses_for_major(major)
-            cc_objects.append(cc)
-            logger.info(
-                "build_concurrent_courses_major: finished major %s/%s (%s), "
-                "%.1fs elapsed, %.0fMB RSS",
-                major_idx + 1, len(majors), major,
-                time.monotonic() - start, _rss_mb())
+
+        # 1. Earliest declaration term per student and major abbreviation
+        min_decls = self.session.query(
+            RegisMajor.regis_major_abbr,
+            RegisMajor.system_key,
+            func.min(RegisMajor.regis_term).label('min_term')
+        )
+        if majors:
+            min_decls = min_decls.filter(
+                func.trim(RegisMajor.regis_major_abbr).in_([m.strip() for m in majors])
+            )
+        min_decls_sub = min_decls.group_by(
+            RegisMajor.regis_major_abbr, RegisMajor.system_key
+        ).subquery()
+
+        # 2. Join Registration to min_decls for courses taken at or after declaration
+        post_decls = self.session.query(
+            min_decls_sub.c.regis_major_abbr,
+            Registration.system_key,
+            Registration.regis_term,
+            Registration.crs_curric_abbr,
+            Registration.crs_number
+        ).join(
+            min_decls_sub,
+            (Registration.system_key == min_decls_sub.c.system_key) &
+            (Registration.regis_term >= min_decls_sub.c.min_term)
+        ).all()
+
+        # 3. Group distinct courses per student and term per major
+        major_term_courses = {}
+        for major, syskey, term, abbr, num in post_decls:
+            m = major.strip()
+            key = (m, syskey, term)
+            label = f'{abbr.strip()}-{num}'
+            if key not in major_term_courses:
+                major_term_courses[key] = set()
+            major_term_courses[key].add(label)
+
+        # 4. Build canonical co-occurrence counters per major
+        major_counters = {}
+        if majors:
+            for m in majors:
+                major_counters[m.strip()] = Counter()
+
+        for (m, syskey, term), labels in major_term_courses.items():
+            if m not in major_counters:
+                major_counters[m] = Counter()
+            sorted_labels = sorted(labels)
+            for i in range(len(sorted_labels)):
+                for j in range(i + 1, len(sorted_labels)):
+                    pair_key = f'{sorted_labels[i]}|{sorted_labels[j]}'
+                    major_counters[m][pair_key] += 1
+
+        cc_objects = [
+            ConcurrentCoursesMajor(major_id=m, concurrent_courses=counter)
+            for m, counter in major_counters.items()
+        ]
+
+        logger.info(
+            "build_concurrent_courses_major: finished %s majors in %.1fs, %.0fMB RSS",
+            len(cc_objects), time.monotonic() - start, _rss_mb()
+        )
         return cc_objects
 
     def get_concurrent_courses_for_major(self, major):
-        concurrent_courses = Counter()
-        decls = RegisMajor.get_major_declarations_by_major(self.session,
-                                                           major)
-        # each decl below triggers a separate Registration query; log the
-        # per-major fan-out so slow majors can be identified from logs
-        logger.info("build_concurrent_courses_major: major %s has %s "
-                    "declarations, %.0fMB RSS", major, len(decls), _rss_mb())
-        for decl in decls:
-            declared_courses = self.get_courses_after_decl(decl)
-            if(declared_courses):
-                decl_conc = \
-                    self.get_concurrent_from_registrations(declared_courses)
-                concurrent_courses += decl_conc
-
-        return ConcurrentCoursesMajor(major_id=major,
-                                      concurrent_courses=concurrent_courses)
-
-    def get_concurrent_from_registrations(self, registrations):
-        df = pd.DataFrame(registrations)
-        syskeys = df['system_key'].unique()
-        terms = df['regis_term'].unique()
-        concurrent_courses = Counter()
-        for syskey in syskeys:
-            for term in terms:
-                concurrent = df.query('system_key == @syskey'
-                                      '& regis_term == @term')
-                conc = self.build_concurrency_from_registrations(concurrent)
-                concurrent_courses += conc
-        return concurrent_courses
-
-    def build_concurrency_from_registrations(self, registrations):
-        concurrency = Counter()
-        course_labels = []
-        for idx, course in registrations.iterrows():
-            course_labels.append(
-                f"{course['crs_curric_abbr']}-{course['crs_number']}")
-        for i in range(len(course_labels)):
-            for j in range(i + 1, len(course_labels)):
-                key = f"{course_labels[i]}|{course_labels[j]}"
-                concurrency[key] = 1
-        return concurrency
-
-    def get_courses_after_decl(self, decl):
-        decl_term = get_combined_term(decl.regis_yr, decl.regis_qtr)
-        courses = self.session.query(Registration).filter(
-            Registration.regis_term >= decl_term,
-            Registration.system_key == decl.system_key
-        )
-        return [u.__dict__ for u in courses.all()]
+        objs = self.get_concurrent_courses_for_all_majors(majors=[major])
+        if objs:
+            return objs[0]
+        return ConcurrentCoursesMajor(major_id=major, concurrent_courses=Counter())
 
     def delete_concurrent_courses(self):
         self._delete_objects(ConcurrentCoursesMajor)
