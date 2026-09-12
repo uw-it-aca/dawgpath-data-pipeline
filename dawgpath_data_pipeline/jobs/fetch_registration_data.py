@@ -8,7 +8,7 @@ from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.registration import Registration
 from dawgpath_data_pipeline.utilities import get_combined_term
 
-REGISTRATION_START_YEAR = 2016
+FETCH_LOOKBACK_YEARS = 5
 REG_QUARTERS = [1, 2, 3, 4]
 
 
@@ -21,11 +21,12 @@ class FetchRegistrationData(DataJob):
             Registration, self._iter_registration_mappings())
         return self._create_result(rows_affected=rows_affected)
 
-    # yield a quarter at a time so a full 10-year fetch is never held in memory
+    # yield a quarter at a time so a full fetch window is never held in memory
     def _iter_registration_mappings(self):
         # local date is intentional; EDW registration years are UW-local
         current_year = date.today().year  # noqa: DTZ011
-        reg_year = REGISTRATION_START_YEAR
+        start_year = current_year - FETCH_LOOKBACK_YEARS
+        reg_year = start_year
         while reg_year <= current_year:
             for quarter in REG_QUARTERS:
                 yield self._get_registration_mappings(reg_year, quarter)

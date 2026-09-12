@@ -11,8 +11,6 @@ from dawgpath_data_pipeline.models.regis_major import RegisMajor
 from dawgpath_data_pipeline.models.transcript import Transcript
 from dawgpath_data_pipeline.utilities import get_combined_term, get_previous_term
 
-START_YEAR_QUARTER = 20163
-
 
 class BuildMajorDecGradeDistro(DataJob):
     def run(self):

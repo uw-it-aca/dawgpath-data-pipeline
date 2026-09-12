@@ -1,10 +1,14 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+from datetime import date
+
 from dawgpath_data_pipeline.dao.edw import get_regis_majors_since_year
 from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.regis_major import RegisMajor
 from dawgpath_data_pipeline.utilities import get_combined_term
+
+FETCH_LOOKBACK_YEARS = 5
 
 
 class FetchRegisMajorData(DataJob):
@@ -17,7 +21,8 @@ class FetchRegisMajorData(DataJob):
 
     # get regis_major data
     def _get_regis_majors(self):
-        regis_majors = get_regis_majors_since_year(2016)
+        start_year = date.today().year - FETCH_LOOKBACK_YEARS  # noqa: DTZ011
+        regis_majors = get_regis_majors_since_year(start_year)
 
         regis_major_objects = []
         for index, regis_major in regis_majors.iterrows():

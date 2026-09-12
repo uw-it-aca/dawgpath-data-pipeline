@@ -1,10 +1,14 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+from datetime import date
+
 from dawgpath_data_pipeline.dao.edw import get_transcripts_since_year
 from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.transcript import Transcript
 from dawgpath_data_pipeline.utilities import get_combined_term
+
+FETCH_LOOKBACK_YEARS = 5
 
 
 class FetchTranscriptData(DataJob):
@@ -17,7 +21,8 @@ class FetchTranscriptData(DataJob):
 
     # get transcript data
     def _get_transcripts(self):
-        transcripts = get_transcripts_since_year(2016)
+        start_year = date.today().year - FETCH_LOOKBACK_YEARS  # noqa: DTZ011
+        transcripts = get_transcripts_since_year(start_year)
 
         transcript_objects = []
         for index, transcript in transcripts.iterrows():

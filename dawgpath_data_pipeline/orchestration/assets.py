@@ -126,7 +126,7 @@ def fetch_sr_major_data():
     group_name="source_refreshes",
     op_tags=TIER_3_K8S_TAGS,
     retry_policy=UPSTREAM_RETRY_POLICY,
-    description="Fetches 10-year course registrations from EDW.",
+    description="Fetches 5-year course registrations from EDW.",
 )
 def fetch_registration_data():
     res = FetchRegistrationData().run()
@@ -137,7 +137,7 @@ def fetch_registration_data():
     group_name="source_refreshes",
     op_tags=TIER_2_K8S_TAGS,
     retry_policy=UPSTREAM_RETRY_POLICY,
-    description="Fetches major declarations since 2016 from EDW.",
+    description="Fetches major declarations for the last 5 years from EDW.",
 )
 def fetch_regis_major_data():
     res = FetchRegisMajorData().run()
@@ -148,7 +148,7 @@ def fetch_regis_major_data():
     group_name="source_refreshes",
     op_tags=TIER_2_K8S_TAGS,
     retry_policy=UPSTREAM_RETRY_POLICY,
-    description="Fetches transcript GPA-attempt rows since 2016 from EDW.",
+    description="Fetches transcript GPA-attempt rows for the last 5 years from EDW.",
 )
 def fetch_transcript_data():
     res = FetchTranscriptData().run()
