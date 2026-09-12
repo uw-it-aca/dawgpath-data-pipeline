@@ -119,7 +119,7 @@ def get_prereqs():
         FROM sec.sr_course_prereq
         WHERE
             last_eff_yr = 9999
-            AND pr_not_excl != \'E\'
+            AND (pr_not_excl IS NULL OR pr_not_excl = '')
     """
     return _run_query(DB, db_query)
 
