@@ -25,7 +25,7 @@ class FetchRegisMajorData(DataJob):
         regis_majors = get_regis_majors_since_year(start_year)
 
         regis_major_objects = []
-        for index, regis_major in regis_majors.iterrows():
+        for regis_major in regis_majors.to_dict('records'):
             combined_qtr = get_combined_term(regis_major['regis_yr'],
                                              regis_major['regis_qtr'])
             regis_major_obj = RegisMajor(

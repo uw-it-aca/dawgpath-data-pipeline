@@ -25,7 +25,7 @@ class FetchTranscriptData(DataJob):
         transcripts = get_transcripts_since_year(start_year)
 
         transcript_objects = []
-        for index, transcript in transcripts.iterrows():
+        for transcript in transcripts.to_dict('records'):
             combined_qtr = get_combined_term(transcript['tran_yr'],
                                              transcript['tran_qtr'])
             transcript_obj = Transcript(

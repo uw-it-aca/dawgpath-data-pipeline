@@ -36,7 +36,7 @@ class FetchRegistrationData(DataJob):
     def _get_registration_mappings(self, year, quarter):
         registrations = get_registrations_in_year_quarter(year, quarter)
         registration_mappings = []
-        for index, registration in registrations.iterrows():
+        for registration in registrations.to_dict('records'):
             regis_term = get_combined_term(registration['regis_yr'],
                                            registration['regis_qtr'])
             course_id = registration['crs_curric_abbr'].strip() + " "\
