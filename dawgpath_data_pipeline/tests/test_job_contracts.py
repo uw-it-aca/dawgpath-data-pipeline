@@ -5,14 +5,13 @@ from unittest.mock import patch
 
 from dawgpath_data_pipeline.jobs import JobResult
 from dawgpath_data_pipeline.jobs.build_common_course_major import BuildCommonCourseMajor
-from dawgpath_data_pipeline.jobs.build_common_major_for_course import (
-    BuildCommonMajorForCourse,
-)
 from dawgpath_data_pipeline.jobs.build_concurrent_courses import BuildConcurrentCourses
 from dawgpath_data_pipeline.jobs.build_concurrent_courses_major import (
     BuildConcurrentCoursesMajor,
 )
 from dawgpath_data_pipeline.jobs.build_course_gpa_distro import BuildCourseGPADistro
+from dawgpath_data_pipeline.jobs.build_course_graphs import BuildCoursePrereqGraphs
+from dawgpath_data_pipeline.jobs.build_curric_graphs import BuildCurricPrereqGraphs
 from dawgpath_data_pipeline.jobs.build_curric_prereq_list import BuildCurricPrereqLists
 from dawgpath_data_pipeline.jobs.build_major_dec_grade_distro import (
     BuildMajorDecGradeDistro,
@@ -23,7 +22,6 @@ from dawgpath_data_pipeline.jobs.fetch_major_data import FetchMajorData
 from dawgpath_data_pipeline.jobs.fetch_prereq_data import FetchPrereqData
 from dawgpath_data_pipeline.jobs.fetch_sr_major_data import FetchSRMajorData
 from dawgpath_data_pipeline.jobs.fetch_sws_course_data import FetchSWSCourseData
-from dawgpath_data_pipeline.jobs.prepare_student_model import PrepareStudentModel
 from dawgpath_data_pipeline.tests import DBTest
 
 
@@ -69,12 +67,10 @@ class TestJobContracts(DBTest):
             (FetchPrereqData, '_get_prereqs', []),
             (FetchSRMajorData, '_get_sr_majors', []),
             (BuildCommonCourseMajor, 'build_all_majors', []),
-            (BuildCommonMajorForCourse, 'build_common_majors', {}),
             (BuildConcurrentCoursesMajor, 'get_concurrent_courses_for_all_majors', []),
             (BuildCourseGPADistro, 'build_distros_for_courses', []),
             (BuildCurricPrereqLists, 'get_currics', []),
             (BuildMajorDecGradeDistro, 'build_gpa_distros', []),
-            (PrepareStudentModel, 'create_students', []),
         ]
         for job_cls, mock_target, return_val in jobs:
             with patch.object(job_cls, mock_target, return_value=return_val):

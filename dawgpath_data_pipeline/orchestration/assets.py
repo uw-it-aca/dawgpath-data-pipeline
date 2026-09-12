@@ -169,9 +169,6 @@ def fetch_sws_course_data(fetch_course_data, fetch_registration_data):
 # --- Tier 2: Derived Local Assets ---
 
 from dawgpath_data_pipeline.jobs.build_common_course_major import BuildCommonCourseMajor
-from dawgpath_data_pipeline.jobs.build_common_major_for_course import (
-    BuildCommonMajorForCourse,
-)
 from dawgpath_data_pipeline.jobs.build_concurrent_courses import BuildConcurrentCourses
 from dawgpath_data_pipeline.jobs.build_concurrent_courses_major import (
     BuildConcurrentCoursesMajor,
@@ -183,7 +180,6 @@ from dawgpath_data_pipeline.jobs.build_curric_prereq_list import BuildCurricPrer
 from dawgpath_data_pipeline.jobs.build_major_dec_grade_distro import (
     BuildMajorDecGradeDistro,
 )
-from dawgpath_data_pipeline.jobs.prepare_student_model import PrepareStudentModel
 
 
 @asset(
@@ -223,26 +219,6 @@ def build_curric_prereq_graphs(fetch_curric_data, fetch_course_data, fetch_prere
 )
 def build_concurrent_courses(fetch_registration_data):
     res = BuildConcurrentCourses().run()
-    return Output(res, metadata=_res_meta(res))
-
-
-@asset(
-    group_name="derived_assets",
-    op_tags=TIER_3_K8S_TAGS,
-    description="Maps most recent major declaration per student using multiprocessing.",
-)
-def prepare_student_model(fetch_regis_major_data):
-    res = PrepareStudentModel().run()
-    return Output(res, metadata=_res_meta(res))
-
-
-@asset(
-    group_name="derived_assets",
-    op_tags=TIER_2_K8S_TAGS,
-    description="Calculates major representation counts per course.",
-)
-def build_common_major_for_course(fetch_registration_data, prepare_student_model):
-    res = BuildCommonMajorForCourse().run()
     return Output(res, metadata=_res_meta(res))
 
 

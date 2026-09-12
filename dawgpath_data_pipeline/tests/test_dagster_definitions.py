@@ -20,12 +20,12 @@ class TestDagsterDefinitions(DBTest):
     def test_dagster_asset_count(self):
         repo_def = defs.get_repository_def()
         assets = list(repo_def.asset_graph.get_all_asset_keys())
-        self.assertEqual(len(assets), 24)
+        self.assertEqual(len(assets), 22)
 
     def test_dagster_job_count(self):
         repo_def = defs.get_repository_def()
         explicit_jobs = [j for j in repo_def.get_all_jobs() if not j.name.startswith("__")]
-        self.assertEqual(len(explicit_jobs), 4)
+        self.assertEqual(len(explicit_jobs), 5)
 
     def test_schedules_target_expected_jobs(self):
         repo_def = defs.get_repository_def()

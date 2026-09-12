@@ -9,7 +9,7 @@ asset tier, so the cheap catalog refresh does not drag the full EDW re-fetch
 with it.
 """
 
-from dagster import AssetSelection, define_asset_job
+from dagster import AssetSelection, define_asset_job, in_process_executor
 
 # EDW catalog metadata plus everything derived only from it.
 CATALOG_ASSETS = [
@@ -42,6 +42,19 @@ full_pipeline_job = define_asset_job(
     description=(
         "Executes full end-to-end pipeline from source fetches to published "
         "exports. This is the primary scheduled refresh."
+    ),
+)
+
+# Diagnostic-only: forces every asset onto one process/one worker so slow
+# jobs aren't obscured by concurrent DB contention from sibling assets.
+full_pipeline_diagnostic_job = define_asset_job(
+    name="full_pipeline_diagnostic_job",
+    selection=AssetSelection.all(),
+    executor_def=in_process_executor,
+    description=(
+        "Same asset selection as full_pipeline_job but runs strictly "
+        "sequentially in a single process, to rule out cross-job resource "
+        "contention while diagnosing slow jobs. Not for scheduled use."
     ),
 )
 

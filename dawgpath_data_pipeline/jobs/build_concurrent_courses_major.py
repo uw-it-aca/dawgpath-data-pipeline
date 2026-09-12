@@ -1,7 +1,10 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+import time
+import resource
 from collections import Counter
+from logging import INFO, StreamHandler, getLogger
 
 import pandas as pd
 
@@ -11,25 +14,49 @@ from dawgpath_data_pipeline.models.regis_major import RegisMajor
 from dawgpath_data_pipeline.models.registration import Registration
 from dawgpath_data_pipeline.utilities import get_combined_term
 
+logger = getLogger(__name__)
+# root logger has no handlers configured anywhere in this app, so INFO
+# messages are silently dropped unless we attach one directly
+if not logger.handlers:
+    logger.addHandler(StreamHandler())
+    logger.setLevel(INFO)
+
+
+def _rss_mb():
+    # ru_maxrss is KB on Linux
+    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
+
 
 class BuildConcurrentCoursesMajor(DataJob):
     def run(self):
         majors = RegisMajor().get_majors(self.session)
+        logger.info("build_concurrent_courses_major: %s majors to process",
+                    len(majors))
         cc_objects = self.get_concurrent_courses_for_all_majors(majors)
         self._atomic_replace(ConcurrentCoursesMajor, cc_objects)
         return self._create_result(rows_affected=len(cc_objects))
 
     def get_concurrent_courses_for_all_majors(self, majors):
         cc_objects = []
-        for major in majors:
+        start = time.monotonic()
+        for major_idx, major in enumerate(majors):
             cc = self.get_concurrent_courses_for_major(major)
             cc_objects.append(cc)
+            logger.info(
+                "build_concurrent_courses_major: finished major %s/%s (%s), "
+                "%.1fs elapsed, %.0fMB RSS",
+                major_idx + 1, len(majors), major,
+                time.monotonic() - start, _rss_mb())
         return cc_objects
 
     def get_concurrent_courses_for_major(self, major):
         concurrent_courses = Counter()
         decls = RegisMajor.get_major_declarations_by_major(self.session,
                                                            major)
+        # each decl below triggers a separate Registration query; log the
+        # per-major fan-out so slow majors can be identified from logs
+        logger.info("build_concurrent_courses_major: major %s has %s "
+                    "declarations, %.0fMB RSS", major, len(decls), _rss_mb())
         for decl in decls:
             declared_courses = self.get_courses_after_decl(decl)
             if(declared_courses):

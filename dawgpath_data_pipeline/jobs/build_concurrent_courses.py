@@ -2,7 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import operator
+import resource
+import time
 from collections import Counter
+from logging import INFO, StreamHandler, getLogger
 
 import pandas as pd
 from sqlalchemy import func
@@ -13,6 +16,18 @@ from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCourses
 from dawgpath_data_pipeline.models.registration import Registration
 from dawgpath_data_pipeline.utilities import get_previous_term
+
+logger = getLogger(__name__)
+# root logger has no handlers configured anywhere in this app, so INFO
+# messages are silently dropped unless we attach one directly
+if not logger.handlers:
+    logger.addHandler(StreamHandler())
+    logger.setLevel(INFO)
+
+
+def _rss_mb():
+    # ru_maxrss is KB on Linux
+    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
 
 TOP_CONCURRENT_COURSE_COUNT = 10
 PREV_QTR_COUNT = 7
@@ -29,6 +44,8 @@ class BuildConcurrentCourses(DataJob):
 
         # Execute quarter processing while building results
         self._delete_concurrent()
+        logger.info("build_concurrent_courses: %s terms to process: %s",
+                    len(terms), terms)
         first_term = terms.pop()
         self.run_for_quarter(first_term[0], first_term[1], True)
         for term in terms:
@@ -102,6 +119,11 @@ class BuildConcurrentCourses(DataJob):
                         Registration.regis_qtr == quarter) \
                 .distinct(Registration.crs_curric_abbr,
                           Registration.crs_number)
+            logger.info(
+                "build_concurrent_courses: term %s-%s: %s registrations, "
+                "%s distinct courses, is_first=%s, %.0fMB RSS",
+                year, quarter, len(registrations), courses.count(), is_first,
+                _rss_mb())
             if is_first:
                 self.run_first_term(registrations, courses)
             else:
@@ -111,6 +133,8 @@ class BuildConcurrentCourses(DataJob):
 
     def run_first_term(self, registrations, courses):
         concurrent_course_objs = []
+        start = time.monotonic()
+        course_count = 0
         for course in courses:
             top_counts = self.get_concurrent_courses_from_course(registrations,
                                                                  course)
@@ -120,10 +144,18 @@ class BuildConcurrentCourses(DataJob):
                                             concurrent_courses=top_counts,
                                             registration_count=reg_count)
             concurrent_course_objs.append(conc_course)
+            course_count += 1
+            if course_count % 200 == 0:
+                logger.info(
+                    "build_concurrent_courses: run_first_term processed "
+                    "%s courses, %.1fs elapsed, %.0fMB RSS",
+                    course_count, time.monotonic() - start, _rss_mb())
         self.session.bulk_save_objects(concurrent_course_objs)
         self.session.commit()
 
     def run_subsequent_term(self, registrations, courses):
+        start = time.monotonic()
+        course_count = 0
         for course in courses:
             top_counts = self.get_concurrent_courses_from_course(registrations,
                                                                  course)
@@ -144,7 +176,15 @@ class BuildConcurrentCourses(DataJob):
                                                 concurrent_courses=top_counts,
                                                 registration_count=reg_count)
                 self.session.add(conc_course)
+            # commit is per-course today; timing here will show whether
+            # per-course commit overhead is the bottleneck
             self.session.commit()
+            course_count += 1
+            if course_count % 200 == 0:
+                logger.info(
+                    "build_concurrent_courses: run_subsequent_term processed "
+                    "%s courses, %.1fs elapsed, %.0fMB RSS",
+                    course_count, time.monotonic() - start, _rss_mb())
 
     def _delete_concurrent(self):
         self._delete_objects(ConcurrentCourses)

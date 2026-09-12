@@ -1,6 +1,10 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+import resource
+import time
+from logging import INFO, StreamHandler, getLogger
+
 from dawgpath_data_pipeline import MINIMUM_DATA_COUNT
 from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.common_course_major import CommonCourseMajor
@@ -12,6 +16,18 @@ from dawgpath_data_pipeline.utilities import (
     get_previous_combined,
 )
 
+logger = getLogger(__name__)
+# root logger has no handlers configured anywhere in this app, so INFO
+# messages are silently dropped unless we attach one directly
+if not logger.handlers:
+    logger.addHandler(StreamHandler())
+    logger.setLevel(INFO)
+
+
+def _rss_mb():
+    # ru_maxrss is KB on Linux
+    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
+
 
 class BuildCommonCourseMajor(DataJob):
 
@@ -22,10 +38,20 @@ class BuildCommonCourseMajor(DataJob):
 
     def build_all_majors(self):
         majors = RegisMajor().get_majors(self.session)
+        logger.info("build_common_course_major: %s majors to process",
+                    len(majors))
+        start = time.monotonic()
         cc_objects = []
-        for major in majors:
+        for major_idx, major in enumerate(majors):
             decls = RegisMajor.get_major_declarations_by_major(self.session,
                                                                major)
+            # each decl below triggers a separate Registration query; log the
+            # per-major fan-out so slow majors can be identified from logs
+            logger.info(
+                "build_common_course_major: major %s/%s (%s) has %s "
+                "declarations, %.1fs elapsed, %.0fMB RSS",
+                major_idx + 1, len(majors), major, len(decls),
+                time.monotonic() - start, _rss_mb())
             common_courses = {}
 
             for decl in decls:

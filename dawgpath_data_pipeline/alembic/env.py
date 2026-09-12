@@ -10,7 +10,6 @@ from dawgpath_data_pipeline.databases.implementation import (
 )
 from dawgpath_data_pipeline.models.base import Base
 from dawgpath_data_pipeline.models.common_course_major import CommonCourseMajor
-from dawgpath_data_pipeline.models.common_major_for_course import CommonMajorForCourse
 from dawgpath_data_pipeline.models.concurrent_courses import (
     ConcurrentCourses,
     ConcurrentCoursesMajor,
@@ -26,7 +25,6 @@ from dawgpath_data_pipeline.models.prereq import Prereq
 from dawgpath_data_pipeline.models.regis_major import RegisMajor
 from dawgpath_data_pipeline.models.registration import Registration
 from dawgpath_data_pipeline.models.sr_major import SRMajor
-from dawgpath_data_pipeline.models.student import Student
 from dawgpath_data_pipeline.models.sws_course import SWSCourse
 from dawgpath_data_pipeline.models.transcript import Transcript
 

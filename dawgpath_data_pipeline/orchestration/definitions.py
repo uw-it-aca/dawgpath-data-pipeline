@@ -11,6 +11,7 @@ from dagster import Definitions, load_assets_from_modules
 from dawgpath_data_pipeline.orchestration import assets
 from dawgpath_data_pipeline.orchestration.jobs import (
     catalog_refresh_job,
+    full_pipeline_diagnostic_job,
     full_pipeline_job,
     publish_artifacts_job,
     sws_course_refresh_job,
@@ -27,6 +28,7 @@ defs = Definitions(
     jobs=[
         catalog_refresh_job,
         full_pipeline_job,
+        full_pipeline_diagnostic_job,
         sws_course_refresh_job,
         publish_artifacts_job,
     ],
