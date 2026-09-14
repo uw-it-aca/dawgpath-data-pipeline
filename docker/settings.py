@@ -22,7 +22,6 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "dawgpath_pipeline_admin.context_processors.google_analytics",
                 "dawgpath_pipeline_admin.context_processors.django_debug",
-                # "dawgpath_pipeline_admin.context_processors.auth_user",
             ],
         },
     }

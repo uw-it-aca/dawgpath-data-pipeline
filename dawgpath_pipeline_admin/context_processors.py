@@ -3,17 +3,6 @@
 
 from django.conf import settings
 
-#from uw_saml.utils import get_user
-#from userservice.user import UserService
-
-
-def auth_user(request):
-    return {
-        # 'username': get_user(request),  # Basic SAML auth
-        # 'username': UserService().get_user(),  # With UserService override
-        # 'signout_url': reverse('saml_logout'),
-    }
-
 
 def google_analytics(request):
     return {"google_analytics": getattr(settings, "GOOGLE_ANALYTICS_KEY", " ")}
