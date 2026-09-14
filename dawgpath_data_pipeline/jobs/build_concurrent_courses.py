@@ -15,7 +15,11 @@ from dawgpath_data_pipeline.databases.implementation import get_db_implementatio
 from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCourses
 from dawgpath_data_pipeline.models.registration import Registration
-from dawgpath_data_pipeline.utilities import get_previous_term
+from dawgpath_data_pipeline.utilities import (
+    get_combined_term,
+    get_current_academic_term,
+    get_previous_term,
+)
 
 logger = getLogger(__name__)
 # root logger has no handlers configured anywhere in this app, so INFO
@@ -104,11 +108,24 @@ class BuildConcurrentCourses(DataJob):
         )
         return self._create_result(rows_affected=len(conc_objects))
 
-    def _get_terms_from_registrations(self):
+    def _get_terms_from_registrations(self, as_of_term=None):
         terms = []
-        max_year = self.session.query(func.max(Registration.regis_yr)).one()[0]
-        max_qtr = self.session.query(func.max(Registration.regis_qtr))\
-            .filter(Registration.regis_yr == max_year).one()[0]
+        if as_of_term is not None:
+            max_term_combined = get_combined_term(*as_of_term)
+        else:
+            current_term = get_current_academic_term()
+            max_term_combined = get_combined_term(*current_term)
+
+        latest_reg = (
+            self.session.query(Registration.regis_yr, Registration.regis_qtr)
+            .filter(Registration.regis_term <= max_term_combined)
+            .order_by(Registration.regis_term.desc())
+            .first()
+        )
+        if not latest_reg:
+            return []
+
+        max_year, max_qtr = latest_reg
         terms.append((max_year, max_qtr))
         for x in range(PREV_QTR_COUNT):
             terms.append(get_previous_term(terms[-1]))

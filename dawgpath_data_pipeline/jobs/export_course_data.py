@@ -10,6 +10,7 @@ from dawgpath_data_pipeline import MINIMUM_DATA_COUNT
 from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCourses
 from dawgpath_data_pipeline.models.course import Course
+from dawgpath_data_pipeline.models.course_offering_cadence import CourseOfferingCadence
 from dawgpath_data_pipeline.models.gpa_distro import GPADistribution
 from dawgpath_data_pipeline.models.sws_course import SWSCourse
 
@@ -54,6 +55,7 @@ class ExportCourseData(DataJob):
                 pass
             campus = self.get_course_campus(course.course_branch)
             course_title = ' '.join(course.long_course_title.split())
+            cadence = self.get_cadence_for_course(course)
             course_data.append({"course_id": course.course_id,
                                 "department_abbrev": course.department_abbrev,
                                 "course_title": course_title,
@@ -65,7 +67,8 @@ class ExportCourseData(DataJob):
                                 "prereq_graph": graph,
                                 "course_description": c_desc,
                                 "offered_string": c_offer,
-                                "prereq_string": c_prereq
+                                "prereq_string": c_prereq,
+                                "offering_cadence": cadence
                                 })
 
         return json.dumps(course_data)
@@ -116,6 +119,18 @@ class ExportCourseData(DataJob):
             return proc_courses
         except NoResultFound:
             print("No concurrent", course.course_id)
+            return None
+
+    def get_cadence_for_course(self, course):
+        try:
+            cad = self.session.query(CourseOfferingCadence) \
+                .filter(CourseOfferingCadence.department_abbrev
+                        == course.department_abbrev) \
+                .filter(CourseOfferingCadence.course_number
+                        == course.course_number) \
+                .one()
+            return cad.offering_cadence
+        except NoResultFound:
             return None
 
     def get_sws_course_for_course(self, course):

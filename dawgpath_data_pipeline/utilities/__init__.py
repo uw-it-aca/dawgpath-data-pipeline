@@ -1,9 +1,33 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+from datetime import datetime, timezone
+
+
 def get_combined_term(year, quarter):
     # Convert decimal year/qtr into int year+qtr, eg 20204
     return int(str(int(year)) + str(int(quarter)))
+
+
+def get_current_academic_term(dt=None):
+    """
+    Returns the (year, quarter) tuple corresponding to real-world calendar date.
+    Quarter codes: 1=Winter (Jan-Mar), 2=Spring (Apr-Jun), 3=Summer (Jul-Sep 23), 4=Autumn (Sep 24-Dec).
+    """
+    if dt is None:
+        dt = datetime.now(timezone.utc)
+    month = dt.month
+    year = dt.year
+    if month in (1, 2, 3):
+        return year, 1
+    elif month in (4, 5, 6):
+        return year, 2
+    elif month in (7, 8, 9):
+        if month == 9 and dt.day >= 24:
+            return year, 4
+        return year, 3
+    else:
+        return year, 4
 
 
 def get_previous_term(term):

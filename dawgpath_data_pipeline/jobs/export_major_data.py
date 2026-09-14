@@ -11,6 +11,8 @@ from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.common_course_major import CommonCourseMajor
 from dawgpath_data_pipeline.models.gpa_distro import MajorDecGPADistribution
 from dawgpath_data_pipeline.models.major import Major
+from dawgpath_data_pipeline.models.major_co_credentials import MajorCoCredentials
+from dawgpath_data_pipeline.models.major_course_sequence import MajorCourseSequence
 from dawgpath_data_pipeline.models.sr_major import SRMajor
 from dawgpath_data_pipeline.utilities import (
     get_SDB_credential_code,
@@ -78,6 +80,24 @@ class ExportMajorData(DataJob):
         except NoResultFound:
             print("no common", major)
 
+    def get_course_sequence(self, major):
+        try:
+            seq = self.session.query(MajorCourseSequence) \
+                .filter(MajorCourseSequence.major == major) \
+                .one()
+            return seq.sequence_data
+        except NoResultFound:
+            return None
+
+    def get_co_credentials(self, major):
+        try:
+            co = self.session.query(MajorCoCredentials) \
+                .filter(MajorCoCredentials.major == major) \
+                .one()
+            return co.co_majors, co.popular_minors
+        except NoResultFound:
+            return None, None
+
     def get_file_contents(self):
         majors = self.get_majors()
         major_data = {}
@@ -86,6 +106,8 @@ class ExportMajorData(DataJob):
             gpa_2, gpa_5 = self.get_distros_for_major(sdb_code)
             home_url = self.get_major_url(sdb_code)
             common_course = self.get_common_courses(sdb_code)
+            course_sequence = self.get_course_sequence(sdb_code)
+            co_majors, popular_minors = self.get_co_credentials(sdb_code)
             major_title = ' '.join(major.program_title.split())
 
             maj_data = {"major_code": sdb_code,
@@ -100,6 +122,9 @@ class ExportMajorData(DataJob):
                             major.program_admissionType,
                         "major_home_url": home_url,
                         "common_course_decl": common_course,
+                        "course_sequence": course_sequence,
+                        "co_majors": co_majors,
+                        "popular_minors": popular_minors,
                         "2_yr": gpa_2,
                         "5_yr": gpa_5,
                         "credential_title": major.major_title_text,

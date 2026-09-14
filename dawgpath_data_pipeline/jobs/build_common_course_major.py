@@ -14,7 +14,9 @@ from dawgpath_data_pipeline.models.course import Course
 from dawgpath_data_pipeline.models.regis_major import RegisMajor
 from dawgpath_data_pipeline.models.registration import Registration
 from dawgpath_data_pipeline.utilities import (
+    get_combined_term,
     get_course_abbr_title_dict,
+    get_current_academic_term,
     get_previous_combined,
 )
 
@@ -35,22 +37,33 @@ from collections import Counter, defaultdict
 
 class BuildCommonCourseMajor(DataJob):
 
-    def run(self):
-        common_courses = self.build_all_majors()
+    def run(self, as_of_term=None):
+        common_courses = self.build_all_majors(as_of_term=as_of_term)
         self._atomic_replace(CommonCourseMajor, common_courses)
         return self._create_result(rows_affected=len(common_courses))
 
-    def build_all_majors(self):
+    def build_all_majors(self, as_of_term=None):
         start = time.monotonic()
         courses = self.session.query(Course).all()
         title_dict = get_course_abbr_title_dict(courses)
 
-        # 1. Minimum declaration term per student and major abbreviation
-        min_decls = self.session.query(
-            RegisMajor.regis_major_abbr,
-            RegisMajor.system_key,
-            func.min(RegisMajor.regis_term).label('min_term')
-        ).group_by(RegisMajor.regis_major_abbr, RegisMajor.system_key).subquery()
+        if as_of_term is not None:
+            max_term_combined = get_combined_term(*as_of_term)
+        else:
+            current_term = get_current_academic_term()
+            max_term_combined = get_combined_term(*current_term)
+
+        # 1. Minimum declaration term per student and major abbreviation <= current term
+        min_decls = (
+            self.session.query(
+                RegisMajor.regis_major_abbr,
+                RegisMajor.system_key,
+                func.min(RegisMajor.regis_term).label('min_term')
+            )
+            .filter(RegisMajor.regis_term <= max_term_combined)
+            .group_by(RegisMajor.regis_major_abbr, RegisMajor.system_key)
+            .subquery()
+        )
 
         # 2. Count total unique declared students per major (for percentage calculation)
         decl_counts_query = self.session.query(
