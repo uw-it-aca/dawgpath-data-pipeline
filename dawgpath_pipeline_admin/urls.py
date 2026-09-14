@@ -6,7 +6,6 @@ from django.urls import re_path
 from django.views.generic import TemplateView
 
 from dawgpath_pipeline_admin.views.dagster import DagsterProxyView
-from dawgpath_pipeline_admin.views.pages import PageView
 
 # start with an empty url array
 urlpatterns = []
@@ -26,7 +25,7 @@ if settings.DEBUG:
         ),
     ]
 
+# Dagster is the only UI this app serves; proxy everything at root.
 urlpatterns += [
-    re_path(r"^dagster(/.*)?$", DagsterProxyView.as_view(), name="dagster"),
-    re_path(r"^$", PageView.as_view()),
+    re_path(r"^.*$", DagsterProxyView.as_view(), name="dagster"),
 ]

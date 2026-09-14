@@ -1,8 +1,8 @@
 # WebSocket Support for the Dagster UI
 
 Status: proposed, not implemented. Deployment currently runs the HTTP-only
-option (Django reverse proxy), which works for everything except live log
-streaming.
+option (Django reverse proxy, serving Dagster at root), which works for
+everything except live log streaming.
 
 Three options are recorded below. Plan B is the smallest change. Plan C is
 likely the better long-term answer and has a working precedent in the org.
@@ -10,7 +10,7 @@ likely the better long-term answer and has a working precedent in the org.
 ## Problem
 
 The Dagster UI streams run logs over a WebSocket (GraphQL subscriptions at
-`/dagster/graphql`). The current path to the UI is:
+`/graphql`). The current path to the UI is:
 
 ```
 kgateway -> Service :80 -> nginx :8000 -> gunicorn (WSGI) -> DagsterProxyView
@@ -43,16 +43,17 @@ rules:
 
 `django-container` already runs nginx in front of gunicorn (`conf/nginx.conf`,
 upstream `app_server` over a unix socket). nginx handles WebSocket upgrades
-natively, so move the `/dagster` proxy from Django to nginx and keep Django as
+natively, so move the root proxy from Django to nginx and keep Django as
 the authorization decision point via `auth_request`.
 
 ```
-kgateway -> nginx :8000 --(auth_request)--> gunicorn -> /dagster/auth-check
+kgateway -> nginx :8000 --(auth_request)--> gunicorn -> /auth-check
                        \--(proxy_pass + upgrade)--> 127.0.0.1:3000
 ```
 
-The Dagster sidecar stays bound to loopback with `--path-prefix /dagster`, so
-it remains unreachable except through nginx, and SAML remains the only way in.
+The Dagster sidecar stays bound to loopback (no `--path-prefix`, since it now
+serves at root), so it remains unreachable except through nginx, and SAML
+remains the only way in.
 
 ## Changes in `uw-it-aca/django-container`
 
@@ -81,7 +82,7 @@ prefix location.
    `/app/conf/nginx-extra.conf` by the Dockerfile):
 
    ```nginx
-   location /dagster {
+   location / {
        auth_request /_dagster_auth;
        error_page 401 = @dagster_login;
 
@@ -96,7 +97,7 @@ prefix location.
 
    location = /_dagster_auth {
        internal;
-       proxy_pass http://app_server/dagster/auth-check;
+       proxy_pass http://app_server/auth-check;
        proxy_pass_request_body off;
        proxy_set_header Content-Length "";
    }
@@ -107,20 +108,22 @@ prefix location.
    ```
 
    Notes:
+   - `location = /_dagster_auth` and `location @dagster_login` are exact/named
+     matches, so they still take precedence over the root `location /` block.
    - `auth_request` forwards the original `Cookie` header, so the Django
      session is available to the check.
    - `error_page 401` matters: without it a browser gets a bare 401 instead of
      a SAML redirect.
    - `proxy_buffering off` and a long `proxy_read_timeout` are needed for log
      streaming; the gateway `requestTimeouts` (90s) may also need raising for
-     the `/dagster` route.
+     this route.
 
 2. Replace `DagsterProxyView` with a lightweight authorization endpoint that
    returns 200/401/403 and no body. Reuse the existing `has_dagster_access()`
    helper and `DAGSTER_ACCESS_GROUP` setting; both already exist.
 
-3. Route `^dagster/auth-check$` to that view. Remove the catch-all
-   `^dagster(/.*)?$` proxy route, since nginx handles the path once this lands.
+3. Route `^auth-check$` to that view. Remove the catch-all `^.*$` proxy
+   route, since nginx handles every other path once this lands.
 
 4. Drop the direct `requests` dependency from `setup.py` if nothing else uses
    it.
@@ -132,22 +135,22 @@ prefix location.
 
 ## Deployment values
 
-No change needed. `sidecarContainers.dagster-webserver` and the loopback bind
-already match this design. If the gateway timeout proves too short for
-long-lived subscriptions, raise `gateway.requestTimeouts` in
+No further change needed. `sidecarContainers.dagster-webserver` already runs
+without `--path-prefix` (dropped when the proxy moved to serving at root) and
+the loopback bind still matches this design. If the gateway timeout proves too
+short for long-lived subscriptions, raise `gateway.requestTimeouts` in
 `docker/test-values.yml` and `docker/prod-values.yml`.
 
 ## Verification
 
 1. Local: run the gateway container and Dagster sidecar side by side, confirm
-   `/dagster` loads and the run page streams logs without reload.
-2. Confirm an unauthenticated request to `/dagster` redirects to SAML login,
-   not a bare 401.
+   `/` loads and the run page streams logs without reload.
+2. Confirm an unauthenticated request to `/` redirects to SAML login, not a
+   bare 401.
 3. Confirm a user outside `DAGSTER_ACCESS_GROUP` gets 403.
-4. Confirm `curl -I` on `/dagster/graphql` without a session does not reach
-   Dagster.
+4. Confirm `curl -I` on `/graphql` without a session does not reach Dagster.
 5. Deploy to test and watch for nginx `auth_request` latency; it adds one
-   subrequest per request, including static asset fetches under `/dagster`.
+   subrequest per request, including static asset fetches at root.
 
 ## Rollback
 

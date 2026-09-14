@@ -1,10 +1,10 @@
 # DawgPath Data Pipeline deployment values for test environment.
 # Rendered by CI through uw-it-aca/django-production-chart.
 #
-# The main deployment is the SAML gateway, which reverse-proxies /dagster to a
-# Dagster webserver sidecar bound to loopback in the same pod. The dagster-daemon
-# workload runs the monthly full refresh and weekly catalog refresh; both ship
-# stopped and must be started from the Dagster UI.
+# The main deployment is the SAML gateway, which reverse-proxies everything at
+# root to a Dagster webserver sidecar bound to loopback in the same pod. The
+# dagster-daemon workload runs the monthly full refresh and weekly catalog
+# refresh; both ship stopped and must be started from the Dagster UI.
 
 repo: dawgpath-data-pipeline
 instance: test
@@ -230,8 +230,6 @@ sidecarContainers:
       - "3000"
       - "-w"
       - "/app/workspace.yaml"
-      - "--path-prefix"
-      - "/dagster"
     environmentVariables:
       - name: DAGSTER_HOME
         value: /app

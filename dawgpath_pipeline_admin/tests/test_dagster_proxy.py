@@ -17,7 +17,7 @@ class DagsterProxyTest(TestCase):
         session.save()
 
     def test_anonymous_is_redirected_to_login(self):
-        response = self.client.get("/dagster/runs")
+        response = self.client.get("/runs")
         self.assertEqual(response.status_code, 302)
         self.assertIn("/saml/login", response["Location"])
 
@@ -25,7 +25,7 @@ class DagsterProxyTest(TestCase):
     def test_authenticated_without_group_is_denied(self):
         self.client.force_login(self.user)
         self._set_saml_groups(["u_acadev_other"])
-        response = self.client.get("/dagster/runs")
+        response = self.client.get("/runs")
         self.assertEqual(response.status_code, 403)
 
     @override_settings(DAGSTER_ACCESS_GROUP="u_acadev_dawgpath")
@@ -38,13 +38,13 @@ class DagsterProxyTest(TestCase):
 
         self.client.force_login(self.user)
         self._set_saml_groups(["u_acadev_dawgpath"])
-        response = self.client.get("/dagster/runs")
+        response = self.client.get("/runs")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(b"".join(response.streaming_content), b"dagster")
         self.assertEqual(
             mock_request.call_args.kwargs["url"],
-            "http://127.0.0.1:3000/dagster/runs")
+            "http://127.0.0.1:3000/runs")
 
     @patch("dawgpath_pipeline_admin.views.dagster.requests.request")
     def test_upstream_status_and_headers_are_preserved(self, mock_request):
@@ -57,7 +57,7 @@ class DagsterProxyTest(TestCase):
         mock_request.return_value.iter_content.return_value = iter([b"{}"])
 
         self.client.force_login(self.user)
-        response = self.client.get("/dagster/graphql")
+        response = self.client.get("/graphql")
 
         self.assertEqual(response.status_code, 502)
         self.assertEqual(response["x-dagster-header"], "kept")
