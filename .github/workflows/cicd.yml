@@ -159,9 +159,7 @@ jobs:
           # imagePullPolicy on a sidecar (dagster-webserver/forwarder). Pinning a
           # separate static tag on dagster-webserver would drift from the main
           # container's commit tag, which is worse than this documented skip.
-          checkov_skip_checks: >-
-            CKV_K8S_21,CKV_K8S_35,CKV_K8S_43,CKV_K8S_106,CKV_K8S_107,CKV2_K8S_6,
-            CKV_K8S_14,CKV_K8S_15
+          checkov_skip_checks: CKV_K8S_21,CKV_K8S_35,CKV_K8S_43,CKV_K8S_106,CKV_K8S_107,CKV2_K8S_6,CKV_K8S_14,CKV_K8S_15
 
       - name: Deploy Evaluation Branch
         if: needs.context.outputs.git_repo_branch == 'feature/eval-me'
@@ -172,9 +170,7 @@ jobs:
           git_repo_branch: ${{ needs.context.outputs.git_repo_branch }}
           gh_auth_token: ${{ secrets.GH_AUTH_TOKEN }}
           app_instance: eval
-          checkov_skip_checks: >-
-            CKV_K8S_21,CKV_K8S_35,CKV_K8S_43,CKV_K8S_106,CKV_K8S_107,CKV2_K8S_6,
-            CKV_K8S_14,CKV_K8S_15
+          checkov_skip_checks: CKV_K8S_21,CKV_K8S_35,CKV_K8S_43,CKV_K8S_106,CKV_K8S_107,CKV2_K8S_6,CKV_K8S_14,CKV_K8S_15
 
       - name: Surface context from executed build step
         id: context
