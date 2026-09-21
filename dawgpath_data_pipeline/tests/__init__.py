@@ -20,6 +20,7 @@ class DBTest(unittest.TestCase):
 
     def setUp(self):
         self.db = get_db_implementation()
+        Base.metadata.drop_all(self.db.engine)
         Base.metadata.create_all(self.db.engine)
         self.session = self.db.get_session()
 

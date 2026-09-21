@@ -33,6 +33,7 @@ def _rss_mb():
 
 from collections import Counter, defaultdict
 
+
 class BuildCommonCourseMajor(DataJob):
 
     def run(self):

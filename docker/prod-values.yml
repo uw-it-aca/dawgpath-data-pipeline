@@ -51,8 +51,15 @@ gateway:
     frontEnd: 90s
     backEnd: 90s
 
-# TODO: confirm the provisioned Cloud SQL instance with platform owners and
-# add the matching externalService serviceAddress/servicePort.
+# DawgPath Pipeline shares the existing dawgpath-v1 Cloud SQL instance.
+# The pipeline uses a separate logical production database on that instance.
+externalService:
+  enabled: true
+  name: dawgpath-pipeline-db-service
+  type: ClusterIP
+  serviceAddress: 172.18.1.250
+  servicePort: 5432
+
 database:
   engine: postgres
   name: dawgpath-pipeline-prod
@@ -74,6 +81,13 @@ environmentVariables:
     value: prod
   - name: GCS_BUCKET_NAME
     value: uw-dawgpath-pipeline-artifacts-prod
+  - name: GOOGLE_APPLICATION_CREDENTIALS
+    value: /gcs/credentials.json
+
+  # EDW is only reachable from the campus network; the forwarder sidecar
+  # opens an SSH tunnel and this app talks to it over loopback instead.
+  - name: EDW_SERVER
+    value: "127.0.0.1"
 
   - name: AUTH
     value: SAML
@@ -100,6 +114,8 @@ environmentVariables:
 
   - name: RESTCLIENTS_SWS_DAO_CLASS
     value: Live
+  - name: SWS_ENV
+    value: PROD
   - name: RESTCLIENTS_SWS_VERIFY_HTTPS
     value: "True"
   - name: RESTCLIENTS_SWS_CERT_FILE
@@ -111,39 +127,51 @@ externalSecrets:
   enabled: true
   secrets:
     - name: pipeline.dawgpath.uw.edu-secrets
-      externalKey: dawgpath/prod/secrets
+      externalKey: dawgpath/pipeline/prod/secrets
       data:
         - name: django-secret
           property: django-secret
-        - name: edw-server
-          property: edw-server
-        - name: edw-user
-          property: edw-user
-        - name: edw-password
-          property: edw-password
         - name: sws-host
           property: sws-host
         - name: dagster-access-group
           property: dagster-access-group
+    - name: pipeline.dawgpath.uw.edu-edw-secrets
+      externalKey: dawgpath/pipeline/shared/secrets
+      data:
+        - name: edw-user
+          property: edw-user
+        - name: edw-password
+          property: edw-password
+        - name: edw-target-hostname
+          property: edw-server
+    - name: pipeline.dawgpath.uw.edu-proxy-secrets
+      externalKey: shared/proxies/uw_ssh_tunnel
+      data:
+        - name: proxy-hostname
+          property: hostname
+        - name: proxy-id
+          property: username
+        - name: proxy-id-key
+          property: key
     - name: pipeline.dawgpath.uw.edu-uw-idp-cert
       externalKey: idp-cert
       data:
         - name: uw-idp-cert
           property: cert
     - name: pipeline.dawgpath.uw.edu-sql-secrets
-      externalKey: dawgpath/shared/sql-secrets
+      externalKey: dawgpath/pipeline/prod/sql-secrets
       data:
         - name: username
           property: username
         - name: password
           property: password
     - name: pipeline.dawgpath.uw.edu-gcs-credentials
-      externalKey: dawgpath/shared/gcs-credentials
+      externalKey: dawgpath/pipeline/prod/gcs-credentials
       data:
         - name: credentials.json
           property: credentials.json
     - name: pipeline.dawgpath.uw.edu-uwca-certs
-      externalKey: dawgpath/prod/uwca-certs
+      externalKey: dawgpath/pipeline/prod/uwca-certs
       data:
         - name: pipeline.dawgpath.uw.edu-uwca.cert
           property: pipeline.dawgpath.uw.edu-uwca.cert
@@ -155,17 +183,13 @@ environmentVariablesSecrets:
     name: DJANGO_SECRET
     secretName: pipeline.dawgpath.uw.edu-secrets
     secretKey: django-secret
-  edwServer:
-    name: EDW_SERVER
-    secretName: pipeline.dawgpath.uw.edu-secrets
-    secretKey: edw-server
   edwUser:
     name: EDW_USER
-    secretName: pipeline.dawgpath.uw.edu-secrets
+    secretName: pipeline.dawgpath.uw.edu-edw-secrets
     secretKey: edw-user
   edwPassword:
     name: EDW_PASSWORD
-    secretName: pipeline.dawgpath.uw.edu-secrets
+    secretName: pipeline.dawgpath.uw.edu-edw-secrets
     secretKey: edw-password
   swsHost:
     name: RESTCLIENTS_SWS_HOST
@@ -250,7 +274,6 @@ sidecarContainers:
           secretKeyRef:
             name: pipeline.dawgpath.uw.edu-sql-secrets
             key: password
-
 # Runs execute inside this pod under the default run launcher, so it is sized
 # for the heaviest asset (registration refresh) rather than for the daemon.
 daemon:
@@ -267,3 +290,36 @@ daemon:
         requests:
           cpu: 500m
           memory: 2048Mi
+      # Runs execute here, so this pod—not the UI pod—needs the EDW tunnel.
+      sidecarContainers:
+        forwarder:
+          image: us-docker.pkg.dev/uwit-mci-axdd/containers/uw-ssh-client:89695b2
+          environmentVariables:
+            - name: PROXY_ID_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pipeline.dawgpath.uw.edu-proxy-secrets
+                  key: proxy-id-key
+            - name: PROXY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: pipeline.dawgpath.uw.edu-proxy-secrets
+                  key: proxy-id
+            - name: PROXY_HOSTNAME
+              valueFrom:
+                secretKeyRef:
+                  name: pipeline.dawgpath.uw.edu-proxy-secrets
+                  key: proxy-hostname
+            - name: TARGET_HOSTNAME
+              valueFrom:
+                secretKeyRef:
+                  name: pipeline.dawgpath.uw.edu-edw-secrets
+                  key: edw-target-hostname
+            - name: TARGET_PORT
+              value: "1433"
+            - name: LOCAL_PORT
+              value: "1433"
+          command:
+            - "sh"
+            - "-c"
+            - 'mkdir -m 0700 ~/.ssh && echo "${PROXY_ID_KEY}" > ~/.ssh/id_ecdsa && chmod 400 ~/.ssh/id_ecdsa && ssh ${PROXY_ID}@${PROXY_HOSTNAME} -o StrictHostKeyChecking=no -o ServerAliveInterval=300 -N -L 127.0.0.1:${LOCAL_PORT}:${TARGET_HOSTNAME}:${TARGET_PORT}'

@@ -1,8 +1,8 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-import time
 import resource
+import time
 from collections import Counter
 from logging import INFO, StreamHandler, getLogger
 
@@ -12,7 +12,6 @@ from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.concurrent_courses import ConcurrentCoursesMajor
 from dawgpath_data_pipeline.models.regis_major import RegisMajor
 from dawgpath_data_pipeline.models.registration import Registration
-from dawgpath_data_pipeline.utilities import get_combined_term
 
 logger = getLogger(__name__)
 # root logger has no handlers configured anywhere in this app, so INFO

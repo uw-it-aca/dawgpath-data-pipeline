@@ -9,6 +9,8 @@ INSTALLED_APPS += [
 
 GOOGLE_ANALYTICS_KEY = os.getenv("GOOGLE_ANALYTICS_KEY", default=" ")
 
+DAGSTER_ACCESS_GROUP = os.getenv("DAGSTER_ACCESS_GROUP", default=None)
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",

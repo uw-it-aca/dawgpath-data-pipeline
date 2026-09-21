@@ -28,6 +28,15 @@ class DagsterProxyTest(TestCase):
         response = self.client.get("/runs")
         self.assertEqual(response.status_code, 403)
 
+    @override_settings(DAGSTER_ACCESS_GROUP=None)
+    def test_authenticated_with_unset_access_group_is_denied(self):
+        # Fail closed: a misconfigured/missing DAGSTER_ACCESS_GROUP must not
+        # grant access to every authenticated user.
+        self.client.force_login(self.user)
+        self._set_saml_groups(["u_acadev_dawgpath"])
+        response = self.client.get("/runs")
+        self.assertEqual(response.status_code, 403)
+
     @override_settings(DAGSTER_ACCESS_GROUP="u_acadev_dawgpath")
     @patch("dawgpath_pipeline_admin.views.dagster.requests.request")
     def test_authorized_group_is_proxied(self, mock_request):
@@ -46,6 +55,33 @@ class DagsterProxyTest(TestCase):
             mock_request.call_args.kwargs["url"],
             "http://127.0.0.1:3000/runs")
 
+    @override_settings(DAGSTER_ACCESS_GROUP="u_acadev_dawgpath")
+    @patch("dawgpath_pipeline_admin.views.dagster.requests.request")
+    def test_same_origin_post_is_proxied(self, mock_request):
+        mock_request.return_value.status_code = 200
+        mock_request.return_value.headers = {"content-type": "application/json"}
+        mock_request.return_value.iter_content.return_value = iter([b"{}"])
+
+        self.client.force_login(self.user)
+        self._set_saml_groups(["u_acadev_dawgpath"])
+        response = self.client.post(
+            "/graphql", secure=True, HTTP_ORIGIN="https://testserver")
+
+        self.assertEqual(response.status_code, 200)
+        mock_request.assert_called_once()
+
+    @override_settings(DAGSTER_ACCESS_GROUP="u_acadev_dawgpath")
+    @patch("dawgpath_pipeline_admin.views.dagster.requests.request")
+    def test_cross_origin_post_is_denied(self, mock_request):
+        self.client.force_login(self.user)
+        self._set_saml_groups(["u_acadev_dawgpath"])
+        response = self.client.post(
+            "/graphql", HTTP_ORIGIN="https://attacker.example")
+
+        self.assertEqual(response.status_code, 403)
+        mock_request.assert_not_called()
+
+    @override_settings(DAGSTER_ACCESS_GROUP="u_acadev_dawgpath")
     @patch("dawgpath_pipeline_admin.views.dagster.requests.request")
     def test_upstream_status_and_headers_are_preserved(self, mock_request):
         mock_request.return_value.status_code = 502
@@ -57,6 +93,7 @@ class DagsterProxyTest(TestCase):
         mock_request.return_value.iter_content.return_value = iter([b"{}"])
 
         self.client.force_login(self.user)
+        self._set_saml_groups(["u_acadev_dawgpath"])
         response = self.client.get("/graphql")
 
         self.assertEqual(response.status_code, 502)

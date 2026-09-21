@@ -10,8 +10,6 @@ from dawgpath_data_pipeline.jobs.build_concurrent_courses_major import (
     BuildConcurrentCoursesMajor,
 )
 from dawgpath_data_pipeline.jobs.build_course_gpa_distro import BuildCourseGPADistro
-from dawgpath_data_pipeline.jobs.build_course_graphs import BuildCoursePrereqGraphs
-from dawgpath_data_pipeline.jobs.build_curric_graphs import BuildCurricPrereqGraphs
 from dawgpath_data_pipeline.jobs.build_curric_prereq_list import BuildCurricPrereqLists
 from dawgpath_data_pipeline.jobs.build_major_dec_grade_distro import (
     BuildMajorDecGradeDistro,

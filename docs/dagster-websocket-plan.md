@@ -186,7 +186,7 @@ Still required:
   hostname, so this needs the same chart change as Plan A, or DawgPath-specific
   manifests in the Flux repo.
 - Authorization. OIDC at the edge proves identity; group membership
-  (`DAGSTER_ACCESS_GROUP` today) must move into the gateway policy or stay as a
+  (``DAGSTER_ACCESS_GROUP`` today) must move into the gateway policy or stay as a
   check inside Dagster's reachable surface.
 - An OIDC client registration and secret in Vault.
 

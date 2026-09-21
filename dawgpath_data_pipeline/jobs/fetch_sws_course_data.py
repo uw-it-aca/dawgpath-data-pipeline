@@ -141,9 +141,7 @@ class FetchSWSCourseData(DataJob):
         last_updated = existing.last_updated
         if last_updated.tzinfo is None:
             last_updated = last_updated.replace(tzinfo=timezone.utc)
-        if (now_utc - last_updated).days > SWS_REFRESH_THRESHOLD_DAYS:
-            return True
-        return False
+        return (now_utc - last_updated).days > SWS_REFRESH_THRESHOLD_DAYS
 
     def _fetch_single_sws_course(self, yr, qtr, dept, num):
         try:

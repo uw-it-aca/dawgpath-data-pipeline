@@ -33,7 +33,8 @@ TOP_CONCURRENT_COURSE_COUNT = 10
 PREV_QTR_COUNT = 7
 
 
-from collections import Counter, defaultdict
+from collections import defaultdict
+
 
 class BuildConcurrentCourses(DataJob):
     def run(self):

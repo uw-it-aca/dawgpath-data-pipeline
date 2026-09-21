@@ -1,11 +1,13 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+from urllib.parse import urlparse
+
 import requests
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.http import StreamingHttpResponse
+from django.http import HttpResponseForbidden, StreamingHttpResponse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -34,9 +36,20 @@ STREAM_CHUNK_SIZE = 8192
 def has_dagster_access(request):
     access_group = getattr(settings, "DAGSTER_ACCESS_GROUP", None)
     if not access_group:
-        return True
+        return False
     saml_data = request.session.get("samlUserdata", {})
     return access_group in saml_data.get("isMemberOf", [])
+
+
+def has_same_origin(request):
+    origin = request.headers.get("Origin")
+    parsed_origin = urlparse(origin) if origin else None
+    return (
+        request.is_secure()
+        and parsed_origin is not None
+        and parsed_origin.scheme == "https"
+        and parsed_origin.netloc == request.get_host()
+    )
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -46,6 +59,8 @@ class DagsterProxyView(LoginRequiredMixin, View):
     http_method_names = ["get", "post", "head", "options"]
 
     def dispatch(self, request, *args, **kwargs):
+        if request.method == "POST" and not has_same_origin(request):
+            return HttpResponseForbidden("Cross-origin requests are not allowed")
         if request.user.is_authenticated and not has_dagster_access(request):
             raise PermissionDenied("Not authorized for the Dagster UI")
         return super().dispatch(request, *args, **kwargs)
