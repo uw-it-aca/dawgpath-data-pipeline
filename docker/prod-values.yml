@@ -248,7 +248,7 @@ podVolumes:
 # Bound to loopback so the SAML gateway in this pod is its only entrance.
 sidecarContainers:
   dagster-webserver:
-    image: us-west1-docker.pkg.dev/uwit-mci-axdd/dawgpath-images/dawgpath-data-pipeline:latest
+    image: us-docker.pkg.dev/uwit-mci-axdd/containers/dawgpath-data-pipeline:latest
     command:
       - "/app/bin/dagster-webserver"
       - "-h"
@@ -319,6 +319,8 @@ daemon:
               drop:
                 - ALL
           environmentVariables:
+            - name: HOME
+              value: /tmp
             - name: PROXY_ID_KEY
               valueFrom:
                 secretKeyRef:
