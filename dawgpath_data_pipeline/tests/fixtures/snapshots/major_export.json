@@ -28,6 +28,7 @@
     },
     "credential_title": "Cred title",
     "credential_code": "INFO_0_1_1",
-    "credential_description": "Bachelor of Science in Informatics"
+    "credential_description": "Bachelor of Science in Informatics",
+    "program_verind_id": null
   }
 }
