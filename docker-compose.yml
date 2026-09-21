@@ -1,0 +1,58 @@
+version: '3.4'
+
+services:
+  app:
+    build:
+      context: .
+      target: app-container
+    restart: always
+    container_name: dawgpath_pipeline_admin_app
+    environment:
+      - GOOGLE_ANALYTICS_KEY=${GOOGLE_ANALYTICS_KEY}
+    volumes:
+      - ./dawgpath_pipeline_admin:/app/dawgpath_pipeline_admin
+      - ./dawgpath_data_pipeline:/app/dawgpath_data_pipeline
+      - statics-volume:/static
+    ports:
+      - "${RUNSERVER_PORT:-8000}:8000"
+    stdin_open: true
+    tty: true
+  dagster:
+    build:
+      context: .
+      target: app-container
+    container_name: dawgpath_pipeline_dagster
+    environment:
+      - DAGSTER_HOME=/app
+      - ENV=localdev
+    volumes:
+      - ./dawgpath_pipeline_admin:/app/dawgpath_pipeline_admin
+      - ./dawgpath_data_pipeline:/app/dawgpath_data_pipeline
+      - ./workspace.yaml:/app/workspace.yaml
+      - ./dagster.yaml:/app/dagster.yaml
+      - ./certs:/secrets:ro
+    ports:
+      - "3000:3000"
+    command: /app/bin/dagster dev -h 0.0.0.0 -p 3000 -w /app/workspace.yaml
+    stdin_open: true
+    tty: true
+  postgres:
+    container_name: dawgpath_pipeline_postgres
+    image: postgres:13.4
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+volumes:
+  statics-volume:

@@ -1,5 +1,22 @@
-# prereq-data-pipeline
+# DawgPath Data Pipeline
 
-![Tests](https://github.com/uw-it-aca/prereq-data-pipeline/actions/workflows/cicd.yml/badge.svg?branch=main) [![Coverage Status](https://coveralls.io/repos/github/uw-it-aca/prereq-data-pipeline/badge.svg)](https://coveralls.io/github/uw-it-aca/prereq-data-pipeline)
+![Tests](https://github.com/uw-it-aca/dawgpath-data-pipeline/actions/workflows/cicd.yml/badge.svg?branch=main) [![Coverage Status](https://coveralls.io/repos/github/uw-it-aca/dawgpath-data-pipeline/badge.svg)](https://coveralls.io/github/uw-it-aca/dawgpath-data-pipeline)
 
-Data pipeline for the Prereq Map application
+Data pipeline for DawgPath and the Prereq Map application.
+
+This repository is currently in an in-progress refactor from manually run ETL scripts toward a deployable application/job structure. The existing ETL behavior is still implemented in `dawgpath_data_pipeline` as SQLAlchemy-backed Python job classes. The Django/Vue admin shell exists, but it is not yet a production job runner.
+
+## Documentation
+
+- [Current state](docs/current-state.md): branch status, architecture snapshot, validation status, and deployment fit.
+- [Pipeline runner plan](docs/pipeline-runner-plan.md): architecture plan for Dagster orchestrator, GCS artifact delivery, and SAML SSO boundary.
+- [ETL job catalog](docs/jobs.md): current jobs, inputs, outputs, dependencies, and inferred workflow order.
+- [Job safety and transaction audit](docs/job-safety-audit.md): destructive execution audit, transaction strategies, and staging table plan.
+- [Privacy & data release policy](docs/privacy-data-release.md): `MINIMUM_DATA_COUNT = 8` privacy threshold rules and enforcement.
+- [Operations and deployment notes](docs/operations.md): local operation, cluster fit, and suggested lockdown plan.
+- [Dagster UI WebSocket plan](docs/dagster-websocket-plan.md): proposed nginx `auth_request` approach for live log streaming behind SAML.
+- [Known issues and immediate fixes](docs/known-issues.md): items to address before deployment or deeper refactoring.
+
+## Current Validation Snapshot
+
+As of 2026-09-09, `python -m compileall dawgpath_data_pipeline/` passes. The historical test runner, `python dawgpath_data_pipeline/test.py -v`, fails in the active local environment before tests run because `commonconf` is not installed.

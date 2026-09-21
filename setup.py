@@ -1,45 +1,52 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 README = """
 See the README on `GitHub
-<https://github.com/uw-it-aca/prereq-data-pipeline>`_.
+<https://github.com/uw-it-aca/dawgpath-data-pipeline>`_.
 """
 
 # The VERSION file is created by travis-ci, based on the tag name
-version_path = 'prereq_data_pipeline/VERSION'
+version_path = "dawgpath_pipeline_admin/VERSION"
+print(os.path.join(os.path.dirname(__file__), version_path))
 VERSION = open(os.path.join(os.path.dirname(__file__), version_path)).read()
 VERSION = VERSION.replace("\n", "")
 
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
-url = "https://github.com/uw-it-aca/prereq-data-pipeline"
+url = "https://github.com/uw-it-aca/dawgpath-data-pipeline"
 setup(
-    name='Prereq Data Pipeline',
+    name="dawgpath_pipeline_admin",
     version=VERSION,
-    packages=['prereq_data_pipeline'],
-    author="UW-IT AXDD",
+    packages=find_packages(),
+    author="UW-IT",
     author_email="aca-it@uw.edu",
     include_package_data=True,
     install_requires=[
-        'pandas~=1.5.3',
-        'SQLAlchemy~=1.3.23',
-        'commonconf~=1.1',
-        'nose2',
-        'alembic',
-        'psycopg2',
-        'pymssql',
-        'UW-RestClients-SWS~=2.3'
+        "django~=4.2",
+        "sqlalchemy~=2.0",
+        "pandas~=2.0",
+        "commonconf~=1.1",
+        "uw-restclients-sws~=2.4",
+        "uw-django-saml2~=1.8",
+        "requests",
+        "pymssql~=2.2",
+        "psycopg2>=2.9",
+        "alembic~=1.12",
+        "dagster>=1.6.0",
+        "dagster-webserver>=1.6.0",
+        "google-cloud-storage>=2.0.0",
     ],
-    license='',
-    description='A tool for managing prereq map data',
+    license="Apache License, Version 2.0",
+    description="",
     long_description=README,
     url=url,
     classifiers=[
-        'Intended Audience :: Developers',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3.6',
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python",
+        "Framework :: Django",
     ],
 )

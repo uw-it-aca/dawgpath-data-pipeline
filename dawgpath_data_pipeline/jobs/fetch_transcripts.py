@@ -1,0 +1,64 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
+from datetime import date
+
+from dawgpath_data_pipeline.dao.edw import get_transcripts_since_year
+from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.models.transcript import Transcript
+from dawgpath_data_pipeline.utilities import get_combined_term
+
+FETCH_LOOKBACK_YEARS = 5
+
+
+class FetchTranscriptData(DataJob):
+    upstream_sources = ["EDW: sec.transcript"]
+
+    def run(self):
+        transcripts = self._get_transcripts()
+        self._atomic_replace(Transcript, transcripts)
+        return self._create_result(rows_affected=len(transcripts))
+
+    # get transcript data
+    def _get_transcripts(self):
+        start_year = date.today().year - FETCH_LOOKBACK_YEARS  # noqa: DTZ011
+        transcripts = get_transcripts_since_year(start_year)
+
+        transcript_objects = []
+        for transcript in transcripts.to_dict('records'):
+            combined_qtr = get_combined_term(transcript['tran_yr'],
+                                             transcript['tran_qtr'])
+            transcript_obj = Transcript(
+                system_key=transcript['system_key'],
+                tran_yr=transcript['tran_yr'],
+                tran_qtr=transcript['tran_qtr'],
+                combined_qtr=combined_qtr
+            )
+
+            """
+            handle manual override cases:
+
+            Manual Override of the student's Quarterly Grade Points Total i.e.
+             when this field is greater than zero, its value is used instead of
+             qtr_grade_points
+            """
+            if(transcript['over_qtr_grade_pt'] > 0):
+                transcript_obj.qtr_grade_points = \
+                    transcript['over_qtr_grade_pt']
+            else:
+                transcript_obj.qtr_grade_points = \
+                    transcript['qtr_grade_points']
+
+            if (transcript['over_qtr_grade_at'] > 0):
+                transcript_obj.qtr_graded_attmp = \
+                    transcript['over_qtr_grade_at']
+            else:
+                transcript_obj.qtr_graded_attmp = \
+                    transcript['qtr_graded_attmp']
+
+            transcript_objects.append(transcript_obj)
+        return transcript_objects
+
+    # delete existing transcript data
+    def _delete_transcripts(self):
+        self._delete_objects(Transcript)

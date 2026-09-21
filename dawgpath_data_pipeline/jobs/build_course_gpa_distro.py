@@ -1,0 +1,51 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
+from sqlalchemy import func
+
+from dawgpath_data_pipeline import MINIMUM_DATA_COUNT
+from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.models.gpa_distro import GPADistribution
+from dawgpath_data_pipeline.models.registration import Registration
+
+SAVE_COUNT = 1000
+
+
+class BuildCourseGPADistro(DataJob):
+    def run(self):
+        distros = self.build_distros_for_courses()
+        self._atomic_replace(GPADistribution, distros)
+        return self._create_result(rows_affected=len(distros))
+
+    def build_distros_for_courses(self):
+        courses = self.session.query(Registration.crs_curric_abbr,
+                                     Registration.crs_number) \
+            .distinct(Registration.crs_curric_abbr,
+                      Registration.crs_number).all()
+        distros = []
+        for course in courses:
+            distros.append(self.build_distro_for_course(course.crs_curric_abbr,
+                                                        course.crs_number))
+        return distros
+
+    def build_distro_for_course(self, curric, number):
+        gpa_data = self.session.query(Registration.gpa,
+                                      func.count(Registration.gpa)) \
+            .filter(Registration.crs_curric_abbr == curric,
+                    Registration.crs_number == number) \
+            .group_by(Registration.gpa).all()
+        distro = {key: 0 for key in range(41)}
+        data_points = 0
+        for gpa, count in gpa_data:
+            data_points += count
+            distro[gpa] = count
+
+        if data_points < MINIMUM_DATA_COUNT:
+            distro = {key: 0 for key in range(41)}
+        gpa_distro = GPADistribution(crs_curric_abbr=curric,
+                                     crs_number=number,
+                                     gpa_distro=distro)
+        return gpa_distro
+
+    def _delete_gpa_distros(self):
+        self._delete_objects(GPADistribution)

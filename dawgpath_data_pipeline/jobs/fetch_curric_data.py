@@ -1,0 +1,39 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
+from dawgpath_data_pipeline.dao.edw import get_curric_info
+from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.models.curriculum import Curriculum
+
+
+class FetchCurricData(DataJob):
+    upstream_sources = ["EDW: sec.sr_curric_code"]
+
+    def run(self):
+        currics = self._get_currics()
+        self._atomic_replace(Curriculum, currics)
+        return self._create_result(rows_affected=len(currics))
+
+    # get curric data
+    def _get_currics(self):
+        currics = get_curric_info()
+        curric_objects = []
+        for index, curric in currics.iterrows():
+            curric_objects.append(
+                Curriculum(
+                    abbrev=curric['curric_abbr'].strip(),
+                    name=curric['curric_name'].strip(),
+                    campus=str(curric['curric_branch']),
+                    url=curric['curric_home_url'].strip()
+                )
+            )
+        return curric_objects
+
+    # save curric data
+    def _save_currics(self, currics):
+        self.session.add_all(currics)
+        self.session.commit()
+
+    # delete existing curric data
+    def _delete_currics(self):
+        self._delete_objects(Curriculum)

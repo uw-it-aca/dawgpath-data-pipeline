@@ -1,0 +1,73 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
+from dawgpath_data_pipeline.dao.edw import get_majors
+from dawgpath_data_pipeline.jobs import DataJob
+from dawgpath_data_pipeline.models.major import Major
+
+
+def parse_boolean(value):
+    normalized_value = value.lower()
+    if normalized_value in ("y", "yes", "t", "true", "on", "1"):
+        return True
+    if normalized_value in ("n", "no", "f", "false", "off", "0"):
+        return False
+    raise ValueError(f"invalid truth value {value!r}")
+
+
+class FetchMajorData(DataJob):
+    upstream_sources = ["EDW: sec.CM_Credentials", "EDW: sec.CM_Programs"]
+
+    def run(self):
+        majors = self._get_majors()
+        self._atomic_replace(Major, majors)
+        return self._create_result(rows_affected=len(majors))
+
+    # get major data
+    def _get_majors(self):
+        majors = get_majors()
+
+        major_objects = []
+        for index, major in majors.iterrows():
+            soc = major['program_school_or_college'].strip()
+            try:
+                no_publish = parse_boolean(major['DoNotPublish'].strip())
+            except ValueError:
+                if(len(major['DoNotPublish'].strip()) == 0):
+                    no_publish = False
+                else:
+                    raise
+
+            cdsl = major['credential_dateStartLabel'].strip()
+            cdel = major['credential_dateEndLabel'].strip()
+            major_obj = Major(
+                program_code=major['program_code'].strip(),
+                program_title=major['program_title'].strip(),
+                program_department=major['program_department'].strip(),
+                program_description=major['program_description'].strip(),
+                program_level=major['program_level'].strip(),
+                program_type=major['program_type'].strip(),
+                program_school_or_college=soc,
+                program_dateStartLabel=major['program_dateStartLabel'].strip(),
+                program_dateEndLabel=major['program_dateEndLabel'].strip(),
+                program_verind_id=major['program_verind_id'][1].strip(),
+                campus_name=major['campus_name'].strip(),
+                program_admissionType=major['program_admissionType'].strip(),
+                credential_title=major['credential_title'].strip(),
+                credential_code=major['credential_code'].strip(),
+                credential_description=major['credential_description'].strip(),
+                credential_dateStartLabel=cdsl,
+                credential_dateEndLabel=cdel,
+                credential_DoNotPublish=no_publish
+            )
+            major_objects.append(major_obj)
+        return major_objects
+
+    # save major data
+    def _save_majors(self, majors):
+        self.session.add_all(majors)
+        self.session.commit()
+
+    # delete existing major data
+    def _delete_majors(self):
+        self._delete_objects(Major)

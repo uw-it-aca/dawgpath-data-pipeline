@@ -1,0 +1,8 @@
+[
+  {
+    "curric_abbrev": "CSE",
+    "curric_name": "Computer Science & Engineering",
+    "prereq_graph": "{\"nodes\": [{\"id\": \"CSE 142\"}], \"edges\": []}",
+    "course_data": "[{\"course_id\": \"CSE 142\", \"course_title\": \"Fundamentals of Programming\", \"prereqs\": [], \"postreqs\": []}]"
+  }
+]

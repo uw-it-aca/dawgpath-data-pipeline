@@ -3,6 +3,18 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+bin/
+include/
+lib/
+lib
+lib64
+pyvenv.cfg
+
 # C extensions
 *.so
 
@@ -14,8 +26,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
 parts/
 sdist/
 var/
@@ -26,10 +36,19 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.DS_Store
+
+# IDE and Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.code-workspace
+
+coverage/
 
 # PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
 
@@ -51,15 +70,38 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
-# Translations
-*.mo
-*.pot
+# SQLite & Databases
+*.sqlite
+*.sqlite3
+db.sqlite
+db.sqlite3
+db.sqlite3-journal
+
+# Output Artifacts
+artifacts/
+
+# Dagster local runtime state
+.tmp_dagster_home*/
+.dagster/
+.history/
+history/
+storage/
+schedules/
+*.sqlite
+*.db
+
+# Credentials / Certificates
+certs/
+*.cert
+*.key
+*.crt
+*.pem
 
 # Django stuff:
 *.log
 local_settings.py
-db.sqlite3
-db.sqlite3-journal
+dawgpath_data_pipeline/conf/app.conf
+test_live_jobs.py
 
 # Flask stuff:
 instance/
@@ -84,14 +126,7 @@ ipython_config.py
 # pyenv
 .python-version
 
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+# PEP 582
 __pypackages__/
 
 # Celery stuff
@@ -117,6 +152,9 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
+# IDE settings
+.editorconfig
+
 # mkdocs documentation
 /site
 
@@ -127,5 +165,15 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# private connection settings
+constring.txt
+
+# cypress image snapshots diffs
+screenshots/
+__diff_output__/
+
+# coverage
+coverage
 
 app.conf
