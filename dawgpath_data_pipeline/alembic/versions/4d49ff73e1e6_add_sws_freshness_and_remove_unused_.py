@@ -1,3 +1,6 @@
+# Copyright 2026 UW-IT, University of Washington
+# SPDX-License-Identifier: Apache-2.0
+
 """add_sws_freshness_and_remove_unused_tables
 
 Revision ID: 4d49ff73e1e6
