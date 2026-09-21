@@ -245,7 +245,9 @@ podVolumes:
 # Bound to loopback so the SAML gateway in this pod is its only entrance.
 sidecarContainers:
   dagster-webserver:
-    image: us-docker.pkg.dev/uwit-mci-axdd/containers/dawgpath-data-pipeline:latest
+    # TODO: chart can't inherit the per-deploy commit tag for sidecars (see
+    # /memories/repo/dawgpath-pipeline-deploy-followups.md); pin manually until fixed.
+    image: us-docker.pkg.dev/uwit-mci-axdd/containers/dawgpath-data-pipeline:884d1a0
     command:
       - "/app/bin/dagster-webserver"
       - "-h"
@@ -312,6 +314,8 @@ daemon:
               memory: 64Mi
           securityContext:
             allowPrivilegeEscalation: false
+            runAsNonRoot: false
+            runAsUser: 0
             capabilities:
               drop:
                 - ALL
