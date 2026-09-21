@@ -29,6 +29,7 @@ setup(
         "pandas~=2.0",
         "commonconf~=1.1",
         "uw-restclients-sws~=2.4",
+        "uw-django-saml2~=1.8",
         "requests",
         "pymssql~=2.2",
         "psycopg2>=2.9",
