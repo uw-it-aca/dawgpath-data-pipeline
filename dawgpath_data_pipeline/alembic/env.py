@@ -15,7 +15,6 @@ from dawgpath_data_pipeline.models.concurrent_courses import (
     ConcurrentCoursesMajor,
 )
 from dawgpath_data_pipeline.models.course import Course
-
 # models must me imported for autogenerate to detect changes
 from dawgpath_data_pipeline.models.curriculum import Curriculum
 from dawgpath_data_pipeline.models.gpa_distro import GPADistribution
