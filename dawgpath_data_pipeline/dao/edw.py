@@ -1,11 +1,14 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+import time
+
 import pandas
 import pymssql
 from commonconf import settings
 
 DB = "UWSDBDataStore"
+CONNECTION_ATTEMPTS = 3
 
 
 def get_regis_majors_since_year(year):
@@ -168,7 +171,15 @@ def _run_query(database, query):
     password = settings.EDW_PASSWORD
     user = settings.EDW_USER
     server = settings.EDW_SERVER
-    con = pymssql.connect(server, user, password, database)
+    for attempt in range(1, CONNECTION_ATTEMPTS + 1):
+        try:
+            con = pymssql.connect(server, user, password, database)
+            break
+        except pymssql.OperationalError as error:
+            if (not error.args or error.args[0] != 20002 or
+                    attempt == CONNECTION_ATTEMPTS):
+                raise
+            time.sleep(2 ** attempt)
     df = pandas.read_sql(query, con)
     con.close()
     return df

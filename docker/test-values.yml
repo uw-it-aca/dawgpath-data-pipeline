@@ -301,7 +301,8 @@ daemon:
       # Runs execute here, so this pod—not the UI pod—needs the EDW tunnel.
       sidecarContainers:
         forwarder:
-          image: us-docker.pkg.dev/uwit-mci-axdd/containers/uw-ssh-client:89695b2
+          restartPolicy: Always
+          image: us-docker.pkg.dev/uwit-mci-axdd/containers/uw-ssh-client:c73534d
           resources:
             requests:
               cpu: 10m
@@ -344,4 +345,4 @@ daemon:
           command:
             - "sh"
             - "-c"
-            - 'mkdir -p -m 0700 ~/.ssh && chmod 700 ~/.ssh && echo "${PROXY_ID_KEY}" > ~/.ssh/id_ecdsa && chmod 400 ~/.ssh/id_ecdsa && ssh -o BatchMode=yes -o ConnectTimeout=15 -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no -o ServerAliveInterval=300 -o ServerAliveCountMax=3 ${PROXY_ID}@${PROXY_HOSTNAME} -N -L 127.0.0.1:${LOCAL_PORT}:${TARGET_HOSTNAME}:${TARGET_PORT}'
+            - 'mkdir -p -m 0700 ~/.ssh && chmod 700 ~/.ssh && echo "${PROXY_ID_KEY}" > ~/.ssh/id_ecdsa && chmod 400 ~/.ssh/id_ecdsa && autossh -N -M 0 -o BatchMode=yes -o ConnectTimeout=15 -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -L 127.0.0.1:${LOCAL_PORT}:${TARGET_HOSTNAME}:${TARGET_PORT} ${PROXY_ID}@${PROXY_HOSTNAME}'
