@@ -101,6 +101,11 @@ certs/
 *.log
 local_settings.py
 dawgpath_data_pipeline/conf/app.conf
+
+# Generated frontend build output
+node_modules/
+dawgpath_pipeline_admin/static/dawgpath_pipeline_admin/
+dawgpath_pipeline_admin/static/manifest.json
 test_live_jobs.py
 
 # Flask stuff:
