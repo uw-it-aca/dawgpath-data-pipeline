@@ -155,10 +155,8 @@ jobs:
           git_repo_branch: ${{ needs.context.outputs.git_repo_branch }}
           gh_auth_token: ${{ secrets.GH_AUTH_TOKEN }}
           # Default skips plus two for django-production-chart's sidecarContainers
-          # helper, which has no way to inherit the per-deploy commit tag or set
-          # imagePullPolicy on a sidecar (dagster-webserver/forwarder). Pinning a
-          # separate static tag on dagster-webserver would drift from the main
-          # container's commit tag, which is worse than this documented skip.
+          # helper, which cannot set imagePullPolicy on a sidecar
+          # (dagster-webserver/forwarder).
           checkov_skip_checks: CKV_K8S_21,CKV_K8S_35,CKV_K8S_43,CKV_K8S_106,CKV_K8S_107,CKV2_K8S_6,CKV_K8S_14,CKV_K8S_15
 
       - name: Deploy Evaluation Branch

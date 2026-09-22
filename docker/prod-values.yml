@@ -248,9 +248,6 @@ podVolumes:
 # Bound to loopback so the SAML gateway in this pod is its only entrance.
 sidecarContainers:
   dagster-webserver:
-    # TODO: chart can't inherit the per-deploy commit tag for sidecars (see
-    # /memories/repo/dawgpath-pipeline-deploy-followups.md); pin manually until fixed.
-    image: us-docker.pkg.dev/uwit-mci-axdd/containers/dawgpath-data-pipeline:f9762b6
     command:
       - "/app/bin/dagster-webserver"
       - "-h"
@@ -350,4 +347,4 @@ daemon:
           command:
             - "sh"
             - "-c"
-            - 'mkdir -m 0700 ~/.ssh && echo "${PROXY_ID_KEY}" > ~/.ssh/id_ecdsa && chmod 400 ~/.ssh/id_ecdsa && ssh ${PROXY_ID}@${PROXY_HOSTNAME} -o StrictHostKeyChecking=no -o ServerAliveInterval=300 -N -L 127.0.0.1:${LOCAL_PORT}:${TARGET_HOSTNAME}:${TARGET_PORT}'
+            - 'mkdir -p -m 0700 ~/.ssh && chmod 700 ~/.ssh && echo "${PROXY_ID_KEY}" > ~/.ssh/id_ecdsa && chmod 400 ~/.ssh/id_ecdsa && ssh -o BatchMode=yes -o ConnectTimeout=15 -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no -o ServerAliveInterval=300 -o ServerAliveCountMax=3 ${PROXY_ID}@${PROXY_HOSTNAME} -N -L 127.0.0.1:${LOCAL_PORT}:${TARGET_HOSTNAME}:${TARGET_PORT}'
