@@ -36,6 +36,7 @@ setup(
         "alembic~=1.12",
         "dagster>=1.6.0",
         "dagster-webserver>=1.6.0",
+        "dagster-postgres>=0.22.0",
         "google-cloud-storage>=2.0.0",
     ],
     license="Apache License, Version 2.0",

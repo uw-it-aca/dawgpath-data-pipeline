@@ -323,8 +323,6 @@ daemon:
               drop:
                 - ALL
           environmentVariables:
-            - name: HOME
-              value: /tmp
             - name: PROXY_ID_KEY
               valueFrom:
                 secretKeyRef:
