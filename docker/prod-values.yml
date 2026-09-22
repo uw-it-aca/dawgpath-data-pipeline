@@ -323,9 +323,7 @@ daemon:
               drop:
                 - ALL
           environmentVariables:
-            - name: HOME
-              value: /tmp
-            - name: PROXY_ID_KEY
+ok,             - name: PROXY_ID_KEY
               valueFrom:
                 secretKeyRef:
                   name: pipeline.dawgpath.uw.edu-proxy-secrets
