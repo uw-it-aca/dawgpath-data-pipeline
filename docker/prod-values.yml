@@ -250,7 +250,7 @@ sidecarContainers:
   dagster-webserver:
     # TODO: chart can't inherit the per-deploy commit tag for sidecars (see
     # /memories/repo/dawgpath-pipeline-deploy-followups.md); pin manually until fixed.
-    image: us-docker.pkg.dev/uwit-mci-axdd/containers/dawgpath-data-pipeline:884d1a0
+    image: us-docker.pkg.dev/uwit-mci-axdd/containers/dawgpath-data-pipeline:f9762b6
     command:
       - "/app/bin/dagster-webserver"
       - "-h"
