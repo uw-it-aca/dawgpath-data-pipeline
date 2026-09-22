@@ -288,14 +288,17 @@ sidecarContainers:
 # Runs execute inside this pod under the default run launcher, so it is sized
 # for the heaviest asset (registration refresh) rather than for the daemon.
 daemon:
-  enabled: true
+  # Disabled (2026-09-21): forwarder crash-looping against tnl2.s.uw.edu
+  # (connection timeouts, cause unconfirmed w/o jump-host root access -
+  # see /memories/repo/dawgpath-pipeline-deploy-followups.md). Restore
+  # enabled: true once cleared with whoever administers that host.
+  # NOTE: replicaCount: 0 does NOT work here - the chart's daemon.yaml uses
+  # `{{ default 1 .replicaCount }}`, and Sprig's default() treats 0 as unset,
+  # silently falling back to 1. enabled: false is the only way to stop it.
+  enabled: false
   daemons:
-    # Scaled to 0 (2026-09-21): forwarder crash-looping against tnl2.s.uw.edu
-    # (connection timeouts, cause unconfirmed w/o jump-host root access -
-    # see /memories/repo/dawgpath-pipeline-deploy-followups.md). Restore
-    # replicaCount: 1 once cleared with whoever administers that host.
     - name: dagster-daemon
-      replicaCount: 0
+      replicaCount: 1
       command: ["/app/bin/dagster-daemon"]
       args: ["run"]
       resources:
