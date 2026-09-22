@@ -290,8 +290,12 @@ sidecarContainers:
 daemon:
   enabled: true
   daemons:
+    # Scaled to 0 (2026-09-21): forwarder crash-looping against tnl2.s.uw.edu
+    # (connection timeouts, cause unconfirmed w/o jump-host root access -
+    # see /memories/repo/dawgpath-pipeline-deploy-followups.md). Restore
+    # replicaCount: 1 once cleared with whoever administers that host.
     - name: dagster-daemon
-      replicaCount: 1
+      replicaCount: 0
       command: ["/app/bin/dagster-daemon"]
       args: ["run"]
       resources:
