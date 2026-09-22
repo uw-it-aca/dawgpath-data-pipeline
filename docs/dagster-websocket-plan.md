@@ -1,16 +1,50 @@
 # WebSocket Support for the Dagster UI
 
-Status: proposed, not implemented. Deployment currently runs the HTTP-only
-option (Django reverse proxy, serving Dagster at root), which works for
-everything except live log streaming.
+Status: deprioritized. Deployment currently runs the HTTP-only option (Django
+reverse proxy, serving Dagster at root). This does not break live log/run
+status updates in practice — see "Confirmed: no functional loss" below — so
+this plan is no longer on the critical path. It is kept for reference if the
+polling volume or latency ever becomes a problem.
 
 Three options are recorded below. Plan B is the smallest change. Plan C is
 likely the better long-term answer and has a working precedent in the org.
 
+## Confirmed: no functional loss (2026-09-22)
+
+The Dagster UI's own frontend (`ui-core/src/runs/LogsProvider.tsx` and
+`ui-core/src/app/WebSocketProvider.tsx`, bundled in the installed
+`dagster_webserver` package's `webapp/build`) already has a built-in fallback:
+
+- On each run page load, it attempts a WebSocket connection for
+  `PipelineRunLogsSubscription`.
+- If the socket never connects/acks within 10s (`TIME_TO_WAIT_FOR_ACK`), or
+  errors, `WebSocketContext.availability` becomes `'unavailable'`, and
+  `LogsProvider` renders `LogsProviderWithQuery` instead of the subscription
+  variant.
+- `LogsProviderWithQuery` is a plain `useQuery(RUN_LOGS_QUERY, {pollInterval:
+  5000, ...})` — i.e. a regular GraphQL POST every 5 seconds while the run is
+  still in progress. This is what shows up in the browser network tab as
+  repeated `/graphql` POSTs, and it does update logs and run status live.
+
+Remaining costs of not having WebSockets, now that they're understood to be
+cosmetic/perf rather than functional:
+
+- A visible ~10s stall ("attempting-to-connect") on each run page load before
+  it gives up on WS and starts polling, logged to the browser console as
+  `[WebSockets] Timed out waiting for WS connection.`
+- Up to 5s latency instead of push, and one GraphQL POST every 5s per open
+  run/log view instead of a single persistent connection.
+
+Unverified: whether the asset/run overview "live" charts (governed by
+`--live-data-poll-rate` in `dagster-webserver`) also degrade gracefully in the
+same way; they appeared to keep updating during this observation, but the
+fallback path wasn't traced in the same detail as `LogsProvider`.
+
 ## Problem
 
 The Dagster UI streams run logs over a WebSocket (GraphQL subscriptions at
-`/graphql`). The current path to the UI is:
+`/graphql`) when available, but falls back to HTTP polling when it isn't (see
+above). The current path to the UI is:
 
 ```
 kgateway -> Service :80 -> nginx :8000 -> gunicorn (WSGI) -> DagsterProxyView
@@ -18,8 +52,10 @@ kgateway -> Service :80 -> nginx :8000 -> gunicorn (WSGI) -> DagsterProxyView
 ```
 
 `DagsterProxyView` in `dawgpath_pipeline_admin/views/dagster.py` proxies with
-`requests`, and gunicorn/WSGI cannot perform an HTTP upgrade. So the UI loads
-and runs can be launched, but run pages do not stream; they need a reload.
+`requests`, and gunicorn/WSGI cannot perform an HTTP upgrade. So the WebSocket
+connection attempt always fails/times out, and the UI falls back to the
+5s-polling `LogsProviderWithQuery` path described above instead of streaming.
+Run pages still update, just on a delay rather than instantly.
 
 kgateway is **not** the blocker. Envoy passes `Upgrade: websocket` through on
 HTTP routes.
