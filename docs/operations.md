@@ -2,6 +2,9 @@
 
 Last reviewed: 2026-09-09
 
+For EDW connectivity failures through the `tnl2.s.uw.edu` forwarder, see
+[EDW SSH Tunnel Reliability](edw-ssh-tunnel.md).
+
 This project is not currently ready to run as a scheduled production job on the cluster without additional work. The ETL behavior exists, but the operational boundary is still implicit Python class calls rather than a stable command interface.
 
 ## Local Operation
