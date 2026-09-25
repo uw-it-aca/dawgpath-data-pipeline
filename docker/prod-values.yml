@@ -234,6 +234,17 @@ configmaps:
             db_name:
               env: DB_DATABASE
             port: 5432
+      # Keep in sync with the repo's dagster.yaml (enforced by test_instance_config).
+      concurrency:
+        runs:
+          max_concurrent_runs: -1
+        pools:
+          default_limit: 1
+          granularity: run
+      run_monitoring:
+        enabled: true
+        start_timeout_seconds: 300
+        poll_interval_seconds: 120
 
 podVolumes:
   dagster-instance:

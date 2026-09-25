@@ -10,3 +10,29 @@ local_artifact_storage:
 run_launcher:
   module: dagster.core.launcher
   class: DefaultRunLauncher
+
+# Keep concurrency and run_monitoring in sync with the dagster-instance
+# configmaps in docker/test-values.yml and docker/prod-values.yml, which
+# replace this file in deployed pods (enforced by test_instance_config).
+#
+# All steps still execute as subprocesses of this single daemon pod (see
+# docs/pipeline-runner-plan.md), so heavy work is capped by pools: tier_3
+# (graph builds) and edw_history (quarter fetches). The limit can only be set
+# as a default across pools, so both get 1 run at a time. Run granularity
+# keeps blocked runs queued instead of idling on the pod.
+concurrency:
+  runs:
+    max_concurrent_runs: -1
+  pools:
+    default_limit: 1
+    granularity: run
+
+# Detects runs whose worker process/pod died without Dagster recording a
+# step failure (crashes silently, gets OOM-killed, evicted, etc.) and marks
+# them FAILURE instead of leaving them in STARTED forever. Intentionally no
+# max_runtime_seconds here — that's a separate duration cap that would kill
+# legitimately long EDW jobs; this only checks worker liveness.
+run_monitoring:
+  enabled: true
+  start_timeout_seconds: 300
+  poll_interval_seconds: 120

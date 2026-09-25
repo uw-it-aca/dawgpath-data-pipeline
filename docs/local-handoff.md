@@ -3,8 +3,9 @@
 ## Current status
 - Dagster orchestration is implemented in `dawgpath_data_pipeline/orchestration/`.
 - Asset groups: `source_refreshes`, `derived_assets`, `published_artifacts`.
-- Job groups: `catalog_refresh`, `full_pipeline_job`, `sws_course_refresh`, `publish_artifacts_job`.
-- Schedules: `monthly_full_pipeline` (04:00 on the 1st) and `weekly_catalog_refresh` (05:00 Sundays), both shipped stopped.
+- Job groups: `catalog_refresh`, `enrollment_history_refresh` (quarter-partitioned), `full_pipeline_job`, `sws_course_refresh`, `publish_artifacts_job`, `sync_history_quarters` (manual: rolls the quarter partition list to the current lookback window; run once after a fresh deploy).
+- Schedules: `monthly_full_pipeline` (04:00 on the 1st; launches one `enrollment_history_refresh` run per quarter) and `weekly_catalog_refresh` (05:00 Sundays), both shipped stopped.
+- Sensor: `full_pipeline_after_history_refresh` launches `full_pipeline_job` once every quarter in the latest scheduled batch succeeds; shipped stopped and must be started alongside `monthly_full_pipeline`.
 - Artifact versioning and manifest publishing are implemented via `dawgpath_data_pipeline/utilities/artifact_publisher.py`.
 - Local Dagster dev runner is validated; port 3000 responds with HTTP 200.
 - Deployment config is split into `docker/test-values.yml` and `docker/prod-values.yml`.

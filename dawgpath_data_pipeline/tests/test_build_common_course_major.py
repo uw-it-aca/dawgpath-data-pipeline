@@ -22,12 +22,12 @@ class TestCommonCourse(DBTest):
     mock_df = None
 
     @patch('dawgpath_data_pipeline.jobs.'
-           'fetch_regis_major_data.get_regis_majors_since_year')
+           'fetch_regis_major_data.get_regis_majors_in_year_quarter')
     def _save_regis_majors(self, get_regis_major_mock):
         mock_df = pd.DataFrame.from_dict(regis_mock_data,
                                          orient='columns')
         get_regis_major_mock.return_value = mock_df
-        self.mock_regis_majors = FetchRegisMajorData()._get_regis_majors()
+        self.mock_regis_majors = FetchRegisMajorData()._get_regis_majors(2020, 1)
         FetchRegisMajorData()._delete_regis_majors()
         FetchRegisMajorData()._bulk_save_objects(self.mock_regis_majors)
 

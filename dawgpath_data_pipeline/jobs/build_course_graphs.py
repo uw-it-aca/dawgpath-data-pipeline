@@ -15,6 +15,11 @@ from dawgpath_data_pipeline.utilities.graphs import GraphFactory
 
 logger = getLogger(__name__)
 
+# Bounded rather than defaulting to os.cpu_count(): each worker holds its own
+# GraphFactory/DB connection plus a 1000-course chunk, so an unbounded pool on
+# a high-CPU pod can multiply peak memory well past what tier sizing assumes.
+MAX_POOL_WORKERS = 4
+
 
 def get_graphs(courses):
     gf = GraphFactory(courses=courses)
@@ -34,7 +39,7 @@ class BuildCoursePrereqGraphs(DataJob):
         chunk_size = 1000
         chunks = [courses[x:x+chunk_size] for x in
                   range(0, len(courses), chunk_size)]
-        pool = multiprocessing.Pool()
+        pool = multiprocessing.Pool(processes=MAX_POOL_WORKERS)
         results = pool.map(get_graphs, chunks)
         graphs = list(chain.from_iterable(results))
 

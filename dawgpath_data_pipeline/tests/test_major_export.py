@@ -33,22 +33,22 @@ class TestMajorGPAExport(DBTest):
         self.mock_sr_majors = FetchSRMajorData()._get_sr_majors()
 
     @patch('dawgpath_data_pipeline.jobs.'
-           'fetch_regis_major_data.get_regis_majors_since_year')
+           'fetch_regis_major_data.get_regis_majors_in_year_quarter')
     def _save_regis_majors(self, get_regis_major_mock):
         mock_df = pd.DataFrame.from_dict(regis_mock_data,
                                          orient='columns')
         get_regis_major_mock.return_value = mock_df
-        self.mock_regis_majors = FetchRegisMajorData()._get_regis_majors()
+        self.mock_regis_majors = FetchRegisMajorData()._get_regis_majors(2020, 1)
         FetchRegisMajorData()._delete_regis_majors()
         FetchRegisMajorData()._bulk_save_objects(self.mock_regis_majors)
 
     @patch('dawgpath_data_pipeline.jobs.'
-           'fetch_transcripts.get_transcripts_since_year')
+           'fetch_transcripts.get_transcripts_in_year_quarter')
     def _save_transcript_data(self, get_tran_mock):
         mock_df = pd.DataFrame.from_dict(tran_mock_data,
                                          orient='columns')
         get_tran_mock.return_value = mock_df
-        self.mock_transcripts = FetchTranscriptData()._get_transcripts()
+        self.mock_transcripts = FetchTranscriptData()._get_transcripts(2020, 1)
         FetchTranscriptData()._delete_transcripts()
         FetchTranscriptData()._bulk_save_objects(self.mock_transcripts)
 

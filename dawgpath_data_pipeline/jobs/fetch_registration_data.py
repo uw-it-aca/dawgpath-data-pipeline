@@ -1,36 +1,30 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from datetime import date
+from sqlalchemy import or_
 
 from dawgpath_data_pipeline.dao.edw import get_registrations_in_year_quarter
 from dawgpath_data_pipeline.jobs import DataJob
 from dawgpath_data_pipeline.models.registration import Registration
-from dawgpath_data_pipeline.utilities import get_combined_term
-
-FETCH_LOOKBACK_YEARS = 5
-REG_QUARTERS = [1, 2, 3, 4]
+from dawgpath_data_pipeline.utilities import (
+    get_combined_term,
+    get_history_start_term,
+)
 
 
 class FetchRegistrationData(DataJob):
     upstream_sources = ["EDW: sec.registration_courses"]
 
-    def run(self):
-        # Replace within one transaction, one quarter at a time
-        rows_affected = self._atomic_replace_stream(
-            Registration, self._iter_registration_mappings())
+    # Replaces one quarter and prunes quarters that aged out of the window
+    def run(self, year, quarter):
+        term = get_combined_term(year, quarter)
+        rows_affected = self._atomic_replace_where(
+            Registration,
+            or_(Registration.regis_term == term,
+                Registration.regis_term < get_history_start_term()),
+            self._get_registration_mappings(year, quarter),
+            lock_key=f"{Registration.__tablename__}:{term}")
         return self._create_result(rows_affected=rows_affected)
-
-    # yield a quarter at a time so a full fetch window is never held in memory
-    def _iter_registration_mappings(self):
-        # local date is intentional; EDW registration years are UW-local
-        current_year = date.today().year  # noqa: DTZ011
-        start_year = current_year - FETCH_LOOKBACK_YEARS
-        reg_year = start_year
-        while reg_year <= current_year:
-            for quarter in REG_QUARTERS:
-                yield self._get_registration_mappings(reg_year, quarter)
-            reg_year += 1
 
     # get registration column mappings by year and quarter
     def _get_registration_mappings(self, year, quarter):

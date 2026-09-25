@@ -4,7 +4,7 @@
 import time
 from datetime import datetime, timezone
 
-from sqlalchemy import insert
+from sqlalchemy import insert, text
 
 from dawgpath_data_pipeline import MINIMUM_DATA_COUNT
 from dawgpath_data_pipeline.databases.implementation import get_db_implementation
@@ -141,25 +141,31 @@ class DataJob:
             self.session.rollback()
             raise
 
-    def _atomic_replace_stream(self, model_cls, mapping_batches,
-                               chunk_size=10000):
+    def _advisory_xact_lock(self, lock_key):
+        # SQLite already serializes writers; Postgres needs an explicit lock
+        if self.session.get_bind().dialect.name == "postgresql":
+            self.session.execute(
+                text("SELECT pg_advisory_xact_lock(hashtext(:key))"),
+                {"key": lock_key})
+
+    def _atomic_replace_where(self, model_cls, criteria, mappings, lock_key,
+                              chunk_size=10000):
         """
-        Atomically replaces all rows for model_cls from an iterable of
-        column-mapping batches. Rows are inserted without building ORM
-        instances, so tables too large to materialize at once stay within
-        memory. Returns the number of rows inserted.
+        Atomically deletes rows of model_cls matching criteria and inserts
+        replacement column mappings in a single transaction, so one slice of
+        a table can be refreshed without touching the rest. Concurrent
+        replaces sharing lock_key run one after the other, so overlapping
+        refreshes of the same slice cannot both insert.
         """
-        rows_affected = 0
         try:
-            self._delete_objects(model_cls, commit=False)
-            for batch in mapping_batches:
-                for x in range(0, len(batch), chunk_size):
-                    chunk = batch[x:x + chunk_size]
-                    if chunk:
-                        self.session.execute(insert(model_cls), chunk)
-                        rows_affected += len(chunk)
+            self._advisory_xact_lock(lock_key)
+            self.session.query(model_cls).filter(criteria).delete(
+                synchronize_session=False)
+            for x in range(0, len(mappings), chunk_size):
+                self.session.execute(insert(model_cls),
+                                     mappings[x:x + chunk_size])
             self.session.commit()
         except Exception:
             self.session.rollback()
             raise
-        return rows_affected
+        return len(mappings)

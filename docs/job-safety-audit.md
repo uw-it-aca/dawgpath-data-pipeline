@@ -32,10 +32,10 @@ Jobs are classified into three safety tiers:
 | `FetchCurricData` | **Strategy A** | `_get_currics()` called first; then `_atomic_replace(Curriculum, currics)` | No deletion if EDW `sec.sr_curric_code` fetch fails. |
 | `FetchMajorData` | **Strategy A** | `_get_majors()` called first; then `_atomic_replace(Major, majors)` | No deletion if EDW major query fails. |
 | `FetchPrereqData` | **Strategy A** | `_get_prereqs()` called first; then `_atomic_replace(Prereq, prereqs)` | No deletion if EDW `sec.sr_course_prereq` query fails. |
-| `FetchRegisMajorData` | **Strategy A** | `_get_regis_majors()` called first; then `_atomic_replace(RegisMajor, regis_majors)` | No deletion if EDW `sec.registration_regis_col_major` fails. |
+| `FetchRegisMajorData` | **Strategy A** | Per quarter partition: `_atomic_replace_where(RegisMajor, ...)` deletes that quarter (plus quarters older than the lookback window) and inserts its mappings in one transaction. | Rolled back if the quarter's EDW fetch or insert fails; other quarters untouched. |
 | `FetchSRMajorData` | **Strategy A** | `_get_sr_majors()` called first; then `_atomic_replace(SRMajor, sr_majors)` | No deletion if EDW `sec.sr_major_code` query fails. |
-| `FetchTranscriptData` | **Strategy A** | `_get_transcripts()` called first; then `_atomic_replace(Transcript, transcripts)` | No deletion if EDW `sec.transcript` query fails. |
-| `FetchRegistrationData` | **Strategy A** | `_atomic_replace_stream(Registration, ...)` inserts quarter-by-quarter column mappings inside one transaction. | Rolled back if any quarter's EDW fetch or insert fails; avoids materializing 10 years of rows in memory. |
+| `FetchTranscriptData` | **Strategy A** | Per quarter partition: `_atomic_replace_where(Transcript, ...)`, same pattern as `FetchRegisMajorData`. | Rolled back if the quarter's EDW fetch or insert fails; other quarters untouched. |
+| `FetchRegistrationData` | **Strategy A** | Per quarter partition: `_atomic_replace_where(Registration, ...)`, same pattern as `FetchRegisMajorData`. | Rolled back if the quarter's EDW fetch or insert fails; other quarters untouched. A partially failed batch leaves a mix of old and new quarters until re-executed. |
 | `FetchSWSCourseData` | **Strategy A** | Incremental; queries missing courses and saves non-empty chunks. | Does not delete existing `SWSCourse` records. |
 | `BuildCommonCourseMajor` | **Strategy A** | `build_all_majors()` called first; then `_atomic_replace(CommonCourseMajor, ...)` | No deletion if declaration query or course calculation fails. |
 | `BuildCommonMajorForCourse` | **Strategy A** | `build_common_majors()` called first; then `_atomic_replace(CommonMajorForCourse, ...)` | No deletion if student-course grouping fails. |
