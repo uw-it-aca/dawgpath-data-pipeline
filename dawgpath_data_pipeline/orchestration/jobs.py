@@ -9,7 +9,40 @@ asset tier, so the cheap catalog refresh does not drag the full EDW re-fetch
 with it.
 """
 
-from dagster import AssetSelection, define_asset_job, in_process_executor
+from dagster import (
+    AssetSelection,
+    OpExecutionContext,
+    define_asset_job,
+    in_process_executor,
+    job,
+    op,
+)
+
+from dawgpath_data_pipeline.orchestration.partitions import (
+    HISTORY_ASSETS,
+    history_quarter_partitions,
+    sync_history_partitions,
+)
+
+HISTORY_SELECTION = AssetSelection.assets(*HISTORY_ASSETS)
+
+
+@op
+def sync_history_quarters_op(context: OpExecutionContext):
+    keys = sync_history_partitions(context.instance)
+    context.log.info(f"History quarters: {keys[0]}..{keys[-1]} ({len(keys)})")
+
+
+@job(
+    name="sync_history_quarters",
+    description=(
+        "Adds quarters entering the lookback window to "
+        "enrollment_history_refresh and removes ones that aged out. The "
+        "monthly schedule also does this on every tick."
+    ),
+)
+def sync_history_quarters_job():
+    sync_history_quarters_op()
 
 # EDW catalog metadata plus everything derived only from it.
 CATALOG_ASSETS = [
@@ -36,12 +69,25 @@ catalog_refresh_job = define_asset_job(
     ),
 )
 
+enrollment_history_refresh_job = define_asset_job(
+    name="enrollment_history_refresh",
+    selection=HISTORY_SELECTION,
+    partitions_def=history_quarter_partitions,
+    description=(
+        "Refreshes one quarter of EDW registrations, major declarations, and "
+        "transcripts per run, and prunes quarters older than the lookback "
+        "window."
+    ),
+)
+
+# Quarter-partitioned history assets run in enrollment_history_refresh; the
+# history refresh sensor launches this once a full batch of quarters succeeds.
 full_pipeline_job = define_asset_job(
     name="full_pipeline_job",
-    selection=AssetSelection.all(),
+    selection=AssetSelection.all() - HISTORY_SELECTION,
     description=(
-        "Executes full end-to-end pipeline from source fetches to published "
-        "exports. This is the primary scheduled refresh."
+        "Executes everything downstream of the quarter-partitioned history "
+        "fetches, from catalog fetches to published exports."
     ),
 )
 
@@ -49,7 +95,7 @@ full_pipeline_job = define_asset_job(
 # jobs aren't obscured by concurrent DB contention from sibling assets.
 full_pipeline_diagnostic_job = define_asset_job(
     name="full_pipeline_diagnostic_job",
-    selection=AssetSelection.all(),
+    selection=AssetSelection.all() - HISTORY_SELECTION,
     executor_def=in_process_executor,
     description=(
         "Same asset selection as full_pipeline_job but runs strictly "

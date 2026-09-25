@@ -18,11 +18,17 @@ from dagster import (
     asset,
 )
 
+from dawgpath_data_pipeline.orchestration.partitions import (
+    HISTORY_POOL,
+    history_quarter_partitions,
+)
 from dawgpath_data_pipeline.orchestration.tags import (
     TIER_1_K8S_TAGS,
     TIER_2_K8S_TAGS,
     TIER_3_K8S_TAGS,
+    TIER_3_POOL,
 )
+from dawgpath_data_pipeline.utilities import parse_combined_term
 from dawgpath_data_pipeline.utilities.artifact_publisher import ArtifactPublisher
 
 # EDW rejects connections during its nightly restricted window (SQL 923),
@@ -124,12 +130,14 @@ def fetch_sr_major_data():
 
 @asset(
     group_name="source_refreshes",
-    op_tags=TIER_3_K8S_TAGS,
+    op_tags=TIER_2_K8S_TAGS,
     retry_policy=UPSTREAM_RETRY_POLICY,
-    description="Fetches 5-year course registrations from EDW.",
+    partitions_def=history_quarter_partitions,
+    pool=HISTORY_POOL,
+    description="Fetches one quarter of course registrations from EDW.",
 )
-def fetch_registration_data():
-    res = FetchRegistrationData().run()
+def fetch_registration_data(context: OpExecutionContext):
+    res = FetchRegistrationData().run(*parse_combined_term(context.partition_key))
     return Output(res, metadata=_res_meta(res))
 
 
@@ -137,10 +145,12 @@ def fetch_registration_data():
     group_name="source_refreshes",
     op_tags=TIER_2_K8S_TAGS,
     retry_policy=UPSTREAM_RETRY_POLICY,
-    description="Fetches major declarations for the last 5 years from EDW.",
+    partitions_def=history_quarter_partitions,
+    pool=HISTORY_POOL,
+    description="Fetches one quarter of major declarations from EDW.",
 )
-def fetch_regis_major_data():
-    res = FetchRegisMajorData().run()
+def fetch_regis_major_data(context: OpExecutionContext):
+    res = FetchRegisMajorData().run(*parse_combined_term(context.partition_key))
     return Output(res, metadata=_res_meta(res))
 
 
@@ -148,20 +158,25 @@ def fetch_regis_major_data():
     group_name="source_refreshes",
     op_tags=TIER_2_K8S_TAGS,
     retry_policy=UPSTREAM_RETRY_POLICY,
-    description="Fetches transcript GPA-attempt rows for the last 5 years from EDW.",
+    partitions_def=history_quarter_partitions,
+    pool=HISTORY_POOL,
+    description="Fetches one quarter of transcript GPA-attempt rows from EDW.",
 )
-def fetch_transcript_data():
-    res = FetchTranscriptData().run()
+def fetch_transcript_data(context: OpExecutionContext):
+    res = FetchTranscriptData().run(*parse_combined_term(context.partition_key))
     return Output(res, metadata=_res_meta(res))
 
 
+# Partitioned upstreams are wired as deps (not inputs) so downstream steps
+# read their tables directly instead of loading every partition's output.
 @asset(
     group_name="source_refreshes",
     op_tags=TIER_1_K8S_TAGS,
     retry_policy=UPSTREAM_RETRY_POLICY,
+    deps=[fetch_registration_data],
     description="Fetches SWS course descriptions and parsed prerequisite strings.",
 )
-def fetch_sws_course_data(fetch_course_data, fetch_registration_data):
+def fetch_sws_course_data(fetch_course_data):
     res = FetchSWSCourseData().run()
     return Output(res, metadata=_res_meta(res))
 
@@ -185,6 +200,7 @@ from dawgpath_data_pipeline.jobs.build_major_dec_grade_distro import (
 @asset(
     group_name="derived_assets",
     op_tags=TIER_3_K8S_TAGS,
+    pool=TIER_3_POOL,
     description="Builds course-level prerequisite graph JSON using multiprocessing.",
 )
 def build_course_prereq_graphs(fetch_course_data, fetch_prereq_data):
@@ -205,6 +221,7 @@ def build_curric_prereq_lists(fetch_curric_data, fetch_course_data, fetch_prereq
 @asset(
     group_name="derived_assets",
     op_tags=TIER_3_K8S_TAGS,
+    pool=TIER_3_POOL,
     description="Builds curriculum-level prerequisite graph JSON.",
 )
 def build_curric_prereq_graphs(fetch_curric_data, fetch_course_data, fetch_prereq_data):
@@ -215,9 +232,10 @@ def build_curric_prereq_graphs(fetch_curric_data, fetch_course_data, fetch_prere
 @asset(
     group_name="derived_assets",
     op_tags=TIER_2_K8S_TAGS,
+    deps=[fetch_registration_data],
     description="Calculates concurrent course registration counts for the last 8 quarters.",
 )
-def build_concurrent_courses(fetch_registration_data):
+def build_concurrent_courses():
     res = BuildConcurrentCourses().run()
     return Output(res, metadata=_res_meta(res))
 
@@ -225,9 +243,10 @@ def build_concurrent_courses(fetch_registration_data):
 @asset(
     group_name="derived_assets",
     op_tags=TIER_2_K8S_TAGS,
+    deps=[fetch_regis_major_data, fetch_registration_data],
     description="Calculates top 10 common courses completed prior to major declaration.",
 )
-def build_common_course_major(fetch_regis_major_data, fetch_registration_data, fetch_course_data):
+def build_common_course_major(fetch_course_data):
     res = BuildCommonCourseMajor().run()
     return Output(res, metadata=_res_meta(res))
 
@@ -235,9 +254,10 @@ def build_common_course_major(fetch_regis_major_data, fetch_registration_data, f
 @asset(
     group_name="derived_assets",
     op_tags=TIER_2_K8S_TAGS,
+    deps=[fetch_regis_major_data, fetch_registration_data],
     description="Calculates course co-occurrence after major declaration.",
 )
-def build_concurrent_courses_major(fetch_regis_major_data, fetch_registration_data):
+def build_concurrent_courses_major():
     res = BuildConcurrentCoursesMajor().run()
     return Output(res, metadata=_res_meta(res))
 
@@ -245,9 +265,10 @@ def build_concurrent_courses_major(fetch_regis_major_data, fetch_registration_da
 @asset(
     group_name="derived_assets",
     op_tags=TIER_2_K8S_TAGS,
+    deps=[fetch_registration_data],
     description="Calculates 0-40 GPA distribution bucket counts per course.",
 )
-def build_course_gpa_distro(fetch_registration_data):
+def build_course_gpa_distro():
     res = BuildCourseGPADistro().run()
     return Output(res, metadata=_res_meta(res))
 
@@ -255,9 +276,10 @@ def build_course_gpa_distro(fetch_registration_data):
 @asset(
     group_name="derived_assets",
     op_tags=TIER_2_K8S_TAGS,
+    deps=[fetch_regis_major_data, fetch_transcript_data],
     description="Calculates 2-year and 5-year GPA distributions per major.",
 )
-def build_major_dec_grade_distro(fetch_regis_major_data, fetch_transcript_data):
+def build_major_dec_grade_distro():
     res = BuildMajorDecGradeDistro().run()
     return Output(res, metadata=_res_meta(res))
 

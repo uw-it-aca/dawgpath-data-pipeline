@@ -11,16 +11,21 @@ run_launcher:
   module: dagster.core.launcher
   class: DefaultRunLauncher
 
+# Keep concurrency and run_monitoring in sync with the dagster-instance
+# configmaps in docker/test-values.yml and docker/prod-values.yml, which
+# replace this file in deployed pods (enforced by test_instance_config).
+#
 # All steps still execute as subprocesses of this single daemon pod (see
-# docs/pipeline-runner-plan.md), so the memory-heaviest (tier_3) assets must
-# never run concurrently with each other or they can stack past the pod's
-# memory limit and get OOM-killed without a clean step failure.
-run_queue:
-  max_concurrent_runs: -1
-  tag_concurrency_limits:
-    - key: "dagster/tier"
-      value: "tier_3"
-      limit: 1
+# docs/pipeline-runner-plan.md), so heavy work is capped by pools: tier_3
+# (graph builds) and edw_history (quarter fetches). The limit can only be set
+# as a default across pools, so both get 1 run at a time. Run granularity
+# keeps blocked runs queued instead of idling on the pod.
+concurrency:
+  runs:
+    max_concurrent_runs: -1
+  pools:
+    default_limit: 1
+    granularity: run
 
 # Detects runs whose worker process/pod died without Dagster recording a
 # step failure (crashes silently, gets OOM-killed, evicted, etc.) and marks

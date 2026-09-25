@@ -11,7 +11,7 @@ DB = "UWSDBDataStore"
 CONNECTION_ATTEMPTS = 3
 
 
-def get_regis_majors_since_year(year):
+def get_regis_majors_in_year_quarter(year, quarter):
     db_query = f"""
             SELECT
                 system_key,
@@ -24,12 +24,13 @@ def get_regis_majors_since_year(year):
                 regis_major_abbr
             FROM sec.registration_regis_col_major
             WHERE
-                regis_yr >= {year}
+                regis_yr = {int(year)}
+                AND regis_qtr = {int(quarter)}
     """
     return _run_query(DB, db_query)
 
 
-def get_transcripts_since_year(year):
+def get_transcripts_in_year_quarter(year, quarter):
     db_query = f"""
             SELECT
                 system_key,
@@ -41,7 +42,8 @@ def get_transcripts_since_year(year):
                 over_qtr_grade_at
             FROM sec.transcript
             WHERE
-                tran_yr >= {year}
+                tran_yr = {int(year)}
+                AND tran_qtr = {int(quarter)}
     """
     return _run_query(DB, db_query)
 
@@ -106,8 +108,8 @@ def get_registrations_in_year_quarter(year, quarter):
                 grade
             FROM sec.registration_courses
             WHERE
-                regis_yr = {year}
-                AND regis_qtr = {quarter}
+                regis_yr = {int(year)}
+                AND regis_qtr = {int(quarter)}
                 AND dup_enroll = ''
                 AND request_status in ('A', 'C', 'R')
                 AND crs_number < 500

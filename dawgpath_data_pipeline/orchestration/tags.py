@@ -6,11 +6,14 @@ Kubernetes Pod Sizing Tags for Dagster Executor.
 Allows GKE to launch dedicated worker pods sized appropriately for each job tier.
 """
 
-# "dagster/tier" also drives dagster.yaml's run_queue tag_concurrency_limits,
-# so it must stay in sync even while the k8s tags below are inert (see
-# docs/pipeline-runner-plan.md).
+# The k8s tags below are inert under the default run launcher (see
+# docs/pipeline-runner-plan.md). TIER_KEY is matched by the default
+# executor's tag_concurrency_limits in definitions.py.
+TIER_KEY = "dawgpath/tier"
+TIER_3_POOL = "tier_3"
+
 TIER_1_K8S_TAGS = {
-    "dagster/tier": "tier_1",
+    TIER_KEY: "tier_1",
     "dagster-k8s/config": {
         "container_config": {
             "resources": {
@@ -22,7 +25,7 @@ TIER_1_K8S_TAGS = {
 }
 
 TIER_2_K8S_TAGS = {
-    "dagster/tier": "tier_2",
+    TIER_KEY: "tier_2",
     "dagster-k8s/config": {
         "container_config": {
             "resources": {
@@ -34,7 +37,7 @@ TIER_2_K8S_TAGS = {
 }
 
 TIER_3_K8S_TAGS = {
-    "dagster/tier": "tier_3",
+    TIER_KEY: "tier_3",
     "dagster-k8s/config": {
         "container_config": {
             "resources": {
