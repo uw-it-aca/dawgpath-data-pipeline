@@ -25,7 +25,8 @@ setup(
     include_package_data=True,
     install_requires=[
         "django~=4.2",
-        "sqlalchemy~=2.0",
+        # 2.1 makes psycopg 3 the default postgresql:// driver; only psycopg2 is installed
+        "sqlalchemy~=2.0.0",
         "pandas~=2.0",
         "commonconf~=1.1",
         "uw-restclients-sws~=2.4",
