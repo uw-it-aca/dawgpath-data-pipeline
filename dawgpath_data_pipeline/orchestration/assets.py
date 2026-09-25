@@ -3,11 +3,18 @@
 
 """
 Software-Defined Assets for DawgPath Data Pipeline.
-Wraps existing DataJob classes into three tier groups with explicit dependency graphs,
-metadata logging, and Kubernetes worker sizing tags.
+
+Wraps existing DataJob classes into three pipeline-stage groups
+(source_refreshes -> derived_assets -> published_artifacts) with explicit
+dependency graphs and metadata logging.
+
+The TIER_*_K8S_TAGS applied below are unrelated to those groups: they are
+per-asset Kubernetes worker sizing, so an export can be tier 1 while a graph
+build in the same group is tier 3.
 """
 
 import json
+import resource
 
 from dagster import (
     Backoff,
@@ -41,6 +48,17 @@ UPSTREAM_RETRY_POLICY = RetryPolicy(
 )
 
 
+def _peak_rss_mib():
+    """Peak RSS of this step's process; ru_maxrss is KiB on Linux.
+
+    RUSAGE_CHILDREN covers the multiprocessing pools some builds use, and
+    reports the largest single child rather than their sum.
+    """
+    peak = max(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+               resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss)
+    return round(peak / 1024, 1)
+
+
 def _res_meta(res):
     meta = {
         "job_name": res.job_name,
@@ -49,6 +67,7 @@ def _res_meta(res):
         "start_time": res.start_time,
         "end_time": res.end_time,
         "duration_seconds": round(res.duration_seconds, 3),
+        "peak_rss_mib": _peak_rss_mib(),
         "privacy_threshold": res.get("privacy_threshold", 8),
     }
     if res.upstream_sources:
@@ -60,7 +79,7 @@ def _res_meta(res):
     return meta
 
 
-# --- Tier 1: Source Refreshes ---
+# --- Group: source_refreshes (EDW and SWS fetches) ---
 
 from dawgpath_data_pipeline.jobs.fetch_course_data import FetchCourseData
 from dawgpath_data_pipeline.jobs.fetch_curric_data import FetchCurricData
@@ -181,7 +200,7 @@ def fetch_sws_course_data(fetch_course_data):
     return Output(res, metadata=_res_meta(res))
 
 
-# --- Tier 2: Derived Local Assets ---
+# --- Group: derived_assets (local analytics built from fetched tables) ---
 
 from dawgpath_data_pipeline.jobs.build_common_course_major import BuildCommonCourseMajor
 from dawgpath_data_pipeline.jobs.build_concurrent_courses import BuildConcurrentCourses
@@ -284,7 +303,7 @@ def build_major_dec_grade_distro():
     return Output(res, metadata=_res_meta(res))
 
 
-# --- Tier 3: Published Artifact Exports ---
+# --- Group: published_artifacts (exports consumed by DawgPath) ---
 
 from dawgpath_data_pipeline.jobs.export_course_data import ExportCourseData
 from dawgpath_data_pipeline.jobs.export_course_prereq_data import ExportCoursePrereqData
@@ -324,6 +343,7 @@ def export_course_data_json(
             "rows_affected": meta["rows_affected"],
             "bytes": meta["size_bytes"],
             "checksum_sha256": meta["checksum_sha256"],
+            "peak_rss_mib": _peak_rss_mib(),
         },
     )
 
@@ -357,6 +377,7 @@ def export_curric_data_json(
             "rows_affected": meta["rows_affected"],
             "bytes": meta["size_bytes"],
             "checksum_sha256": meta["checksum_sha256"],
+            "peak_rss_mib": _peak_rss_mib(),
         },
     )
 
@@ -392,6 +413,7 @@ def export_major_data_json(
             "rows_affected": meta["rows_affected"],
             "bytes": meta["size_bytes"],
             "checksum_sha256": meta["checksum_sha256"],
+            "peak_rss_mib": _peak_rss_mib(),
         },
     )
 
@@ -423,6 +445,7 @@ def export_course_prereq_pickle(
             "rows_affected": meta["rows_affected"],
             "bytes": meta["size_bytes"],
             "checksum_sha256": meta["checksum_sha256"],
+            "peak_rss_mib": _peak_rss_mib(),
         },
     )
 
@@ -454,5 +477,6 @@ def export_prereq_pickle(
             "rows_affected": meta["rows_affected"],
             "bytes": meta["size_bytes"],
             "checksum_sha256": meta["checksum_sha256"],
+            "peak_rss_mib": _peak_rss_mib(),
         },
     )

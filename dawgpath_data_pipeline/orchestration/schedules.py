@@ -2,19 +2,28 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-Schedules for the DawgPath pipeline.
+Automations for the DawgPath pipeline.
 
 EDW enters a restricted-access window at 01:59 that has been observed to clear
 around 03:10; 03:30 is treated as the safe floor. Schedules start after that,
 and the EDW-backed assets carry a retry policy for windows that run long.
 
-Both schedules ship stopped so a first deploy does not immediately launch a
-full refresh. Start them from the Dagster UI once the deployment is verified.
+Everything ships stopped so a first deploy does not immediately launch a full
+refresh. Start them from the Dagster UI once the deployment is verified.
 
-The monthly refresh fans out one enrollment_history_refresh run per quarter,
-then full_pipeline_after_history_refresh launches full_pipeline_job once every
-quarter in that batch has succeeded. Both must be started for the full
-refresh to complete.
+A full fetch -> build -> export refresh is always two stages; no single job
+is a full refresh on its own.
+
+  scheduled  monthly_full_refresh fans out one enrollment_history_refresh run
+             per quarter, then full_refresh_after_history launches
+             catalog_and_analytics_refresh once every quarter in that batch
+             has succeeded. Both the schedule and the sensor must be started.
+
+  manual     Back-fill enrollment_history_refresh over every quarter from the
+             UI. The same sensor treats a backfill as a batch, so it chains
+             catalog_and_analytics_refresh once the backfill covers the whole
+             lookback window successfully. Run sync_history_quarters first if
+             the partition list is stale.
 """
 
 from datetime import date
@@ -32,9 +41,9 @@ from dagster import (
 )
 
 from dawgpath_data_pipeline.orchestration.jobs import (
+    catalog_and_analytics_refresh_job,
     catalog_refresh_job,
     enrollment_history_refresh_job,
-    full_pipeline_job,
 )
 from dawgpath_data_pipeline.orchestration.partitions import (
     HISTORY_BATCH_TAG,
@@ -44,25 +53,40 @@ from dawgpath_data_pipeline.orchestration.partitions import (
 
 TIMEZONE = "America/Los_Angeles"
 PARTITION_TAG = "dagster/partition"
+BACKFILL_TAG = "dagster/backfill"
 # Enough recent runs to cover a full batch plus manual re-executions.
 HISTORY_RUN_LOOKBACK = 500
 
 # sws_course_refresh is deliberately unscheduled: SWS runs monthly inside
-# full_pipeline_job, and the standalone job exists for throttled manual runs.
+# catalog_and_analytics_refresh, and the standalone job exists for throttled
+# manual runs.
+
+
+def _batch_id(run):
+    """Scheduled batches carry the tick date; backfills carry a backfill id."""
+    return run.tags.get(HISTORY_BATCH_TAG) or run.tags.get(BACKFILL_TAG)
+
+
+def _batch_date(batch):
+    """Backfill ids aren't dates, so those are checked against today."""
+    try:
+        return date.fromisoformat(batch)
+    except ValueError:
+        return None
 
 
 @schedule(
-    name="monthly_full_pipeline",
+    name="monthly_full_refresh",
     job=enrollment_history_refresh_job,
     cron_schedule="0 4 1 * *",
     execution_timezone=TIMEZONE,
     default_status=DefaultScheduleStatus.STOPPED,
     description=(
         "Full refresh at 04:00 on the first of each month: one history run "
-        "per quarter, followed by full_pipeline_job via sensor."
+        "per quarter, followed by catalog_and_analytics_refresh via sensor."
     ),
 )
-def monthly_full_pipeline_schedule(context):
+def monthly_full_refresh_schedule(context):
     tick_date = context.scheduled_execution_time.date()
     batch = tick_date.isoformat()
     for partition_key in sync_history_partitions(context.instance, tick_date):
@@ -74,35 +98,35 @@ def monthly_full_pipeline_schedule(context):
 
 
 @sensor(
-    name="full_pipeline_after_history_refresh",
-    job=full_pipeline_job,
+    name="full_refresh_after_history",
+    job=catalog_and_analytics_refresh_job,
     minimum_interval_seconds=300,
     default_status=DefaultSensorStatus.STOPPED,
     description=(
-        "Launches full_pipeline_job once every quarter in the latest "
-        "scheduled history batch has succeeded."
+        "Completes a full refresh: launches catalog_and_analytics_refresh "
+        "once every quarter in the latest history batch -- a scheduled batch "
+        "or a manual backfill -- has succeeded."
     ),
 )
-def full_pipeline_after_history_refresh(context):
+def full_refresh_after_history(context):
     runs = context.instance.get_runs(
         filters=RunsFilter(job_name=enrollment_history_refresh_job.name),
         limit=HISTORY_RUN_LOOKBACK,
     )
-    batch = next((run.tags[HISTORY_BATCH_TAG] for run in runs
-                  if HISTORY_BATCH_TAG in run.tags), None)
+    batch = next((_batch_id(run) for run in runs if _batch_id(run)), None)
     if batch is None:
-        return SkipReason("No scheduled history batch has run yet.")
+        return SkipReason("No scheduled or backfilled history batch yet.")
     if batch == context.cursor:
-        return SkipReason(f"Already launched full pipeline for batch {batch}.")
+        return SkipReason(f"Already launched full refresh for batch {batch}.")
 
     # runs are newest first, so the first run seen per partition is the
     # latest attempt, including UI re-executions (which keep run tags)
     latest_by_partition = {}
     for run in runs:
-        if run.tags.get(HISTORY_BATCH_TAG) == batch:
+        if _batch_id(run) == batch:
             latest_by_partition.setdefault(run.tags.get(PARTITION_TAG), run)
 
-    expected = history_partition_keys(date.fromisoformat(batch))
+    expected = history_partition_keys(_batch_date(batch))
     missing = [key for key in expected if key not in latest_by_partition]
     if missing:
         return SkipReason(f"Batch {batch} missing quarters: {missing}")

@@ -2,12 +2,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from datetime import date, datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from dagster import (
     AssetKey,
     DagsterInstance,
+    DagsterRunStatus,
     DefaultScheduleStatus,
+    DefaultSensorStatus,
     SkipReason,
     build_schedule_context,
     build_sensor_context,
@@ -29,6 +32,7 @@ from dawgpath_data_pipeline.orchestration.definitions import (
     defs,
 )
 from dawgpath_data_pipeline.orchestration.jobs import sync_history_quarters_job
+from dawgpath_data_pipeline.orchestration.monitors import _oom_suspected
 from dawgpath_data_pipeline.orchestration.partitions import (
     HISTORY_ASSETS,
     HISTORY_BATCH_TAG,
@@ -37,8 +41,8 @@ from dawgpath_data_pipeline.orchestration.partitions import (
     history_quarter_partitions,
 )
 from dawgpath_data_pipeline.orchestration.schedules import (
-    full_pipeline_after_history_refresh,
-    monthly_full_pipeline_schedule,
+    full_refresh_after_history,
+    monthly_full_refresh_schedule,
 )
 from dawgpath_data_pipeline.orchestration.tags import TIER_3_POOL, TIER_KEY
 from dawgpath_data_pipeline.tests import DBTest
@@ -54,19 +58,29 @@ class TestDagsterDefinitions(DBTest):
 
     def test_dagster_job_count(self):
         repo_def = defs.get_repository_def()
-        explicit_jobs = [j for j in repo_def.get_all_jobs() if not j.name.startswith("__")]
-        self.assertEqual(len(explicit_jobs), 7)
+        explicit_jobs = [j.name for j in repo_def.get_all_jobs()
+                         if not j.name.startswith("__")]
+        self.assertEqual(
+            sorted(explicit_jobs),
+            ["catalog_and_analytics_refresh", "catalog_refresh",
+             "enrollment_history_refresh", "export_artifacts",
+             "sws_course_refresh", "sync_history_quarters"])
 
     def test_schedules_target_expected_jobs(self):
         repo_def = defs.get_repository_def()
         schedules = {s.name: s for s in repo_def.schedule_defs}
         self.assertEqual(
             sorted(schedules),
-            ["monthly_full_pipeline", "weekly_catalog_refresh"])
+            ["monthly_full_refresh", "weekly_catalog_refresh"])
         self.assertEqual(
-            schedules["monthly_full_pipeline"].cron_schedule, "0 4 1 * *")
+            schedules["monthly_full_refresh"].cron_schedule, "0 4 1 * *")
+        self.assertEqual(
+            schedules["monthly_full_refresh"].job_name,
+            "enrollment_history_refresh")
         self.assertEqual(
             schedules["weekly_catalog_refresh"].cron_schedule, "0 5 * * 0")
+        self.assertEqual(
+            schedules["weekly_catalog_refresh"].job_name, "catalog_refresh")
 
     def test_schedules_start_stopped(self):
         repo_def = defs.get_repository_def()
@@ -104,19 +118,27 @@ class TestDagsterDefinitions(DBTest):
         self.assertEqual(keys[0], "20211")
         self.assertEqual(keys[-1], "20264")
 
-    def test_full_pipeline_excludes_history_assets(self):
+    def test_catalog_and_analytics_refresh_excludes_history_assets(self):
         repo_def = defs.get_repository_def()
-        for name in ("full_pipeline_job", "full_pipeline_diagnostic_job"):
-            selected = {key.to_user_string() for key in
-                        repo_def.get_job(name).asset_layer.executable_asset_keys}
-            self.assertIn("build_course_gpa_distro", selected)
-            for history_asset in HISTORY_ASSETS:
-                self.assertNotIn(history_asset, selected)
+        selected = {key.to_user_string() for key in
+                    repo_def.get_job("catalog_and_analytics_refresh")
+                    .asset_layer.executable_asset_keys}
+        self.assertIn("build_course_gpa_distro", selected)
+        for history_asset in HISTORY_ASSETS:
+            self.assertNotIn(history_asset, selected)
         history_job = repo_def.get_job("enrollment_history_refresh")
         self.assertEqual(
             {key.to_user_string() for key in
              history_job.asset_layer.executable_asset_keys},
             set(HISTORY_ASSETS))
+
+    def test_export_artifacts_job_is_exports_only(self):
+        repo_def = defs.get_repository_def()
+        selected = {key.to_user_string() for key in
+                    repo_def.get_job("export_artifacts")
+                    .asset_layer.executable_asset_keys}
+        self.assertIn("export_course_data_json", selected)
+        self.assertNotIn("fetch_course_data", selected)
 
     def test_monthly_schedule_rolls_partitions_and_requests_each(self):
         name = history_quarter_partitions.name
@@ -127,7 +149,7 @@ class TestDagsterDefinitions(DBTest):
                 instance=instance,
                 scheduled_execution_time=datetime(
                     2026, 1, 1, 4, tzinfo=timezone.utc))
-            requests = list(monthly_full_pipeline_schedule(context))
+            requests = list(monthly_full_refresh_schedule(context))
             keys = history_partition_keys(date(2026, 1, 1))
             self.assertEqual(
                 sorted(instance.get_dynamic_partitions(name)), keys)
@@ -161,14 +183,59 @@ class TestDagsterDefinitions(DBTest):
         self.assertEqual(
             EXECUTOR_TAG_LIMITS,
             [{"key": TIER_KEY, "value": "tier_3", "limit": 1}])
-        executor = repo_def.get_job("full_pipeline_job").executor_def
+        executor = repo_def.get_job(
+            "catalog_and_analytics_refresh").executor_def
         self.assertIs(executor, default_executor)
 
     def test_history_sensor_skips_without_batch(self):
         with DagsterInstance.ephemeral() as instance:
-            result = full_pipeline_after_history_refresh(
+            result = full_refresh_after_history(
                 build_sensor_context(instance=instance))
             self.assertIsInstance(result, SkipReason)
+
+    def _history_runs(self, tag, batch, keys):
+        return [SimpleNamespace(
+            tags={tag: batch, "dagster/partition": key},
+            status=DagsterRunStatus.SUCCESS,
+            is_finished=True) for key in reversed(keys)]
+
+    def test_history_sensor_chains_after_manual_backfill(self):
+        keys = history_partition_keys()
+        runs = self._history_runs("dagster/backfill", "abcd1234", keys)
+        with (
+            DagsterInstance.ephemeral() as instance,
+            patch.object(DagsterInstance, "get_runs", return_value=runs),
+        ):
+            result = full_refresh_after_history(
+                build_sensor_context(instance=instance))
+            self.assertEqual(result.tags[HISTORY_BATCH_TAG], "abcd1234")
+
+    def test_history_sensor_waits_for_incomplete_backfill(self):
+        keys = history_partition_keys()
+        runs = self._history_runs("dagster/backfill", "abcd1234", keys[:-1])
+        with (
+            DagsterInstance.ephemeral() as instance,
+            patch.object(DagsterInstance, "get_runs", return_value=runs),
+        ):
+            result = full_refresh_after_history(
+                build_sensor_context(instance=instance))
+            self.assertIsInstance(result, SkipReason)
+            self.assertIn(keys[-1], result.skip_message)
+
+    def test_failure_sensor_is_registered_and_running(self):
+        repo_def = defs.get_repository_def()
+        sensor = {s.name: s for s in repo_def.sensor_defs}["run_failure_capture"]
+        self.assertEqual(sensor.default_status, DefaultSensorStatus.RUNNING)
+
+    def test_oom_suspected_on_sigkill_but_not_on_traceback(self):
+        self.assertTrue(_oom_suspected([
+            "Multiprocess executor: child process for step "
+            "build_course_prereq_graphs unexpectedly exited with code -9"]))
+        self.assertTrue(_oom_suspected(
+            ["Run failed because the run worker process was terminated"]))
+        self.assertFalse(_oom_suspected(
+            ["dagster._core.errors.DagsterExecutionStepExecutionError: "
+             "ValueError: bad row"]))
 
     def test_materialize_history_partition(self):
         key = "20241"
