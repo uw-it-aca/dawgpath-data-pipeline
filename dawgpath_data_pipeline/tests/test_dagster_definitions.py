@@ -228,14 +228,15 @@ class TestDagsterDefinitions(DBTest):
         self.assertEqual(sensor.default_status, DefaultSensorStatus.RUNNING)
 
     def test_oom_suspected_on_sigkill_but_not_on_traceback(self):
-        self.assertTrue(_oom_suspected([
-            "Multiprocess executor: child process for step "
-            "build_course_prereq_graphs unexpectedly exited with code -9"]))
+        sigkill = ("Multiprocess executor: child process for step "
+                   "build_course_prereq_graphs unexpectedly exited with "
+                   "code -9")
+        traceback = ("dagster._core.errors.DagsterExecutionStepExecutionError"
+                     ": ValueError: bad row")
+        self.assertTrue(_oom_suspected([sigkill]))
         self.assertTrue(_oom_suspected(
             ["Run failed because the run worker process was terminated"]))
-        self.assertFalse(_oom_suspected(
-            ["dagster._core.errors.DagsterExecutionStepExecutionError: "
-             "ValueError: bad row"]))
+        self.assertFalse(_oom_suspected([traceback]))
 
     def test_materialize_history_partition(self):
         key = "20241"
