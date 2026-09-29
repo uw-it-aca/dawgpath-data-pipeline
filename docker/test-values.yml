@@ -141,6 +141,14 @@ externalSecrets:
           property: edw-password
         - name: edw-target-hostname
           property: edw-server
+    # Azure SQL credentials are a single shared account, same in test and prod.
+    - name: test-pipeline.dawgpath.uw.edu-azsql-secrets
+      externalKey: dawgpath/pipeline/shared/secrets
+      data:
+        - name: azsql-user
+          property: azsql-user
+        - name: azsql-password
+          property: azsql-password
     - name: test-pipeline.dawgpath.uw.edu-proxy-secrets
       externalKey: shared/proxies/uw_ssh_tunnel
       data:
@@ -188,6 +196,14 @@ environmentVariablesSecrets:
     name: EDW_PASSWORD
     secretName: test-pipeline.dawgpath.uw.edu-edw-secrets
     secretKey: edw-password
+  azsqlUser:
+    name: AZSQL_USER
+    secretName: test-pipeline.dawgpath.uw.edu-azsql-secrets
+    secretKey: azsql-user
+  azsqlPassword:
+    name: AZSQL_PASSWORD
+    secretName: test-pipeline.dawgpath.uw.edu-azsql-secrets
+    secretKey: azsql-password
   swsHost:
     name: RESTCLIENTS_SWS_HOST
     secretName: test-pipeline.dawgpath.uw.edu-secrets

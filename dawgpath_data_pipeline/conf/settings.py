@@ -9,6 +9,14 @@ class AppSettings:
     EDW_USER = ""
     EDW_SERVER = ""
 
+    AZSQL_SERVER = "studentanalytics-prod.database.windows.net"
+    AZSQL_PORT = "1433"
+    AZSQL_DATABASE = "StudentAnalytics"
+    AZSQL_USER = ""
+    AZSQL_PASSWORD = ""
+    AZSQL_AUTHENTICATION = "ActiveDirectoryPassword"
+    AZSQL_DRIVER = "ODBC Driver 18 for SQL Server"
+
     DB_CLASS = "postgres"
     DB_FILE = ""
     DB_DEBUG = False
