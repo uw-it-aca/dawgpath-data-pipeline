@@ -89,7 +89,7 @@ environmentVariables:
   - name: EDW_SERVER
     value: "127.0.0.1"
   - name: AZSQL_SERVER
-    value: "127.0.0.1"
+    value: "studentanalytics-prod.database.windows.net"
   - name: AZSQL_PORT
     value: "1434"
 
@@ -323,7 +323,11 @@ daemon:
   daemons:
     - name: dagster-daemon
       replicaCount: 1
-      command: ["/app/bin/dagster-daemon"]
+      command:
+        - "/usr/bin/env"
+        - "LD_PRELOAD=libnss_wrapper.so"
+        - "NSS_WRAPPER_HOSTS=/app/project/azure-sql-hosts"
+        - "/app/bin/dagster-daemon"
       args: ["run"]
       resources:
         limits:
@@ -332,7 +336,7 @@ daemon:
         requests:
           cpu: 500m
           memory: 2048Mi
-      # Runs execute here, so this pod—not the UI pod—needs the EDW tunnel.
+      # Runs execute here, so this pod—not the UI pod—needs the database tunnels.
       sidecarContainers:
         forwarder:
           restartPolicy: Always
