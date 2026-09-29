@@ -63,7 +63,6 @@ def _connection_string():
         f"Authentication={settings.AZSQL_AUTHENTICATION};"
         "Encrypt=yes;"
         "TrustServerCertificate=no;"
-        "MultipleActiveResultSets=False;"
         "Connection Timeout=30;"
     )
 
