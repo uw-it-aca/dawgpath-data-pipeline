@@ -4,7 +4,7 @@ FROM us-docker.pkg.dev/uwit-mci-axdd/containers/django-container:${DJANGO_CONTAI
 
 USER root
 
-RUN apt-get update && apt-get install -y libpq-dev curl gnupg
+RUN apt-get update && apt-get install -y libpq-dev curl gnupg libnss-wrapper
 
 # Azure SQL (StudentAnalytics) needs Entra ID password auth, which pymssql cannot do.
 RUN . /etc/os-release && \

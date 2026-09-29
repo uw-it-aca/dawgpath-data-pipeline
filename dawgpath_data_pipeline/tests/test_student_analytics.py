@@ -16,9 +16,8 @@ from dawgpath_data_pipeline.dao.student_analytics import (
 
 def _settings(settings_mock):
     settings_mock.AZSQL_DRIVER = "ODBC Driver 18 for SQL Server"
-    settings_mock.AZSQL_SERVER = "127.0.0.1"
+    settings_mock.AZSQL_SERVER = "studentanalytics-prod.database.windows.net"
     settings_mock.AZSQL_PORT = "1434"
-    settings_mock.AZSQL_HOSTNAME_IN_CERTIFICATE = "*.database.windows.net"
     settings_mock.AZSQL_DATABASE = "StudentAnalytics"
     settings_mock.AZSQL_USER = "a_azsql_dawgpath@uw.edu"
     settings_mock.AZSQL_PASSWORD = "sekrit"
@@ -34,14 +33,14 @@ class TestStudentAnalytics(TestCase):
         conn_str = _connection_string()
 
         self.assertIn("DRIVER={ODBC Driver 18 for SQL Server};", conn_str)
-        self.assertIn("SERVER=tcp:127.0.0.1,1434;", conn_str)
+        self.assertIn(
+            "SERVER=tcp:studentanalytics-prod.database.windows.net,1434;",
+            conn_str)
         self.assertIn("DATABASE=StudentAnalytics;", conn_str)
         self.assertIn("UID=a_azsql_dawgpath@uw.edu;", conn_str)
         self.assertIn("Authentication=ActiveDirectoryPassword;", conn_str)
         self.assertIn("Encrypt=yes;", conn_str)
         self.assertIn("TrustServerCertificate=no;", conn_str)
-        self.assertIn(
-            "HostNameInCertificate=*.database.windows.net;", conn_str)
         # ODBC rejects the ADO.NET True/False spelling; off is the default.
         self.assertNotIn("MultipleActiveResultSets", conn_str)
 
