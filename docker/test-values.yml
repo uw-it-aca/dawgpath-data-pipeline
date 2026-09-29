@@ -81,10 +81,14 @@ environmentVariables:
   - name: GOOGLE_APPLICATION_CREDENTIALS
     value: /gcs/credentials.json
 
-  # EDW is only reachable from the campus network; the forwarder sidecar
-  # opens an SSH tunnel and this app talks to it over loopback instead.
+  # EDW and Azure SQL must originate from the campus network; the forwarder
+  # sidecar opens SSH tunnels and this app talks to them over loopback.
   - name: EDW_SERVER
     value: "127.0.0.1"
+  - name: AZSQL_SERVER
+    value: "127.0.0.1"
+  - name: AZSQL_PORT
+    value: "1434"
 
   - name: AUTH
     value: SAML
@@ -369,7 +373,13 @@ daemon:
               value: "1433"
             - name: LOCAL_PORT
               value: "1433"
+            - name: AZSQL_TARGET_HOSTNAME
+              value: "studentanalytics-prod.database.windows.net"
+            - name: AZSQL_TARGET_PORT
+              value: "1433"
+            - name: AZSQL_LOCAL_PORT
+              value: "1434"
           command:
             - "sh"
             - "-c"
-            - 'mkdir -p -m 0700 ~/.ssh && chmod 700 ~/.ssh && echo "${PROXY_ID_KEY}" > ~/.ssh/id_ecdsa && chmod 400 ~/.ssh/id_ecdsa && autossh -N -M 0 -o BatchMode=yes -o ConnectTimeout=15 -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -L 127.0.0.1:${LOCAL_PORT}:${TARGET_HOSTNAME}:${TARGET_PORT} ${PROXY_ID}@${PROXY_HOSTNAME}'
+            - 'mkdir -p -m 0700 ~/.ssh && chmod 700 ~/.ssh && echo "${PROXY_ID_KEY}" > ~/.ssh/id_ecdsa && chmod 400 ~/.ssh/id_ecdsa && autossh -N -M 0 -o BatchMode=yes -o ConnectTimeout=15 -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -L 127.0.0.1:${LOCAL_PORT}:${TARGET_HOSTNAME}:${TARGET_PORT} -L 127.0.0.1:${AZSQL_LOCAL_PORT}:${AZSQL_TARGET_HOSTNAME}:${AZSQL_TARGET_PORT} ${PROXY_ID}@${PROXY_HOSTNAME}'
