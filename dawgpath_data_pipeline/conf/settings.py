@@ -3,6 +3,14 @@
 
 import os
 
+# Mirrors django-container's SWS_ENV mapping so both processes share one knob.
+SWS_HOSTS = {
+    "PROD": "https://ws.api.uw.edu:443",
+    "EVAL": "https://wseval.s.uw.edu:443",
+}
+
+BOOLEAN_SETTINGS = ("DB_DEBUG", "RESTCLIENTS_SWS_VERIFY_HTTPS")
+
 
 class AppSettings:
     EDW_PASSWORD = ""
@@ -18,8 +26,8 @@ class AppSettings:
     AZSQL_AUTHENTICATION = "ActiveDirectoryPassword"
     AZSQL_DRIVER = "ODBC Driver 18 for SQL Server"
 
-    DB_CLASS = "postgres"
-    DB_FILE = ""
+    DB_CLASS = "sqlite3"
+    DB_FILE = "db.sqlite"
     DB_DEBUG = False
 
     DB_USER = "postgres"
@@ -29,13 +37,17 @@ class AppSettings:
     DB_DATABASE = ""
 
     RESTCLIENTS_SWS_DAO_CLASS = "Live"
-    RESTCLIENTS_SWS_CERT_FILE = ""
-    RESTCLIENTS_SWS_KEY_FILE = ""
-    RESTCLIENTS_SWS_HOST = ""
-    RESTCLIENTS_SWS_VERIFY_HTTPS = False
+    RESTCLIENTS_SWS_VERIFY_HTTPS = True
 
-    def get(self, attr, default=None):
-        # deployed environments inject config as env vars; local uses app.conf
-        if attr in os.environ:
-            return os.environ[attr]
-        return getattr(AppSettings, attr)
+    GCS_BUCKET_NAME = None
+
+    def get(self, key):
+        if key in os.environ:
+            value = os.environ[key]
+            if key in BOOLEAN_SETTINGS:
+                return value.strip().lower() in ("1", "true", "yes", "on")
+            return value
+        if key == "RESTCLIENTS_SWS_HOST" and os.getenv("SWS_ENV") in SWS_HOSTS:
+            return SWS_HOSTS[os.environ["SWS_ENV"]]
+        # AttributeError for unset keys lets getattr(settings, key, default) work
+        return getattr(AppSettings, key)

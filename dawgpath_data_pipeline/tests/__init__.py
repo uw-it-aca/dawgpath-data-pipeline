@@ -3,12 +3,10 @@
 
 import os
 import unittest
-from os.path import abspath, dirname
 
-from commonconf.backends import use_configparser_backend
-
-path = abspath(os.path.join(dirname(__file__), "..", "conf", "test.conf"))
-use_configparser_backend(path, 'PDP-Settings')
+# Pin the DB so a sourced local .env can't point tests at a real database.
+os.environ.update({"DB_CLASS": "sqlite3", "DB_FILE": "db.sqlite",
+                   "DB_DEBUG": "False"})
 
 from dawgpath_data_pipeline.databases.implementation import get_db_implementation
 from dawgpath_data_pipeline.models.base import Base

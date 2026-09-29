@@ -15,7 +15,9 @@ The historical test entry point is:
 python dawgpath_data_pipeline/test.py -v
 ```
 
-The test runner configures `commonconf` from `dawgpath_data_pipeline/conf/test.conf` and then runs `nose2` discovery.
+Pipeline settings come only from environment variables, resolved through the `commonconf` backend `dawgpath_data_pipeline.conf.settings.AppSettings` (env first, then class defaults). The test package pins `DB_CLASS=sqlite3` before importing pipeline code. Run discovery scoped to the package (`-s dawgpath_data_pipeline -t .`) so local scripts at the repo root are not collected.
+
+For local runs, copy `.env.sample` to `.env`. Docker Compose passes it to the `dagster` service; for host runs, export it with `set -a; . ./.env; set +a`.
 
 The current active shell validation on 2026-09-09 passed compilation but failed test startup because `commonconf` was missing from the active environment. Install project dependencies into the selected Python environment before using the test command.
 
@@ -24,7 +26,7 @@ The Docker Compose file defines:
 - `app`: Django app container built from the `app-container` target.
 - `postgres`: local Postgres 13.4.
 
-The Compose app service only passes `GOOGLE_ANALYTICS_KEY` explicitly. ETL database and EDW/SWS configuration still need to be provided through the app's settings mechanism before live fetch jobs can run.
+The Compose app service only passes `GOOGLE_ANALYTICS_KEY` explicitly. The `dagster` service reads ETL database and EDW/SWS/Azure SQL settings from the optional root `.env`.
 
 ## Cluster Fit
 

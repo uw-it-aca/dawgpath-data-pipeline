@@ -12,8 +12,6 @@ class Sqlite3(Database):
     engine = None
 
     def __init__(self, is_memory):
-        self.url += "/{}".format(getattr(settings, "DB_FILE", "db.sqlite"))
-        echo = getattr(settings, "DB_DEBUG", None) == "True"
-
+        self.url += "/{}".format(settings.DB_FILE)
         self.engine = create_engine(self.url,
-                                    echo=echo)
+                                    echo=settings.DB_DEBUG)

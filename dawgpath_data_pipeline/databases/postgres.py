@@ -31,7 +31,6 @@ class Postgres(Database):
     url = ""
 
     def __init__(self):
-        echo = getattr(settings, "DB_DEBUG", None) == "True"
         self.url = URL_PATTERN.format(
             username=settings.DB_USER,
             password=settings.DB_PASSWORD,
@@ -40,4 +39,4 @@ class Postgres(Database):
             database=settings.DB_DATABASE
         )
         self.engine = create_engine(self.url,
-                                    echo=echo)
+                                    echo=settings.DB_DEBUG)

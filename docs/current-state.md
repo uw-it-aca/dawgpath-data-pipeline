@@ -39,7 +39,7 @@ The default application settings currently point to Postgres:
 - user/password: `postgres` / `postgres`
 - database: empty by default
 
-The package initializes `commonconf` in `dawgpath_data_pipeline/__init__.py` and sets `MINIMUM_DATA_COUNT = 8`, which is used to suppress small-count GPA/common-course/concurrency data.
+The package registers the env-var-backed `AppSettings` (`conf/settings.py`) as the `commonconf` backend in `dawgpath_data_pipeline/__init__.py` and sets `MINIMUM_DATA_COUNT = 8`, which is used to suppress small-count GPA/common-course/concurrency data.
 
 ## Data Sources
 

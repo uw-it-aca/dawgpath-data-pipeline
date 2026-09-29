@@ -6,6 +6,8 @@ import json
 import os
 from datetime import datetime, timezone
 
+from commonconf import settings
+
 try:
     from google.cloud import storage
     GCS_AVAILABLE = True
@@ -20,7 +22,7 @@ class ArtifactPublisher:
     """
 
     def __init__(self, bucket_name=None, local_root="artifacts", gcs_prefix=""):
-        self.bucket_name = bucket_name or os.getenv("GCS_BUCKET_NAME")
+        self.bucket_name = bucket_name or settings.GCS_BUCKET_NAME
         self.local_root = os.path.abspath(local_root)
         self.gcs_prefix = gcs_prefix.strip("/")
 

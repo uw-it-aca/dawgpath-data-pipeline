@@ -22,6 +22,9 @@ services:
       context: .
       target: app-container
     container_name: dawgpath_pipeline_dagster
+    env_file:
+      - path: .env
+        required: false
     environment:
       - DAGSTER_HOME=/app
       - ENV=localdev
