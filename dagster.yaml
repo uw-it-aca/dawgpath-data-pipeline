@@ -11,6 +11,10 @@ run_launcher:
   module: dagster.core.launcher
   class: DefaultRunLauncher
 
+# Queue every launch through the daemon so UI-triggered runs execute in the
+# same pod as scheduled runs and share its database tunnels.
+run_queue: {}
+
 # Keep concurrency and run_monitoring in sync with the dagster-instance
 # configmaps in docker/test-values.yml and docker/prod-values.yml, which
 # replace this file in deployed pods (enforced by test_instance_config).
