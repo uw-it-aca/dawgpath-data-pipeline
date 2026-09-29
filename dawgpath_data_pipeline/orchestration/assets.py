@@ -81,6 +81,9 @@ def _res_meta(res):
 
 # --- Group: source_refreshes (EDW and SWS fetches) ---
 
+from dawgpath_data_pipeline.jobs.fetch_bottleneck_gateway_courses import (
+    FetchBottleneckGatewayCourses,
+)
 from dawgpath_data_pipeline.jobs.fetch_course_data import FetchCourseData
 from dawgpath_data_pipeline.jobs.fetch_curric_data import FetchCurricData
 from dawgpath_data_pipeline.jobs.fetch_major_data import FetchMajorData
@@ -144,6 +147,20 @@ def fetch_major_data():
 )
 def fetch_sr_major_data():
     res = FetchSRMajorData().run()
+    return Output(res, metadata=_res_meta(res))
+
+
+@asset(
+    group_name="source_refreshes",
+    op_tags=TIER_1_K8S_TAGS,
+    retry_policy=UPSTREAM_RETRY_POLICY,
+    description=(
+        "Fetches bottleneck and gateway course flags from the Azure SQL "
+        "StudentAnalytics database."
+    ),
+)
+def fetch_bottleneck_gateway_courses():
+    res = FetchBottleneckGatewayCourses().run()
     return Output(res, metadata=_res_meta(res))
 
 
@@ -305,6 +322,10 @@ def build_major_dec_grade_distro():
 
 # --- Group: published_artifacts (exports consumed by DawgPath) ---
 
+from dawgpath_data_pipeline.jobs.export_bottleneck_gateway_courses import (
+    ExportBottleneckCourses,
+    ExportGatewayCourses,
+)
 from dawgpath_data_pipeline.jobs.export_course_data import ExportCourseData
 from dawgpath_data_pipeline.jobs.export_course_prereq_data import ExportCoursePrereqData
 from dawgpath_data_pipeline.jobs.export_curric_data import ExportCurricData
@@ -480,3 +501,52 @@ def export_prereq_pickle(
             "peak_rss_mib": _peak_rss_mib(),
         },
     )
+
+
+def _publish_flagged_courses_csv(context, job, filename):
+    publisher = ArtifactPublisher()
+    data_str = job.get_file_contents()
+    meta = publisher.publish_content(
+        filename=filename,
+        content_bytes=data_str.encode("utf-8"),
+        run_id=context.run_id,
+        rows_affected=job.row_count(data_str),
+    )
+    return Output(
+        meta,
+        metadata={
+            "job_name": job.__class__.__name__,
+            "version_path": meta["version_path"],
+            "latest_path": meta["latest_path"],
+            "rows_affected": meta["rows_affected"],
+            "bytes": meta["size_bytes"],
+            "checksum_sha256": meta["checksum_sha256"],
+            "peak_rss_mib": _peak_rss_mib(),
+        },
+    )
+
+
+@asset(
+    group_name="published_artifacts",
+    op_tags=TIER_1_K8S_TAGS,
+    description="Exports bottleneck course CSV consumed by the Pathways import.",
+)
+def export_bottleneck_courses_csv(
+    context: OpExecutionContext,
+    fetch_bottleneck_gateway_courses,
+):
+    return _publish_flagged_courses_csv(
+        context, ExportBottleneckCourses(), "bottleneck_courses.csv")
+
+
+@asset(
+    group_name="published_artifacts",
+    op_tags=TIER_1_K8S_TAGS,
+    description="Exports gateway course CSV consumed by the Pathways import.",
+)
+def export_gateway_courses_csv(
+    context: OpExecutionContext,
+    fetch_bottleneck_gateway_courses,
+):
+    return _publish_flagged_courses_csv(
+        context, ExportGatewayCourses(), "gateway_courses.csv")

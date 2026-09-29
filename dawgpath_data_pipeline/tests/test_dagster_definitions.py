@@ -54,7 +54,16 @@ class TestDagsterDefinitions(DBTest):
     def test_dagster_asset_count(self):
         repo_def = defs.get_repository_def()
         assets = list(repo_def.asset_graph.get_all_asset_keys())
-        self.assertEqual(len(assets), 22)
+        self.assertEqual(len(assets), 25)
+
+    def test_bottleneck_gateway_assets_join_stage_two_refresh(self):
+        repo_def = defs.get_repository_def()
+        job = repo_def.get_job("catalog_and_analytics_refresh")
+        keys = {k.to_user_string()
+                for k in job.asset_layer.asset_graph.get_all_asset_keys()}
+        self.assertIn("fetch_bottleneck_gateway_courses", keys)
+        self.assertIn("export_bottleneck_courses_csv", keys)
+        self.assertIn("export_gateway_courses_csv", keys)
 
     def test_dagster_job_count(self):
         repo_def = defs.get_repository_def()

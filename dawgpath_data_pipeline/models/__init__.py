@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # all models must be imported here so FK relationships function
+from dawgpath_data_pipeline.models.bottleneck_gateway_course import (
+    BottleneckGatewayCourse,
+)
 from dawgpath_data_pipeline.models.course import Course
 from dawgpath_data_pipeline.models.curriculum import Curriculum
 from dawgpath_data_pipeline.models.graph import Graph

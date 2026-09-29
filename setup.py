@@ -33,6 +33,7 @@ setup(
         "uw-django-saml2~=1.8",
         "requests",
         "pymssql~=2.2",
+        "pyodbc~=5.1",
         "psycopg2>=2.9",
         "alembic~=1.12",
         "dagster>=1.6.0",
