@@ -11,6 +11,7 @@ class AppSettings:
 
     AZSQL_SERVER = "studentanalytics-prod.database.windows.net"
     AZSQL_PORT = "1433"
+    AZSQL_HOSTNAME_IN_CERTIFICATE = "*.database.windows.net"
     AZSQL_DATABASE = "StudentAnalytics"
     AZSQL_USER = ""
     AZSQL_PASSWORD = ""
