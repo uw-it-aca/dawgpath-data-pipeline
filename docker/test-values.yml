@@ -251,6 +251,9 @@ configmaps:
             db_name:
               env: DB_DATABASE
             port: 5432
+      # The daemon pod owns the database tunnels, so it must launch every run,
+      # including retries and manual runs submitted from the webserver.
+      run_queue: {}
       # Keep in sync with the repo's dagster.yaml (enforced by test_instance_config).
       concurrency:
         runs:

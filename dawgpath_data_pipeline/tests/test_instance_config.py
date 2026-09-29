@@ -9,7 +9,7 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parents[2]
 VALUES_FILES = [REPO_ROOT / "docker" / name
                 for name in ("test-values.yml", "prod-values.yml")]
-SHARED_SECTIONS = ("concurrency", "run_monitoring")
+SHARED_SECTIONS = ("run_queue", "concurrency", "run_monitoring")
 
 
 # .dockerignore keeps values files out of the image; CI runs this from the checkout.
