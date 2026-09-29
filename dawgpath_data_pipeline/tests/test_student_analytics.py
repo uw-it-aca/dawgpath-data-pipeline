@@ -41,6 +41,8 @@ class TestStudentAnalytics(TestCase):
         self.assertIn("Authentication=ActiveDirectoryPassword;", conn_str)
         self.assertIn("Encrypt=yes;", conn_str)
         self.assertIn("TrustServerCertificate=no;", conn_str)
+        # ODBC rejects the ADO.NET True/False spelling; off is the default.
+        self.assertNotIn("MultipleActiveResultSets", conn_str)
 
     @patch("dawgpath_data_pipeline.dao.student_analytics.time.sleep")
     @patch("dawgpath_data_pipeline.dao.student_analytics.pandas.read_sql")
