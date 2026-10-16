@@ -14,16 +14,17 @@ refresh. Start them from the Dagster UI once the deployment is verified.
 A full fetch -> build -> export refresh is always two stages; no single job
 is a full refresh on its own.
 
-  scheduled  monthly_full_refresh fans out one enrollment_history_refresh run
-             per quarter, then full_refresh_after_history launches
-             catalog_and_analytics_refresh once every quarter in that batch
-             has succeeded. Both the schedule and the sensor must be started.
+  scheduled  monthly_history_refresh fans out one
+             stage_1_refresh_enrollment_history run per quarter, then
+             launch_stage_2_after_history launches
+             stage_2_refresh_catalog_analytics_and_exports once every quarter
+             in that batch has succeeded. Start both the schedule and sensor.
 
-  manual     Back-fill enrollment_history_refresh over every quarter from the
-             UI. The same sensor treats a backfill as a batch, so it chains
-             catalog_and_analytics_refresh once the backfill covers the whole
-             lookback window successfully. Run sync_history_quarters first if
-             the partition list is stale.
+  manual     Back-fill stage_1_refresh_enrollment_history over every quarter
+             from the UI. The same sensor treats a backfill as a batch, so it
+             chains stage_2_refresh_catalog_analytics_and_exports once the
+             backfill covers the whole lookback window successfully. Run
+             sync_history_partitions first if the partition list is stale.
 """
 
 from datetime import date
@@ -41,9 +42,9 @@ from dagster import (
 )
 
 from dawgpath_data_pipeline.orchestration.jobs import (
-    catalog_and_analytics_refresh_job,
-    catalog_refresh_job,
-    enrollment_history_refresh_job,
+    refresh_catalog_only_job,
+    stage_1_refresh_enrollment_history_job,
+    stage_2_refresh_catalog_analytics_and_exports_job,
 )
 from dawgpath_data_pipeline.orchestration.partitions import (
     HISTORY_BATCH_TAG,
@@ -57,9 +58,9 @@ BACKFILL_TAG = "dagster/backfill"
 # Enough recent runs to cover a full batch plus manual re-executions.
 HISTORY_RUN_LOOKBACK = 500
 
-# sws_course_refresh is deliberately unscheduled: SWS runs monthly inside
-# catalog_and_analytics_refresh, and the standalone job exists for throttled
-# manual runs.
+# refresh_sws_course_descriptions is deliberately unscheduled: SWS runs
+# monthly inside stage_2_refresh_catalog_analytics_and_exports, and the
+# standalone job exists for throttled manual runs.
 
 
 def _batch_id(run):
@@ -76,17 +77,17 @@ def _batch_date(batch):
 
 
 @schedule(
-    name="monthly_full_refresh",
-    job=enrollment_history_refresh_job,
+    name="monthly_history_refresh",
+    job=stage_1_refresh_enrollment_history_job,
     cron_schedule="0 4 1 * *",
     execution_timezone=TIMEZONE,
     default_status=DefaultScheduleStatus.STOPPED,
     description=(
-        "Full refresh at 04:00 on the first of each month: one history run "
-        "per quarter, followed by catalog_and_analytics_refresh via sensor."
+        "Starts stage 1 at 04:00 on the first of each month: one history run "
+        "per quarter, followed by stage 2 via launch_stage_2_after_history."
     ),
 )
-def monthly_full_refresh_schedule(context):
+def monthly_history_refresh_schedule(context):
     tick_date = context.scheduled_execution_time.date()
     batch = tick_date.isoformat()
     for partition_key in sync_history_partitions(context.instance, tick_date):
@@ -98,26 +99,26 @@ def monthly_full_refresh_schedule(context):
 
 
 @sensor(
-    name="full_refresh_after_history",
-    job=catalog_and_analytics_refresh_job,
+    name="launch_stage_2_after_history",
+    job=stage_2_refresh_catalog_analytics_and_exports_job,
     minimum_interval_seconds=300,
     default_status=DefaultSensorStatus.STOPPED,
     description=(
-        "Completes a full refresh: launches catalog_and_analytics_refresh "
-        "once every quarter in the latest history batch -- a scheduled batch "
-        "or a manual backfill -- has succeeded."
+        "Launches stage 2, stage_2_refresh_catalog_analytics_and_exports, "
+        "once every quarter in the latest history batch -- a scheduled "
+        "batch or a manual backfill -- has succeeded."
     ),
 )
-def full_refresh_after_history(context):
+def launch_stage_2_after_history(context):
     runs = context.instance.get_runs(
-        filters=RunsFilter(job_name=enrollment_history_refresh_job.name),
+        filters=RunsFilter(job_name=stage_1_refresh_enrollment_history_job.name),
         limit=HISTORY_RUN_LOOKBACK,
     )
     batch = next((_batch_id(run) for run in runs if _batch_id(run)), None)
     if batch is None:
         return SkipReason("No scheduled or backfilled history batch yet.")
     if batch == context.cursor:
-        return SkipReason(f"Already launched full refresh for batch {batch}.")
+        return SkipReason(f"Already launched stage 2 for batch {batch}.")
 
     # runs are newest first, so the first run seen per partition is the
     # latest attempt, including UI re-executions (which keep run tags)
@@ -145,7 +146,7 @@ def full_refresh_after_history(context):
 
 weekly_catalog_refresh_schedule = ScheduleDefinition(
     name="weekly_catalog_refresh",
-    job=catalog_refresh_job,
+    job=refresh_catalog_only_job,
     cron_schedule="0 5 * * 0",
     execution_timezone=TIMEZONE,
     default_status=DefaultScheduleStatus.STOPPED,

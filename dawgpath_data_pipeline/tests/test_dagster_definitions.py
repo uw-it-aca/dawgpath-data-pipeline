@@ -31,7 +31,7 @@ from dawgpath_data_pipeline.orchestration.definitions import (
     default_executor,
     defs,
 )
-from dawgpath_data_pipeline.orchestration.jobs import sync_history_quarters_job
+from dawgpath_data_pipeline.orchestration.jobs import sync_history_partitions_job
 from dawgpath_data_pipeline.orchestration.monitors import _oom_suspected
 from dawgpath_data_pipeline.orchestration.partitions import (
     HISTORY_ASSETS,
@@ -41,8 +41,8 @@ from dawgpath_data_pipeline.orchestration.partitions import (
     history_quarter_partitions,
 )
 from dawgpath_data_pipeline.orchestration.schedules import (
-    full_refresh_after_history,
-    monthly_full_refresh_schedule,
+    launch_stage_2_after_history,
+    monthly_history_refresh_schedule,
 )
 from dawgpath_data_pipeline.orchestration.tags import TIER_3_POOL, TIER_KEY
 from dawgpath_data_pipeline.tests import DBTest
@@ -58,7 +58,7 @@ class TestDagsterDefinitions(DBTest):
 
     def test_bottleneck_gateway_assets_join_stage_two_refresh(self):
         repo_def = defs.get_repository_def()
-        job = repo_def.get_job("catalog_and_analytics_refresh")
+        job = repo_def.get_job("stage_2_refresh_catalog_analytics_and_exports")
         keys = {k.to_user_string()
                 for k in job.asset_layer.asset_graph.get_all_asset_keys()}
         self.assertIn("fetch_bottleneck_gateway_courses", keys)
@@ -71,25 +71,27 @@ class TestDagsterDefinitions(DBTest):
                          if not j.name.startswith("__")]
         self.assertEqual(
             sorted(explicit_jobs),
-            ["catalog_and_analytics_refresh", "catalog_refresh",
-             "enrollment_history_refresh", "export_artifacts",
-             "sws_course_refresh", "sync_history_quarters"])
+            ["reexport_published_artifacts", "refresh_catalog_only",
+             "refresh_sws_course_descriptions",
+             "stage_1_refresh_enrollment_history",
+             "stage_2_refresh_catalog_analytics_and_exports",
+             "sync_history_partitions"])
 
     def test_schedules_target_expected_jobs(self):
         repo_def = defs.get_repository_def()
         schedules = {s.name: s for s in repo_def.schedule_defs}
         self.assertEqual(
             sorted(schedules),
-            ["monthly_full_refresh", "weekly_catalog_refresh"])
+            ["monthly_history_refresh", "weekly_catalog_refresh"])
         self.assertEqual(
-            schedules["monthly_full_refresh"].cron_schedule, "0 4 1 * *")
+            schedules["monthly_history_refresh"].cron_schedule, "0 4 1 * *")
         self.assertEqual(
-            schedules["monthly_full_refresh"].job_name,
-            "enrollment_history_refresh")
+            schedules["monthly_history_refresh"].job_name,
+            "stage_1_refresh_enrollment_history")
         self.assertEqual(
             schedules["weekly_catalog_refresh"].cron_schedule, "0 5 * * 0")
         self.assertEqual(
-            schedules["weekly_catalog_refresh"].job_name, "catalog_refresh")
+            schedules["weekly_catalog_refresh"].job_name, "refresh_catalog_only")
 
     def test_schedules_start_stopped(self):
         repo_def = defs.get_repository_def()
@@ -97,9 +99,9 @@ class TestDagsterDefinitions(DBTest):
             self.assertEqual(
                 schedule.default_status, DefaultScheduleStatus.STOPPED)
 
-    def test_catalog_refresh_excludes_expensive_sources(self):
+    def test_catalog_only_refresh_excludes_expensive_sources(self):
         repo_def = defs.get_repository_def()
-        job = repo_def.get_job("catalog_refresh")
+        job = repo_def.get_job("refresh_catalog_only")
         selected = {key.to_user_string()
                     for key in job.asset_layer.executable_asset_keys}
         self.assertIn("fetch_curric_data", selected)
@@ -127,24 +129,25 @@ class TestDagsterDefinitions(DBTest):
         self.assertEqual(keys[0], "20211")
         self.assertEqual(keys[-1], "20264")
 
-    def test_catalog_and_analytics_refresh_excludes_history_assets(self):
+    def test_stage_two_refresh_excludes_history_assets(self):
         repo_def = defs.get_repository_def()
         selected = {key.to_user_string() for key in
-                    repo_def.get_job("catalog_and_analytics_refresh")
+                    repo_def.get_job(
+                        "stage_2_refresh_catalog_analytics_and_exports")
                     .asset_layer.executable_asset_keys}
         self.assertIn("build_course_gpa_distro", selected)
         for history_asset in HISTORY_ASSETS:
             self.assertNotIn(history_asset, selected)
-        history_job = repo_def.get_job("enrollment_history_refresh")
+        history_job = repo_def.get_job("stage_1_refresh_enrollment_history")
         self.assertEqual(
             {key.to_user_string() for key in
              history_job.asset_layer.executable_asset_keys},
             set(HISTORY_ASSETS))
 
-    def test_export_artifacts_job_is_exports_only(self):
+    def test_reexport_published_artifacts_job_is_exports_only(self):
         repo_def = defs.get_repository_def()
         selected = {key.to_user_string() for key in
-                    repo_def.get_job("export_artifacts")
+                    repo_def.get_job("reexport_published_artifacts")
                     .asset_layer.executable_asset_keys}
         self.assertIn("export_course_data_json", selected)
         self.assertNotIn("fetch_course_data", selected)
@@ -158,7 +161,7 @@ class TestDagsterDefinitions(DBTest):
                 instance=instance,
                 scheduled_execution_time=datetime(
                     2026, 1, 1, 4, tzinfo=timezone.utc))
-            requests = list(monthly_full_refresh_schedule(context))
+            requests = list(monthly_history_refresh_schedule(context))
             keys = history_partition_keys(date(2026, 1, 1))
             self.assertEqual(
                 sorted(instance.get_dynamic_partitions(name)), keys)
@@ -167,11 +170,11 @@ class TestDagsterDefinitions(DBTest):
         self.assertEqual(
             {r.tags[HISTORY_BATCH_TAG] for r in requests}, {"2026-01-01"})
 
-    def test_sync_history_quarters_job(self):
+    def test_sync_history_partitions_job(self):
         name = history_quarter_partitions.name
         with DagsterInstance.ephemeral() as instance:
             instance.add_dynamic_partitions(name, ["19991"])
-            res = sync_history_quarters_job.execute_in_process(
+            res = sync_history_partitions_job.execute_in_process(
                 instance=instance)
             self.assertTrue(res.success)
             self.assertEqual(sorted(instance.get_dynamic_partitions(name)),
@@ -193,12 +196,12 @@ class TestDagsterDefinitions(DBTest):
             EXECUTOR_TAG_LIMITS,
             [{"key": TIER_KEY, "value": "tier_3", "limit": 1}])
         executor = repo_def.get_job(
-            "catalog_and_analytics_refresh").executor_def
+            "stage_2_refresh_catalog_analytics_and_exports").executor_def
         self.assertIs(executor, default_executor)
 
     def test_history_sensor_skips_without_batch(self):
         with DagsterInstance.ephemeral() as instance:
-            result = full_refresh_after_history(
+            result = launch_stage_2_after_history(
                 build_sensor_context(instance=instance))
             self.assertIsInstance(result, SkipReason)
 
@@ -215,7 +218,7 @@ class TestDagsterDefinitions(DBTest):
             DagsterInstance.ephemeral() as instance,
             patch.object(DagsterInstance, "get_runs", return_value=runs),
         ):
-            result = full_refresh_after_history(
+            result = launch_stage_2_after_history(
                 build_sensor_context(instance=instance))
             self.assertEqual(result.tags[HISTORY_BATCH_TAG], "abcd1234")
 
@@ -226,7 +229,7 @@ class TestDagsterDefinitions(DBTest):
             DagsterInstance.ephemeral() as instance,
             patch.object(DagsterInstance, "get_runs", return_value=runs),
         ):
-            result = full_refresh_after_history(
+            result = launch_stage_2_after_history(
                 build_sensor_context(instance=instance))
             self.assertIsInstance(result, SkipReason)
             self.assertIn(keys[-1], result.skip_message)

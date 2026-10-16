@@ -10,17 +10,17 @@ from dagster import Definitions, load_assets_from_modules, multiprocess_executor
 
 from dawgpath_data_pipeline.orchestration import assets
 from dawgpath_data_pipeline.orchestration.jobs import (
-    catalog_and_analytics_refresh_job,
-    catalog_refresh_job,
-    enrollment_history_refresh_job,
-    export_artifacts_job,
-    sws_course_refresh_job,
-    sync_history_quarters_job,
+    refresh_catalog_only_job,
+    reexport_published_artifacts_job,
+    stage_1_refresh_enrollment_history_job,
+    stage_2_refresh_catalog_analytics_and_exports_job,
+    sws_course_descriptions_refresh_job,
+    sync_history_partitions_job,
 )
 from dawgpath_data_pipeline.orchestration.monitors import run_failure_capture
 from dawgpath_data_pipeline.orchestration.schedules import (
-    full_refresh_after_history,
-    monthly_full_refresh_schedule,
+    launch_stage_2_after_history,
+    monthly_history_refresh_schedule,
     weekly_catalog_refresh_schedule,
 )
 from dawgpath_data_pipeline.orchestration.tags import TIER_KEY
@@ -37,16 +37,16 @@ defs = Definitions(
     assets=all_assets,
     executor=default_executor,
     jobs=[
-        enrollment_history_refresh_job,
-        catalog_and_analytics_refresh_job,
-        catalog_refresh_job,
-        sws_course_refresh_job,
-        export_artifacts_job,
-        sync_history_quarters_job,
+        stage_1_refresh_enrollment_history_job,
+        stage_2_refresh_catalog_analytics_and_exports_job,
+        refresh_catalog_only_job,
+        sws_course_descriptions_refresh_job,
+        reexport_published_artifacts_job,
+        sync_history_partitions_job,
     ],
     schedules=[
-        monthly_full_refresh_schedule,
+        monthly_history_refresh_schedule,
         weekly_catalog_refresh_schedule,
     ],
-    sensors=[full_refresh_after_history, run_failure_capture],
+    sensors=[launch_stage_2_after_history, run_failure_capture],
 )

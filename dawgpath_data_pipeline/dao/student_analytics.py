@@ -1,6 +1,7 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+import socket
 import time
 
 import pandas
@@ -72,6 +73,7 @@ def _is_transient(error):
 
 
 def _run_query(query):
+    _validate_tunnel_resolution()
     for attempt in range(1, CONNECTION_ATTEMPTS + 1):
         try:
             con = pyodbc.connect(_connection_string())
@@ -84,3 +86,19 @@ def _run_query(query):
     df = pandas.read_sql(query, con)
     con.close()
     return df
+
+
+def _validate_tunnel_resolution():
+    if str(settings.AZSQL_PORT) == "1433":
+        return
+
+    addresses = {
+        result[4][0]
+        for result in socket.getaddrinfo(
+            settings.AZSQL_SERVER, settings.AZSQL_PORT, type=socket.SOCK_STREAM)
+    }
+    if not addresses or any(address not in ("127.0.0.1", "::1")
+                            for address in addresses):
+        raise RuntimeError(
+            f"Azure SQL tunnel is not active: {settings.AZSQL_SERVER} "
+            f"resolved to {sorted(addresses)}")
