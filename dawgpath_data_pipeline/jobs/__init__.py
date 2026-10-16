@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import insert, text
 
@@ -77,7 +77,7 @@ class DataJob:
     def __init__(self):
         db = get_db_implementation()
         self.session = db.get_session()
-        self._start_time_iso = datetime.now(timezone.utc).isoformat()
+        self._start_time_iso = datetime.now(UTC).isoformat()
         self._start_time_ticks = time.time()
 
     def _create_result(
@@ -89,7 +89,7 @@ class DataJob:
         metadata=None,
     ):
         end_time_ticks = time.time()
-        end_time_iso = datetime.now(timezone.utc).isoformat()
+        end_time_iso = datetime.now(UTC).isoformat()
         duration = end_time_ticks - self._start_time_ticks
 
         meta_dict = metadata.copy() if metadata is not None else {}

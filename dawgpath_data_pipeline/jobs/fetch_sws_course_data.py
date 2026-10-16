@@ -3,7 +3,7 @@
 
 import re
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from logging import INFO, StreamHandler, getLogger
 
 from sqlalchemy import func
@@ -71,7 +71,7 @@ class FetchSWSCourseData(DataJob):
         }
 
         # 3. Filter down to missing or stale courses needing SWS refresh
-        now_utc = datetime.now(timezone.utc)
+        now_utc = datetime.now(UTC)
         to_fetch = []
         for course in courses:
             dept = course.department_abbrev.strip()
@@ -140,7 +140,7 @@ class FetchSWSCourseData(DataJob):
             return True
         last_updated = existing.last_updated
         if last_updated.tzinfo is None:
-            last_updated = last_updated.replace(tzinfo=timezone.utc)
+            last_updated = last_updated.replace(tzinfo=UTC)
         return (now_utc - last_updated).days > SWS_REFRESH_THRESHOLD_DAYS
 
     def _fetch_single_sws_course(self, yr, qtr, dept, num):

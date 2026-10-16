@@ -10,8 +10,8 @@ from dagster import Definitions, load_assets_from_modules, multiprocess_executor
 
 from dawgpath_data_pipeline.orchestration import assets
 from dawgpath_data_pipeline.orchestration.jobs import (
-    refresh_catalog_only_job,
     reexport_published_artifacts_job,
+    refresh_catalog_only_job,
     stage_1_refresh_enrollment_history_job,
     stage_2_refresh_catalog_analytics_and_exports_job,
     sws_course_descriptions_refresh_job,

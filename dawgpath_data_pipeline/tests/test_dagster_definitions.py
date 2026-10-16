@@ -1,7 +1,7 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -160,7 +160,7 @@ class TestDagsterDefinitions(DBTest):
             context = build_schedule_context(
                 instance=instance,
                 scheduled_execution_time=datetime(
-                    2026, 1, 1, 4, tzinfo=timezone.utc))
+                    2026, 1, 1, 4, tzinfo=UTC))
             requests = list(monthly_history_refresh_schedule(context))
             keys = history_partition_keys(date(2026, 1, 1))
             self.assertEqual(
