@@ -1,7 +1,7 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 from dawgpath_data_pipeline.jobs.fetch_sws_course_data import FetchSWSCourseData
@@ -26,7 +26,7 @@ class TestFetchSWSCourseData(DBTest):
 
     @patch("dawgpath_data_pipeline.jobs.fetch_sws_course_data.get_course")
     def test_fresh_course_skipped(self, mock_get_course):
-        now_utc = datetime.now(timezone.utc)
+        now_utc = datetime.now(UTC)
         course = Course(department_abbrev="CSE", course_number=142)
         reg = Registration(system_key=1, crs_curric_abbr="CSE", crs_number=142, regis_yr=2025, regis_qtr=1, regis_term=20251)
         sws = SWSCourse(
@@ -61,7 +61,7 @@ class TestFetchSWSCourseData(DBTest):
             course_number=142,
             course_description="Old description",
             last_term_fetched=20241,
-            last_updated=datetime.now(timezone.utc)
+            last_updated=datetime.now(UTC)
         )
         self.session.add_all([course, reg, sws])
         self.session.commit()
@@ -83,7 +83,7 @@ class TestFetchSWSCourseData(DBTest):
         mock_get_course.return_value = mock_response
 
         # Course was fetched 200 days ago (older than 180-day threshold)
-        old_date = datetime.now(timezone.utc) - timedelta(days=200)
+        old_date = datetime.now(UTC) - timedelta(days=200)
         course = Course(department_abbrev="CSE", course_number=142)
         reg = Registration(system_key=1, crs_curric_abbr="CSE", crs_number=142, regis_yr=2025, regis_qtr=1, regis_term=20251)
         sws = SWSCourse(

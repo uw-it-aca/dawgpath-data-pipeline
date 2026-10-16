@@ -10,6 +10,7 @@ import pyodbc
 from dawgpath_data_pipeline.dao.student_analytics import (
     _connection_string,
     _run_query,
+    _validate_tunnel_resolution,
     get_bottleneck_gateway_courses,
 )
 
@@ -25,6 +26,29 @@ def _settings(settings_mock):
 
 
 class TestStudentAnalytics(TestCase):
+    @patch("dawgpath_data_pipeline.dao.student_analytics.socket.getaddrinfo")
+    @patch("dawgpath_data_pipeline.dao.student_analytics.settings")
+    def test_tunnel_requires_loopback_resolution(
+            self, settings_mock, getaddrinfo_mock):
+        _settings(settings_mock)
+        getaddrinfo_mock.return_value = [
+            (2, 1, 6, "", ("34.83.192.233", 1434)),
+        ]
+
+        with self.assertRaisesRegex(RuntimeError, "tunnel is not active"):
+            _validate_tunnel_resolution()
+
+    @patch("dawgpath_data_pipeline.dao.student_analytics.socket.getaddrinfo")
+    @patch("dawgpath_data_pipeline.dao.student_analytics.settings")
+    def test_tunnel_accepts_loopback_resolution(
+            self, settings_mock, getaddrinfo_mock):
+        _settings(settings_mock)
+        getaddrinfo_mock.return_value = [
+            (2, 1, 6, "", ("127.0.0.1", 1434)),
+        ]
+
+        _validate_tunnel_resolution()
+
     @patch("dawgpath_data_pipeline.dao.student_analytics.settings")
     def test_connection_string_uses_entra_id_and_encryption(
             self, settings_mock):
@@ -44,12 +68,14 @@ class TestStudentAnalytics(TestCase):
         # ODBC rejects the ADO.NET True/False spelling; off is the default.
         self.assertNotIn("MultipleActiveResultSets", conn_str)
 
+    @patch("dawgpath_data_pipeline.dao.student_analytics._validate_tunnel_resolution")
     @patch("dawgpath_data_pipeline.dao.student_analytics.time.sleep")
     @patch("dawgpath_data_pipeline.dao.student_analytics.pandas.read_sql")
     @patch("dawgpath_data_pipeline.dao.student_analytics.pyodbc.connect")
     @patch("dawgpath_data_pipeline.dao.student_analytics.settings")
     def test_run_query_retries_transient_connection_failures(
-            self, settings_mock, connect_mock, read_sql_mock, sleep_mock):
+            self, settings_mock, connect_mock, read_sql_mock, sleep_mock,
+            validate_mock):
         _settings(settings_mock)
         connection = MagicMock()
         connect_mock.side_effect = [
@@ -65,13 +91,15 @@ class TestStudentAnalytics(TestCase):
         self.assertIs(actual, expected)
         self.assertEqual(connect_mock.call_count, 3)
         self.assertEqual(sleep_mock.call_args_list, [call(2), call(4)])
+        validate_mock.assert_called_once_with()
         connection.close.assert_called_once_with()
 
+    @patch("dawgpath_data_pipeline.dao.student_analytics._validate_tunnel_resolution")
     @patch("dawgpath_data_pipeline.dao.student_analytics.time.sleep")
     @patch("dawgpath_data_pipeline.dao.student_analytics.pyodbc.connect")
     @patch("dawgpath_data_pipeline.dao.student_analytics.settings")
     def test_run_query_does_not_retry_auth_failures(
-            self, settings_mock, connect_mock, sleep_mock):
+            self, settings_mock, connect_mock, sleep_mock, validate_mock):
         _settings(settings_mock)
         connect_mock.side_effect = pyodbc.Error("28000", "Login failed")
 
@@ -80,11 +108,13 @@ class TestStudentAnalytics(TestCase):
 
         self.assertEqual(connect_mock.call_count, 1)
         sleep_mock.assert_not_called()
+        validate_mock.assert_called_once_with()
 
+    @patch("dawgpath_data_pipeline.dao.student_analytics._validate_tunnel_resolution")
     @patch("dawgpath_data_pipeline.dao.student_analytics.pyodbc.connect")
     @patch("dawgpath_data_pipeline.dao.student_analytics.settings")
     def test_connection_failure_does_not_leak_password(
-            self, settings_mock, connect_mock):
+            self, settings_mock, connect_mock, validate_mock):
         _settings(settings_mock)
         connect_mock.side_effect = pyodbc.Error("28000", "Login failed")
 
@@ -92,6 +122,7 @@ class TestStudentAnalytics(TestCase):
             _run_query("SELECT 1")
 
         self.assertNotIn("sekrit", str(ctx.exception))
+        validate_mock.assert_called_once_with()
 
     @patch("dawgpath_data_pipeline.dao.student_analytics._run_query")
     def test_query_keeps_one_current_row_per_course(self, run_query_mock):

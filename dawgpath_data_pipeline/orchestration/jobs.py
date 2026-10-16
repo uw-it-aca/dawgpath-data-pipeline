@@ -8,14 +8,14 @@ No single job is a full refresh. A complete fetch -> build -> export run is
 two stages, because the EDW history fetches are quarter-partitioned and
 everything else is not:
 
-    1. enrollment_history_refresh     (one run per quarter, partitioned)
-    2. catalog_and_analytics_refresh  (every non-history asset, one run)
+    1. stage_1_refresh_enrollment_history (one run per quarter, partitioned)
+    2. stage_2_refresh_catalog_analytics_and_exports (every other asset)
 
 Stage 2 reads the history tables stage 1 writes, so running it alone rebuilds
 and re-exports against whatever enrollment data is already loaded.
 
 The automations that drive both stages live in schedules.py:
-monthly_full_refresh fans out stage 1, full_refresh_after_history chains
+monthly_history_refresh fans out stage 1, launch_stage_2_after_history chains
 stage 2. A manual full refresh is a backfill of stage 1 over every quarter,
 which the same sensor also chains into stage 2.
 
@@ -58,58 +58,59 @@ CATALOG_ASSETS = [
 
 # --- Full refresh: the two stages of an end-to-end run ---
 
-enrollment_history_refresh_job = define_asset_job(
-    name="enrollment_history_refresh",
+stage_1_refresh_enrollment_history_job = define_asset_job(
+    name="stage_1_refresh_enrollment_history",
     selection=HISTORY_SELECTION,
     partitions_def=history_quarter_partitions,
     description=(
         "Stage 1 of a full refresh. Refreshes one quarter of EDW "
         "registrations, major declarations, and transcripts per run, and "
         "prunes quarters older than the lookback window. Every quarter must "
-        "run before catalog_and_analytics_refresh."
+        "run before stage_2_refresh_catalog_analytics_and_exports."
     ),
 )
 
-catalog_and_analytics_refresh_job = define_asset_job(
-    name="catalog_and_analytics_refresh",
+stage_2_refresh_catalog_analytics_and_exports_job = define_asset_job(
+    name="stage_2_refresh_catalog_analytics_and_exports",
     selection=AssetSelection.all() - HISTORY_SELECTION,
     description=(
         "Stage 2 of a full refresh. Re-fetches EDW catalog metadata and SWS "
         "descriptions, rebuilds every derived analytic, and republishes all "
         "exports. Reads the enrollment history tables rather than "
-        "refreshing them, so run enrollment_history_refresh first if that "
-        "data is stale."
+        "refreshing them, so run stage_1_refresh_enrollment_history first "
+        "if that data is stale."
     ),
 )
 
 
 # --- Partial refreshes ---
 
-catalog_refresh_job = define_asset_job(
-    name="catalog_refresh",
+refresh_catalog_only_job = define_asset_job(
+    name="refresh_catalog_only",
     selection=AssetSelection.assets(*CATALOG_ASSETS),
     description=(
-        "Catalog-only subset of catalog_and_analytics_refresh: EDW catalog "
-        "metadata and the prerequisite/curriculum artifacts derived from it. "
+        "Catalog-only subset of "
+        "stage_2_refresh_catalog_analytics_and_exports: EDW catalog metadata "
+        "and the prerequisite/curriculum artifacts derived from it. "
         "Excludes registration, transcript, and SWS work so it stays cheap "
         "enough to run between full refreshes."
     ),
 )
 
 # Kept separate so SWS request volume can be throttled or paused on its own.
-sws_course_refresh_job = define_asset_job(
-    name="sws_course_refresh",
+sws_course_descriptions_refresh_job = define_asset_job(
+    name="refresh_sws_course_descriptions",
     selection=AssetSelection.assets("fetch_sws_course_data"),
     description=(
         "Fetches SWS descriptions for courses missing from the local table. "
         "Incremental: existing rows are never re-requested. Also runs as "
-        "part of catalog_and_analytics_refresh; this job exists for "
-        "throttled manual runs."
+        "part of stage_2_refresh_catalog_analytics_and_exports; this job "
+        "exists for throttled manual runs."
     ),
 )
 
-export_artifacts_job = define_asset_job(
-    name="export_artifacts",
+reexport_published_artifacts_job = define_asset_job(
+    name="reexport_published_artifacts",
     selection=AssetSelection.groups("published_artifacts"),
     description=(
         "Re-exports the published JSON and pickle files from whatever is "
@@ -121,19 +122,19 @@ export_artifacts_job = define_asset_job(
 # --- Maintenance ---
 
 @op
-def sync_history_quarters_op(context: OpExecutionContext):
+def sync_history_partitions_op(context: OpExecutionContext):
     keys = sync_history_partitions(context.instance)
     context.log.info(f"History quarters: {keys[0]}..{keys[-1]} ({len(keys)})")
 
 
 @job(
-    name="sync_history_quarters",
+    name="sync_history_partitions",
     description=(
         "Adds quarters entering the lookback window to "
-        "enrollment_history_refresh and removes ones that aged out. The "
-        "monthly schedule also does this on every tick; run this by hand "
+        "stage_1_refresh_enrollment_history and removes ones that aged out. "
+        "The monthly schedule also does this on every tick; run this by hand "
         "before launching a manual backfill."
     ),
 )
-def sync_history_quarters_job():
-    sync_history_quarters_op()
+def sync_history_partitions_job():
+    sync_history_partitions_op()

@@ -26,3 +26,20 @@ class TestInstanceConfig(TestCase):
             for section in SHARED_SECTIONS:
                 self.assertEqual(deployed.get(section), repo[section],
                                  f"{values_file.name}: {section} out of sync")
+
+    def test_daemon_inherits_azure_sql_resolver(self):
+        for values_file in VALUES_FILES:
+            values = yaml.safe_load(values_file.read_text())
+            environment = {
+                item["name"]: item.get("value")
+                for item in values["environmentVariables"]
+            }
+            daemon = values["daemon"]["daemons"][0]
+
+            self.assertEqual(environment["LD_PRELOAD"],
+                             "libnss_wrapper.so")
+            self.assertEqual(
+                environment["NSS_WRAPPER_HOSTS"],
+                "/app/project/azure-sql-hosts")
+            self.assertEqual(daemon["command"],
+                             ["/app/bin/dagster-daemon"])

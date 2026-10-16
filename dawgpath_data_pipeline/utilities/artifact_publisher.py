@@ -4,7 +4,7 @@
 import hashlib
 import json
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 try:
     from google.cloud import storage
@@ -40,7 +40,7 @@ class ArtifactPublisher:
         Publishes content_bytes as a versioned artifact and updates latest copy + manifest.
         """
         if run_id is None:
-            run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+            run_id = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
 
         sha256 = self._compute_sha256(content_bytes)
         size_bytes = len(content_bytes)
@@ -118,7 +118,7 @@ class ArtifactPublisher:
 
     def _update_manifest(self, run_id, filename, artifact_meta):
         manifest = self._get_manifest()
-        manifest["generated_at"] = datetime.now(timezone.utc).isoformat()
+        manifest["generated_at"] = datetime.now(UTC).isoformat()
         manifest["run_id"] = run_id
         manifest["artifacts"][filename] = artifact_meta
 

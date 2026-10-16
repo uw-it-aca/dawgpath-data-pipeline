@@ -14,7 +14,7 @@ def get_combined_term(year, quarter):
 
 def get_history_terms(today=None):
     # local date is intentional; EDW years are UW-local
-    current_year = (today or date.today()).year  # noqa: DTZ011
+    current_year = (today or date.today()).year
     return [(year, quarter)
             for year in range(current_year - HISTORY_LOOKBACK_YEARS,
                               current_year + 1)
