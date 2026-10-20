@@ -37,6 +37,7 @@ from dawgpath_data_pipeline.orchestration.tags import (
 )
 from dawgpath_data_pipeline.utilities import parse_combined_term
 from dawgpath_data_pipeline.utilities.artifact_publisher import ArtifactPublisher
+from dawgpath_data_pipeline.utilities.reference_data import ReferenceDataStore
 
 # EDW rejects connections during its nightly restricted window (SQL 923),
 # which starts at 01:59 and has run as late as ~03:10.
@@ -331,6 +332,53 @@ from dawgpath_data_pipeline.jobs.export_course_prereq_data import ExportCoursePr
 from dawgpath_data_pipeline.jobs.export_curric_data import ExportCurricData
 from dawgpath_data_pipeline.jobs.export_major_data import ExportMajorData
 from dawgpath_data_pipeline.jobs.export_prereq_data import ExportPrereqData
+
+
+@asset(
+    group_name="published_artifacts",
+    op_tags=TIER_1_K8S_TAGS,
+    description=(
+        "Pins validated uploads available when this export run was created."),
+)
+def pin_reference_data(context: OpExecutionContext):
+    run_id = context.dagster_run.root_run_id or context.run_id
+    record = context.instance.get_run_record_by_id(run_id)
+    if record is None:
+        raise RuntimeError(
+            "Cannot pin references without a persisted Dagster run.")
+    snapshot = ReferenceDataStore().pin_run(
+        run_id, record.create_timestamp)
+    return Output(snapshot, metadata={
+        kind + "_version": entry["version"]
+        for kind, entry in snapshot["references"].items()
+    })
+
+
+@asset(
+    group_name="published_artifacts",
+    op_tags=TIER_1_K8S_TAGS,
+    description=(
+        "Exports run-pinned COI and career CSVs without fetching sources."),
+)
+def export_reference_data(context: OpExecutionContext, pin_reference_data):
+    store = ReferenceDataStore()
+    # Verify both files before publishing either.
+    references = pin_reference_data["references"]
+    contents = {kind: store.read_version(entry)
+                for kind, entry in references.items()}
+    publisher = ArtifactPublisher(local_root=str(store.root))
+    artifacts = {}
+    for kind, entry in references.items():
+        artifacts[kind] = publisher.publish_content(
+            filename=entry["filename"],
+            content_bytes=contents[kind],
+            run_id=context.run_id,
+            rows_affected=entry["rows_affected"],
+        )
+    return Output(artifacts, metadata={
+        kind + "_upload_version": entry["version"]
+        for kind, entry in references.items()
+    })
 
 
 @asset(
