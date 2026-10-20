@@ -9,9 +9,11 @@ services:
     container_name: dawgpath_pipeline_admin_app
     environment:
       - GOOGLE_ANALYTICS_KEY=${GOOGLE_ANALYTICS_KEY}
+      - DAGSTER_ACCESS_GROUP=${DAGSTER_ACCESS_GROUP:-}
     volumes:
       - ./dawgpath_pipeline_admin:/app/dawgpath_pipeline_admin
       - ./dawgpath_data_pipeline:/app/dawgpath_data_pipeline
+      - artifacts-volume:/app/artifacts
       - statics-volume:/static
     ports:
       - "${RUNSERVER_PORT:-8000}:8000"
@@ -28,6 +30,7 @@ services:
     volumes:
       - ./dawgpath_pipeline_admin:/app/dawgpath_pipeline_admin
       - ./dawgpath_data_pipeline:/app/dawgpath_data_pipeline
+      - artifacts-volume:/app/artifacts
       - ./workspace.yaml:/app/workspace.yaml
       - ./dagster.yaml:/app/dagster.yaml
       - ./certs:/secrets:ro
@@ -56,3 +59,4 @@ services:
       - "${POSTGRES_PORT:-5433}:5432"
 volumes:
   statics-volume:
+  artifacts-volume:

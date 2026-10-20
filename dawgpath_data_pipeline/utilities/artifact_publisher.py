@@ -19,8 +19,10 @@ class ArtifactPublisher:
     Writes run-versioned copies, latest pointer copies, and an atomic manifest.json.
     """
 
-    def __init__(self, bucket_name=None, local_root="artifacts", gcs_prefix=""):
+    def __init__(self, bucket_name=None, local_root=None, gcs_prefix=""):
         self.bucket_name = bucket_name or os.getenv("GCS_BUCKET_NAME")
+        if local_root is None:
+            local_root = os.getenv("ARTIFACT_ROOT", "artifacts")
         self.local_root = os.path.abspath(local_root)
         self.gcs_prefix = gcs_prefix.strip("/")
 

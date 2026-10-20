@@ -56,6 +56,103 @@ and then let the sensor launch stage 2 or launch stage 2 manually. If history is
 already current, stage 2 can be run on its own. `reexport_published_artifacts`
 is useful when only republishing is needed.
 
-## Current Validation Snapshot
+## Reference data uploads
+
+Pipeline users in `DAGSTER_ACCESS_GROUP` can upload COI and career-center CSVs
+at `/reference-data/` on the pipeline host. This page is separate from the
+Dagster proxy and uses SAML authentication, group authorization, and CSRF
+protection.
+
+- **COI:** UTF-8 CSV with the header `course_id,score`. IDs such as `INFO 201`
+  must be unique. Scores must be finite and between -5 and 5 (the existing
+  scale includes negative values); -1 is the missing-score sentinel. Each of
+  levels 100, 200, 300 and 400 needs a non-sentinel score for Pathways' aggregate
+  calculations.
+- **Career mapping:** UTF-8 CSV without a header, with a unique credential code
+  and career slug per row, e.g. `INFO-0-1-6,informatics`.
+- Both formats reject empty rows, duplicate IDs, extra columns and surrounding
+  whitespace, and are limited to 10 MiB / 100000 data rows. The byte limit
+  applies both before and after normalization, including the final newline.
+  A UTF-8 BOM and CRLF
+  line endings are accepted and normalized before checksumming/storage.
+
+Validated uploads are versioned and staged, **not immediately published**.
+The newest valid upload of each type committed before a complete export run
+was created is selected for that run. Later uploads apply to later runs.
+Run reexecution retains the root run's selection. Upload history displays the
+uploader, creation time, version, checksum, row count, and next selected versions.
+The exporter reads its root run's immutable snapshot directly; pinning is an
+ordering-only asset dependency, not a shared IO-manager input. Overlapping runs
+and export-only reexecutions therefore cannot substitute another run's uploads.
+An export without an existing snapshot fails instead of selecting newer uploads.
+
+Stage 2 and `reexport_published_artifacts` now include `pin_reference_data` and
+`export_reference_data`. They publish `coi_scores.csv` and
+`admit_major_mapping.csv` alongside the generated exports, retaining the
+selected upload metadata in `reference-data/runs/<root-run-id>.json` and
+Dagster asset metadata. The weekly catalog-only job remains a partial export
+and does not publish reference files. Bootstrap **both** uploads before starting
+a complete export; missing files fail the reference export explicitly.
+
+Storage uses the existing `GCS_BUCKET_NAME` and Application Default Credentials.
+Uploads live under `reference-data/uploads/`; metadata JSON is the immutable
+commit marker and CSV bytes are verified against their recorded SHA-256.
+The UI service needs object create/list/read access there, and Dagster workers
+need list/read plus create/read under `reference-data/runs/`. Do not configure
+deletion/overwrite access for these records; retain referenced uploads for
+reexecution and future release rollback.
+
+Without a bucket, uploads/snapshots use `ARTIFACT_ROOT` (default `artifacts`).
+All exporters use this same root for run-versioned files, latest copies, and
+the shared manifest. An explicit `ArtifactPublisher(local_root=...)` argument
+overrides the environment setting. Set `ARTIFACT_ROOT` consistently in the UI
+and Dagster processes.
+Local Compose shares `/app/artifacts` between the UI and Dagster containers
+through the `artifacts-volume` named volume. The image creates this directory
+as `acait`; Docker copies its ownership into a fresh volume so both non-root
+services can write without a host-directory setup step. Local artifacts are
+excluded from the image build context.
+
+Rebuild the image after this change (`docker compose build app`). Existing
+host files under `./artifacts` are not automatically migrated. To preserve them,
+copy them into the named volume before starting services:
+
+```bash
+docker compose run --rm --no-deps --user root \
+  --volume "$PWD/artifacts:/old-artifacts:ro" \
+  --entrypoint /bin/bash app -c \
+  'cp -a /old-artifacts/. /app/artifacts/ &&
+   chown -R acait:acait /app/artifacts'
+```
+
+Only run this migration when the host directory exists and the services are
+stopped; do not merge it into a volume containing newer uploads. The temporary
+root user is for migration only; both normal services still run as `acait`.
+Inspect local files through either container, for example:
+
+```bash
+docker compose run --rm --no-deps --entrypoint /bin/sh app \
+  -c 'find /app/artifacts/reference-data -type f'
+```
+
+The volume survives container replacement and `docker compose down`, but
+**`docker compose down -v` deletes it**, including uploads and run snapshots.
+
+Configure `DAGSTER_ACCESS_GROUP` and a matching authenticated SAML/mock session
+to use the upload page. Configured GCS failures never fall back to local files.
+
+This is feature 1 of the GCS consumer work: it does not yet introduce an atomic
+complete-release manifest, a prebuilt search index, or changes to Pathways.
+The existing mutable `latest/manifest.json` is still not a complete-release
+boundary and must not be used as such. Cross-checking reference IDs against a
+specific generated catalog belongs in the complete-release finalizer; upload
+validation currently establishes CSV structure and import prerequisites only.
+Pathways' Azure similar-majors refresh is unchanged.
+
+Before bootstrapping, correct the conflicting duplicates in the legacy COI
+file: investigation found 18 duplicated course IDs with different scores.
+Uploads deliberately reject these rather than silently picking a winner.
+
+## Historical validation snapshot
 
 As of 2026-09-09, `python -m compileall dawgpath_data_pipeline/` passes. The historical test runner, `python dawgpath_data_pipeline/test.py -v`, fails in the active local environment before tests run because `commonconf` is not installed.

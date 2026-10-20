@@ -21,6 +21,8 @@ USER acait
 ADD --chown=acait:acait . /app/
 ADD --chown=acait:acait docker/ /app/project/
 
+RUN mkdir -p /app/artifacts && chmod 0755 /app/artifacts
+
 ADD --chown=acait:acait docker/app_start.sh /scripts
 ADD --chown=acait:acait docker/app_deploy.sh /scripts
 RUN chmod u+x /scripts/app_start.sh /scripts/app_deploy.sh

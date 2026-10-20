@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>DawgPath pipeline reference data</title></head>
+<body>
+  <h1>Reference data uploads</h1>
+  <p><a href="/">Back to Dagster</a></p>
+  <p>Validated uploads are staged for the next complete export run. Uploading
+    does not start a run or change a published release. Runs already started
+    keep their original versions.</p>
+  <p>COI: header <code>course_id,score</code>, then two-column rows.
+    Scores must be finite, between -5 and 5; -1 is the missing-score sentinel.
+    Include a non-sentinel score for each level 100, 200, 300 and 400.</p>
+  <p>Career mappings: no header; each row contains a credential code
+    (for example <code>INFO-0-1-6</code>) and a career slug.
+    Both files require unique IDs, UTF-8 encoding, at most 10 MiB and 100000 rows.</p>
+  {% if error %}<p role="alert">{{ error }}</p>{% endif %}
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Validate and stage upload</button>
+  </form>
+  <h2>Upload history</h2>
+  <table>
+    <thead><tr><th>File</th><th>Version</th><th>Uploaded</th><th>By</th>
+      <th>Rows</th><th>SHA-256</th><th>Selection</th></tr></thead>
+    <tbody>
+    {% for entry in history %}
+      <tr><td>{{ entry.filename }}</td><td>{{ entry.version }}</td>
+        <td>{{ entry.uploaded_at }}</td><td>{{ entry.uploader }}</td>
+        <td>{{ entry.rows_affected }}</td><td>{{ entry.checksum_sha256 }}</td>
+        <td>{% if entry.version == selected.coi or entry.version == selected.career %}Next complete run{% else %}Historical{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="7">No uploads. Upload both files before running a complete export.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

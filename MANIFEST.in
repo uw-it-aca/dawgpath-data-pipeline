@@ -1,1 +1,2 @@
 include dawgpath_pipeline_admin/VERSION
+recursive-include dawgpath_pipeline_admin/templates *.html
