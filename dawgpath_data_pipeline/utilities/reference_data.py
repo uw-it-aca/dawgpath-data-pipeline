@@ -220,6 +220,21 @@ class ReferenceDataStore:
             raise RuntimeError("Reference snapshot was not persisted.")
         return json.loads(pinned)
 
+    def read_run(self, run_id):
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", run_id):
+            raise ValueError("Invalid run ID.")
+        content = self._read(f"reference-data/runs/{run_id}.json")
+        if content is None:
+            raise ReferenceValidationError(
+                f"Reference snapshot is missing for run {run_id}. "
+                "Execute pin_reference_data before exporting.")
+        snapshot = json.loads(content)
+        if (snapshot["run_id"] != run_id
+                or set(snapshot["references"]) != set(REFERENCE_FILES)):
+            raise ReferenceValidationError(
+                f"Reference snapshot is invalid for run {run_id}.")
+        return snapshot
+
     def read_version(self, metadata):
         content = self._read(metadata["data_path"])
         if content is None:

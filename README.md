@@ -79,6 +79,10 @@ The newest valid upload of each type committed before a complete export run
 was created is selected for that run. Later uploads apply to later runs.
 Run reexecution retains the root run's selection. Upload history displays the
 uploader, creation time, version, checksum, row count, and next selected versions.
+The exporter reads its root run's immutable snapshot directly; pinning is an
+ordering-only asset dependency, not a shared IO-manager input. Overlapping runs
+and export-only reexecutions therefore cannot substitute another run's uploads.
+An export without an existing snapshot fails instead of selecting newer uploads.
 
 Stage 2 and `reexport_published_artifacts` now include `pin_reference_data` and
 `export_reference_data`. They publish `coi_scores.csv` and

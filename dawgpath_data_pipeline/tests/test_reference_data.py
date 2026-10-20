@@ -10,8 +10,19 @@ from pathlib import Path
 import tempfile
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
+from uuid import uuid4
 
-from dagster import materialize
+from dagster import (
+    Definitions,
+    ReexecutionOptions,
+    define_asset_job,
+    execute_job,
+    fs_io_manager,
+    in_process_executor,
+    instance_for_test,
+    materialize,
+    reconstructable,
+)
 from google.api_core.exceptions import NotFound, PreconditionFailed
 
 from dawgpath_data_pipeline.orchestration.assets import (
@@ -28,6 +39,17 @@ from dawgpath_data_pipeline.utilities.reference_data import (
 
 COI = b"course_id,score\nINFO 101,-0.5\nINFO 201,0\nINFO 301,5\nINFO 401,2\n"
 CAREER = b"INFO-0-1-6,informatics\n"
+
+
+def reference_test_job():
+    return Definitions(
+        assets=[pin_reference_data, export_reference_data],
+        resources={"io_manager": fs_io_manager.configured({
+            "base_dir": str(Path(os.environ["ARTIFACT_ROOT"]) / "io"),
+        })},
+        jobs=[define_asset_job("reference_test")],
+        executor=in_process_executor,
+    ).get_job_def("reference_test")
 
 
 class ReferenceValidationTest(TestCase):
@@ -124,6 +146,27 @@ class ReferenceStoreTest(TestCase):
         with self.assertRaises(ValueError):
             self.store.pin_run("../escape", datetime.now(UTC))
 
+    def test_read_run_requires_existing_valid_snapshot(self):
+        self.upload_both()
+        with self.assertRaisesRegex(ReferenceValidationError, "missing"):
+            self.store.read_run("un-pinned")
+        with self.assertRaises(ValueError):
+            self.store.read_run("../escape")
+        snapshot = self.store.pin_run("pinned", datetime.now(UTC))
+        self.assertEqual(self.store.read_run("pinned"), snapshot)
+        path = (Path(self.tmp.name) / "reference-data/runs/pinned.json")
+        snapshot["run_id"] = "another-run"
+        path.write_text(json.dumps(snapshot))
+        with self.assertRaisesRegex(ReferenceValidationError, "invalid"):
+            self.store.read_run("pinned")
+
+    def test_export_without_pin_fails_without_publishing(self):
+        self.upload_both()
+        result = reference_test_job().execute_in_process(
+            op_selection=["export_reference_data"], raise_on_error=False)
+        self.assertFalse(result.success)
+        self.assertFalse((Path(self.tmp.name) / "runs").exists())
+
     def test_concurrent_pin_creates_one_complete_snapshot(self):
         self.upload_both()
         cutoff = datetime.now(UTC)
@@ -164,6 +207,43 @@ class ReferenceStoreTest(TestCase):
                          coi["version"])
         self.assertEqual(snapshot["references"]["career"]["version"],
                          career["version"])
+
+    def test_export_uses_own_snapshot_after_another_run_pins(self):
+        self.upload_both()
+        run_a = str(uuid4())
+        self.store.pin_run(run_a, datetime.now(UTC))
+        self.store.upload("coi", COI.replace(b"-0.5", b"1.5"), "later")
+        job = reference_test_job()
+        result_b = job.execute_in_process()
+        self.assertTrue(result_b.success)
+        result_a = job.execute_in_process(
+            run_id=run_a, op_selection=["export_reference_data"])
+        self.assertTrue(result_a.success)
+        self.assertEqual(
+            (Path(self.tmp.name) / "runs" / run_a
+             / "coi_scores.csv").read_bytes(),
+            COI)
+
+    def test_export_only_reexecution_uses_root_snapshot(self):
+        self.upload_both()
+        job = reconstructable(reference_test_job)
+        with instance_for_test() as instance:
+            with execute_job(job, instance=instance) as original:
+                self.assertTrue(original.success)
+                root_run_id = original.run_id
+            self.store.upload("coi", COI.replace(b"-0.5", b"1.5"), "later")
+            with execute_job(job, instance=instance) as newer:
+                self.assertTrue(newer.success)
+            with execute_job(
+                job, instance=instance,
+                reexecution_options=ReexecutionOptions(
+                    parent_run_id=root_run_id,
+                    step_selection=["export_reference_data"]),
+            ) as retry:
+                self.assertTrue(retry.success)
+                self.assertEqual(
+                    (Path(self.tmp.name) / "runs" / retry.run_id
+                     / "coi_scores.csv").read_bytes(), COI)
 
 
 class ReferenceGCSTest(TestCase):

@@ -357,13 +357,16 @@ def pin_reference_data(context: OpExecutionContext):
 @asset(
     group_name="published_artifacts",
     op_tags=TIER_1_K8S_TAGS,
+    deps=[pin_reference_data],
     description=(
         "Exports run-pinned COI and career CSVs without fetching sources."),
 )
-def export_reference_data(context: OpExecutionContext, pin_reference_data):
+def export_reference_data(context: OpExecutionContext):
     store = ReferenceDataStore()
+    run_id = context.dagster_run.root_run_id or context.run_id
+    snapshot = store.read_run(run_id)
     # Verify both files before publishing either.
-    references = pin_reference_data["references"]
+    references = snapshot["references"]
     contents = {kind: store.read_version(entry)
                 for kind, entry in references.items()}
     publisher = ArtifactPublisher(local_root=str(store.root))
