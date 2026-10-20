@@ -48,3 +48,4 @@ db.sqlite3
 docker/*-values.yml
 dawgpath_data_pipeline/conf/app.conf
 certs/
+artifacts/

@@ -101,8 +101,38 @@ deletion/overwrite access for these records; retain referenced uploads for
 reexecution and future release rollback.
 
 Without a bucket, uploads/snapshots use `ARTIFACT_ROOT` (default `artifacts`).
-Local Compose shares `/app/artifacts` between the UI and Dagster containers;
-configure `DAGSTER_ACCESS_GROUP` and a matching authenticated SAML/mock session
+Local Compose shares `/app/artifacts` between the UI and Dagster containers
+through the `artifacts-volume` named volume. The image creates this directory
+as `acait`; Docker copies its ownership into a fresh volume so both non-root
+services can write without a host-directory setup step. Local artifacts are
+excluded from the image build context.
+
+Rebuild the image after this change (`docker compose build app`). Existing
+host files under `./artifacts` are not automatically migrated. To preserve them,
+copy them into the named volume before starting services:
+
+```bash
+docker compose run --rm --no-deps --user root \
+  --volume "$PWD/artifacts:/old-artifacts:ro" \
+  --entrypoint /bin/bash app -c \
+  'cp -a /old-artifacts/. /app/artifacts/ &&
+   chown -R acait:acait /app/artifacts'
+```
+
+Only run this migration when the host directory exists and the services are
+stopped; do not merge it into a volume containing newer uploads. The temporary
+root user is for migration only; both normal services still run as `acait`.
+Inspect local files through either container, for example:
+
+```bash
+docker compose run --rm --no-deps --entrypoint /bin/sh app \
+  -c 'find /app/artifacts/reference-data -type f'
+```
+
+The volume survives container replacement and `docker compose down`, but
+**`docker compose down -v` deletes it**, including uploads and run snapshots.
+
+Configure `DAGSTER_ACCESS_GROUP` and a matching authenticated SAML/mock session
 to use the upload page. Configured GCS failures never fall back to local files.
 
 This is feature 1 of the GCS consumer work: it does not yet introduce an atomic
