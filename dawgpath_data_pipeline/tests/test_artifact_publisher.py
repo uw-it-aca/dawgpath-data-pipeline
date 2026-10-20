@@ -4,16 +4,37 @@
 import json
 import os
 import tempfile
+from unittest.mock import patch
 
-from dagster import build_op_context
+from dagster import build_op_context, materialize
 
 from dawgpath_data_pipeline.models.course import Course
-from dawgpath_data_pipeline.orchestration.assets import export_course_prereq_pickle
+from dawgpath_data_pipeline.orchestration.assets import (
+    export_course_prereq_pickle,
+    export_reference_data,
+    pin_reference_data,
+)
 from dawgpath_data_pipeline.tests import DBTest
 from dawgpath_data_pipeline.utilities.artifact_publisher import ArtifactPublisher
+from dawgpath_data_pipeline.utilities.reference_data import ReferenceDataStore
 
 
 class TestArtifactPublisher(DBTest):
+
+    def test_local_root_resolution(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch.dict(os.environ, {
+                    "GCS_BUCKET_NAME": "", "ARTIFACT_ROOT": tmpdir}):
+                self.assertEqual(ArtifactPublisher().local_root, tmpdir)
+                explicit = os.path.join(tmpdir, "explicit")
+                self.assertEqual(
+                    ArtifactPublisher(local_root=explicit).local_root,
+                    explicit)
+            with patch.dict(os.environ, {"GCS_BUCKET_NAME": ""}):
+                os.environ.pop("ARTIFACT_ROOT", None)
+                self.assertEqual(
+                    ArtifactPublisher().local_root,
+                    os.path.abspath("artifacts"))
 
     def test_local_artifact_publishing_and_manifest(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -78,15 +99,36 @@ class TestArtifactPublisher(DBTest):
         self.session.add(course)
         self.session.commit()
 
-        context = build_op_context()
-        out = export_course_prereq_pickle(context=context, fetch_course_data=None)
-        meta = out.value
-        self.assertEqual(meta["filename"], "course_prereq_data.pkl")
-        self.assertEqual(meta["rows_affected"], 1)
+        with tempfile.TemporaryDirectory() as tmpdir, patch.dict(os.environ, {
+                "GCS_BUCKET_NAME": "", "ARTIFACT_ROOT": tmpdir}):
+            store = ReferenceDataStore()
+            store.upload(
+                "coi",
+                b"course_id,score\nCSE 142,0\nCSE 242,0\n"
+                b"CSE 342,0\nCSE 442,0\n",
+                "operator")
+            store.upload(
+                "career", b"CSE-0-1-1,computer-science\n", "operator")
+            result = materialize([pin_reference_data, export_reference_data])
+            self.assertTrue(result.success)
+            with build_op_context() as context:
+                out = export_course_prereq_pickle(
+                    context=context, fetch_course_data=None)
+            meta = out.value
+            self.assertEqual(meta["filename"], "course_prereq_data.pkl")
+            self.assertEqual(meta["rows_affected"], 1)
 
-        # Check latest manifest
-        latest_manifest = os.path.join("artifacts", "latest", "manifest.json")
-        self.assertTrue(os.path.exists(latest_manifest))
-        with open(latest_manifest, "r", encoding="utf-8") as f:
-            manifest = json.load(f)
-        self.assertIn("course_prereq_data.pkl", manifest["artifacts"])
+            latest_manifest = os.path.join(tmpdir, "latest", "manifest.json")
+            with open(latest_manifest, "r", encoding="utf-8") as f:
+                manifest = json.load(f)
+            filenames = {
+                "course_prereq_data.pkl",
+                "coi_scores.csv",
+                "admit_major_mapping.csv",
+            }
+            self.assertEqual(set(manifest["artifacts"]), filenames)
+            for filename in filenames:
+                self.assertTrue(os.path.isfile(os.path.join(
+                    tmpdir, manifest["artifacts"][filename]["version_path"])))
+                self.assertTrue(os.path.isfile(os.path.join(
+                    tmpdir, "latest", filename)))

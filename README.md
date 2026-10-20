@@ -101,6 +101,10 @@ deletion/overwrite access for these records; retain referenced uploads for
 reexecution and future release rollback.
 
 Without a bucket, uploads/snapshots use `ARTIFACT_ROOT` (default `artifacts`).
+All exporters use this same root for run-versioned files, latest copies, and
+the shared manifest. An explicit `ArtifactPublisher(local_root=...)` argument
+overrides the environment setting. Set `ARTIFACT_ROOT` consistently in the UI
+and Dagster processes.
 Local Compose shares `/app/artifacts` between the UI and Dagster containers
 through the `artifacts-volume` named volume. The image creates this directory
 as `acait`; Docker copies its ownership into a fresh volume so both non-root

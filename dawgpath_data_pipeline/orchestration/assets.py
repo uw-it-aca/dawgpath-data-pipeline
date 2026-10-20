@@ -369,7 +369,7 @@ def export_reference_data(context: OpExecutionContext):
     references = snapshot["references"]
     contents = {kind: store.read_version(entry)
                 for kind, entry in references.items()}
-    publisher = ArtifactPublisher(local_root=str(store.root))
+    publisher = ArtifactPublisher()
     artifacts = {}
     for kind, entry in references.items():
         artifacts[kind] = publisher.publish_content(
