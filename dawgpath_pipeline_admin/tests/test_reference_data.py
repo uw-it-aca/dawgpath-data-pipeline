@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
@@ -72,6 +72,19 @@ class ReferenceViewTest(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertContains(response, "two nonempty columns", status_code=400)
         self.assertEqual(ReferenceDataStore().history(), [])
+
+    def test_normalization_overflow_is_visible_and_not_staged(self):
+        self.authorize()
+        content = b"INFO-0-1-6,informatics"
+        with patch(
+                "dawgpath_data_pipeline.utilities.reference_data."
+                "MAX_UPLOAD_BYTES", len(content)):
+            response = self.upload(content=content)
+        self.assertContains(
+            response, "Normalized CSV must be at most 10 MiB.",
+            status_code=400)
+        self.assertEqual(ReferenceDataStore().history(), [])
+        self.assertFalse((Path(self.tmp.name) / "reference-data").exists())
 
     def test_csrf_is_required_not_inherited_from_proxy(self):
         client = Client(enforce_csrf_checks=True)

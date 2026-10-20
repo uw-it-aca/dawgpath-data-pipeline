@@ -9,15 +9,14 @@ import io
 import json
 import math
 import os
-from datetime import UTC, datetime
-from pathlib import Path
 import re
 import tempfile
+from datetime import UTC, datetime
+from pathlib import Path
 from uuid import uuid4
 
 from google.api_core.exceptions import NotFound, PreconditionFailed
 from google.cloud import storage
-
 
 REFERENCE_FILES = {
     "coi": "coi_scores.csv",
@@ -43,10 +42,9 @@ def validate_reference(kind, content):
         rows = list(csv.reader(io.StringIO(text, newline=""), strict=True))
     except (UnicodeDecodeError, csv.Error) as exc:
         raise ReferenceValidationError("Upload a valid UTF-8 CSV.") from exc
-    if kind == "coi":
-        if not rows or rows.pop(0) != ["course_id", "score"]:
-            raise ReferenceValidationError(
-                "COI must start with the header course_id,score.")
+    if kind == "coi" and (not rows or rows.pop(0) != ["course_id", "score"]):
+        raise ReferenceValidationError(
+            "COI must start with the header course_id,score.")
     if not rows or len(rows) > MAX_UPLOAD_ROWS:
         raise ReferenceValidationError(
             "CSV must contain between 1 and 100000 data rows.")
@@ -97,7 +95,11 @@ def validate_reference(kind, content):
     if kind == "coi":
         writer.writerow(["course_id", "score"])
     writer.writerows(rows)
-    return output.getvalue().encode("utf-8"), len(rows)
+    canonical = output.getvalue().encode("utf-8")
+    if len(canonical) > MAX_UPLOAD_BYTES:
+        raise ReferenceValidationError(
+            "Normalized CSV must be at most 10 MiB.")
+    return canonical, len(rows)
 
 
 class ReferenceDataStore:

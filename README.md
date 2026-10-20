@@ -71,7 +71,9 @@ protection.
 - **Career mapping:** UTF-8 CSV without a header, with a unique credential code
   and career slug per row, e.g. `INFO-0-1-6,informatics`.
 - Both formats reject empty rows, duplicate IDs, extra columns and surrounding
-  whitespace, and are limited to 10 MiB / 100000 data rows. A UTF-8 BOM and CRLF
+  whitespace, and are limited to 10 MiB / 100000 data rows. The byte limit
+  applies both before and after normalization, including the final newline.
+  A UTF-8 BOM and CRLF
   line endings are accepted and normalized before checksumming/storage.
 
 Validated uploads are versioned and staged, **not immediately published**.

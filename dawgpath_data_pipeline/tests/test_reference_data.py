@@ -1,13 +1,13 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-from datetime import UTC, datetime, timedelta
-from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import os
-from pathlib import Path
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
@@ -36,7 +36,6 @@ from dawgpath_data_pipeline.utilities.reference_data import (
     validate_reference,
 )
 
-
 COI = b"course_id,score\nINFO 101,-0.5\nINFO 201,0\nINFO 301,5\nINFO 401,2\n"
 CAREER = b"INFO-0-1-6,informatics\n"
 
@@ -53,6 +52,28 @@ def reference_test_job():
 
 
 class ReferenceValidationTest(TestCase):
+    def test_canonical_size_limit_before_staging(self):
+        rows = [f"A-{number}-0-0,a".encode() for number in range(100000)]
+        content = b"\n".join(rows)
+        padding, extra = divmod(MAX_UPLOAD_BYTES - len(content), len(rows))
+        content = b"\n".join(
+            row + b"a" * (padding + (number < extra))
+            for number, row in enumerate(rows))
+        self.assertEqual(len(content), MAX_UPLOAD_BYTES)
+        with self.assertRaisesRegex(ReferenceValidationError, "10 MiB"):
+            validate_reference("career", content)
+        with patch.object(ReferenceDataStore, "_create") as create:
+            with self.assertRaisesRegex(ReferenceValidationError, "10 MiB"):
+                ReferenceDataStore().upload("career", content, "operator")
+            create.assert_not_called()
+
+        below_limit = content[:len(rows[0])] + content[len(rows[0]) + 1:]
+        canonical, count = validate_reference("career", below_limit)
+        self.assertEqual(len(canonical), MAX_UPLOAD_BYTES)
+        self.assertEqual(count, 100000)
+        self.assertEqual(
+            validate_reference("career", canonical), (canonical, count))
+
     def test_valid_formats_and_bom_normalization(self):
         self.assertEqual(validate_reference("coi", COI), (COI, 4))
         self.assertEqual(
@@ -90,9 +111,11 @@ class ReferenceValidationTest(TestCase):
             ("coi", b"x" * (MAX_UPLOAD_BYTES + 1)),
         ]
         for kind, content in cases:
-            with self.subTest(kind=kind, content=content[:80]):
-                with self.assertRaises(ReferenceValidationError):
-                    validate_reference(kind, content)
+            with (
+                self.subTest(kind=kind, content=content[:80]),
+                self.assertRaises(ReferenceValidationError),
+            ):
+                validate_reference(kind, content)
 
 
 class ReferenceStoreTest(TestCase):
@@ -177,9 +200,11 @@ class ReferenceStoreTest(TestCase):
         self.assertEqual(set(snapshots[0]["references"]), {"coi", "career"})
 
     def test_failed_metadata_commit_leaves_unselected_bytes(self):
-        with patch.object(self.store, "_json_create", side_effect=OSError):
-            with self.assertRaises(OSError):
-                self.store.upload("coi", COI, "operator")
+        with (
+            patch.object(self.store, "_json_create", side_effect=OSError),
+            self.assertRaises(OSError),
+        ):
+            self.store.upload("coi", COI, "operator")
         self.assertEqual(self.store.history(), [])
 
     def test_ineligible_future_upload_and_tampering(self):
