@@ -23,6 +23,7 @@ from dagster import (
     materialize,
     reconstructable,
 )
+from dagster._core.storage.defs_state.base import set_defs_state_storage
 from google.api_core.exceptions import NotFound, PreconditionFailed
 
 from dawgpath_data_pipeline.orchestration.assets import (
@@ -48,7 +49,7 @@ def reference_test_job():
         })},
         jobs=[define_asset_job("reference_test")],
         executor=in_process_executor,
-    ).get_job_def("reference_test")
+    ).resolve_job_def("reference_test")
 
 
 class ReferenceValidationTest(TestCase):
@@ -120,6 +121,7 @@ class ReferenceValidationTest(TestCase):
 
 class ReferenceStoreTest(TestCase):
     def setUp(self):
+        self.enterContext(set_defs_state_storage(None))
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         env = patch.dict(os.environ, {
