@@ -36,7 +36,8 @@ The other registered jobs are narrower/manual actions:
 - `refresh_sws_course_descriptions` fetches missing SWS descriptions and can be
   run separately when those requests need to be controlled.
 - `reexport_published_artifacts` republishes artifact files from existing
-  tables without fetching or rebuilding.
+  tables, builds the shared search index, and finalizes an immutable release
+  without fetching sources or rebuilding database analytics.
 - `sync_history_partitions` updates the quarter partitions used by stage 1.
 
 Automations:
@@ -141,17 +142,75 @@ The volume survives container replacement and `docker compose down`, but
 Configure `DAGSTER_ACCESS_GROUP` and a matching authenticated SAML/mock session
 to use the upload page. Configured GCS failures never fall back to local files.
 
-This is feature 1 of the GCS consumer work: it does not yet introduce an atomic
-complete-release manifest, a prebuilt search index, or changes to Pathways.
 The existing mutable `latest/manifest.json` is still not a complete-release
-boundary and must not be used as such. Cross-checking reference IDs against a
-specific generated catalog belongs in the complete-release finalizer; upload
-validation currently establishes CSV structure and import prerequisites only.
-Pathways' Azure similar-majors refresh is unchanged.
+boundary and must not be used as such. Use the immutable release manifest
+described below for complete snapshots. Pathways' Azure similar-majors refresh
+is unchanged.
 
 Before bootstrapping, correct the conflicting duplicates in the legacy COI
 file: investigation found 18 duplicated course IDs with different scores.
 Uploads deliberately reject these rather than silently picking a winner.
+
+## Immutable releases and shared search index
+
+Stage 2 and `reexport_published_artifacts` include two additional assets:
+
+1. `build_search_index_bundle` waits for all exports, reads successful
+   materialization metadata from its own run (or its reexecution ancestors),
+   verifies the recorded sizes/SHA-256 hashes, and builds with the pinned
+   `dawgpath-search` library. It never reads `latest/` or an unrelated run's
+   shared IO-manager output. The exported COI and career bytes must match the
+   root run's pinned reference snapshot.
+2. `finalize_search_index_release` verifies every immutable candidate object
+   and writes `releases/<release-id>/manifest.json` last. This manifest is the
+   completion marker. Failed builds/uploads/finalization leave no new complete
+   release, although partial immutable objects may remain.
+
+The release ID is the Dagster run ID that built the bundle. Releases are stored
+in the configured GCS bucket (or under `ARTIFACT_ROOT` locally):
+
+```text
+releases/<release-id>/
+  course_data.json
+  curric_data.json
+  major_data.json
+  course_prereq_data.pkl
+  prereq_data.pkl
+  gateway_courses.csv
+  bottleneck_courses.csv
+  coi_scores.csv
+  admit_major_mapping.csv
+  search-index.tar.gz
+  manifest.json
+```
+
+Manifest schema `1.0` contains the release ID, all ten objects' paths, sizes and
+SHA-256 hashes, original run-artifact provenance for the nine exports, the
+root reference snapshot, and the library's complete index metadata (including
+contract/builder/Whoosh versions, source hashes and document counts). The bundle
+contains index files and `index-metadata.json` at its archive root; it excludes
+Whoosh's write lock. The builder validates the index before upload, and
+finalization confirms its source hashes match the frozen release objects.
+COI/flag IDs absent from the catalog have no indexed document, preserving
+Pathways behavior; this does not enforce referential completeness.
+
+Objects use create-only GCS writes or atomic local hard links; existing objects
+are accepted only if their bytes match. Neither the bundle nor completion
+manifest updates `latest/`, promotes a release, or activates application data.
+The legacy exporters still update their existing mutable latest copies.
+Workers need object create/read permissions under `releases/` and read access
+to ancestor runs' artifacts and reference snapshots. Retain those records for
+reexecution. If a bundle build/upload fails, reexecute the failed step and
+downstream finalizer in a new Dagster run, which creates a fresh release ID.
+If only finalization fails, reexecuting just the finalizer reuses the ancestor's
+candidate and is idempotent. Runs exported before the new structured artifact
+metadata was deployed must be re-exported before they can feed a search build.
+
+The partial weekly catalog job does not build or finalize complete releases.
+The dependency is pinned by full Git commit in `setup.py`; install dependencies
+during the normal image build (requires GitHub access), not at worker startup.
+Rebuild the image to deploy these assets. PyPI migration, release promotion,
+consumer download/activation/rollback, and Pathways integration remain separate.
 
 ## Historical validation snapshot
 

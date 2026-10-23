@@ -4,7 +4,12 @@
 import hashlib
 import json
 import os
+import re
+import tempfile
 from datetime import UTC, datetime
+from pathlib import Path
+
+from google.api_core.exceptions import PreconditionFailed
 
 try:
     from google.cloud import storage
@@ -26,6 +31,10 @@ class ArtifactPublisher:
         self.local_root = os.path.abspath(local_root)
         self.gcs_prefix = gcs_prefix.strip("/")
 
+        if self.bucket_name and not GCS_AVAILABLE:
+            raise RuntimeError(
+                "GCS_BUCKET_NAME is configured but google-cloud-storage "
+                "is unavailable; refusing local artifact fallback.")
         if self.bucket_name and GCS_AVAILABLE:
             self.mode = "gcs"
             self.gcs_client = storage.Client()
@@ -97,6 +106,56 @@ class ArtifactPublisher:
         with open(file_path, "rb") as f:
             content_bytes = f.read()
         return self.publish_content(filename, content_bytes, run_id=run_id, rows_affected=rows_affected)
+
+    @staticmethod
+    def _validate_path(path):
+        if (not isinstance(path, str)
+                or not re.fullmatch(r"[A-Za-z0-9_./-]+", path)
+                or any(part in {"", ".", ".."} for part in path.split("/"))):
+            raise ValueError("Invalid artifact path.")
+
+    def read_verified(self, metadata):
+        """Read one exact stored object, never a latest-pointer substitute."""
+        path = metadata["version_path"]
+        self._validate_path(path)
+        if self.mode == "gcs":
+            key = f"{self.gcs_prefix}/{path}".strip("/")
+            content = self.bucket.blob(key).download_as_bytes()
+        else:
+            content = (Path(self.local_root) / path).read_bytes()
+        if (len(content) != metadata["size_bytes"]
+                or self._compute_sha256(content) != metadata["checksum_sha256"]):
+            raise ValueError(f"Artifact checksum/size mismatch: {path}")
+        return content
+
+    def publish_immutable(self, path, content_bytes, *, content_type):
+        """Create once; identical retries succeed, conflicting bytes fail."""
+        self._validate_path(path)
+        metadata = {
+            "version_path": path,
+            "checksum_sha256": self._compute_sha256(content_bytes),
+            "size_bytes": len(content_bytes),
+        }
+        if self.mode == "gcs":
+            key = f"{self.gcs_prefix}/{path}".strip("/")
+            try:
+                self.bucket.blob(key).upload_from_string(
+                    content_bytes, content_type=content_type,
+                    if_generation_match=0)
+            except PreconditionFailed:
+                self.read_verified(metadata)
+        else:
+            destination = Path(self.local_root) / path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            with tempfile.NamedTemporaryFile(dir=destination.parent) as temporary:
+                temporary.write(content_bytes)
+                temporary.flush()
+                os.fsync(temporary.fileno())
+                try:
+                    os.link(temporary.name, destination)
+                except FileExistsError:
+                    self.read_verified(metadata)
+        return metadata
 
     def _get_manifest(self):
         manifest_rel = "latest/manifest.json"
