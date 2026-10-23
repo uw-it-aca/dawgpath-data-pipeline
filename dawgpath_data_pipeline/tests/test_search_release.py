@@ -72,6 +72,9 @@ CONTENTS = {
     "bottleneck_courses.csv": b"course,dept_abbr,course_no\n",
     "coi_scores.csv": COI,
     "admit_major_mapping.csv": CAREER,
+    "similar_majors.csv": (
+        b"credential_code,STEM_ind,similar_credential_code,similar_STEM_ind,"
+        b"similarity,similarity_group\nINFO-0-1-6,1,MATH-0-1-6,1,0.8,High\n"),
 }
 
 
@@ -167,7 +170,26 @@ class SearchReleaseTest(TestCase):
 
     def test_missing_input_fails_without_release_objects(self):
         self.artifacts.pop("major_data.json")
-        with self.assertRaisesRegex(ValueError, "nine"):
+        with self.assertRaisesRegex(ValueError, "ten"):
+            self.build()
+        self.assertFalse((self.root / "releases").exists())
+
+    def test_new_manifest_includes_similar_majors_and_legacy_finalizer_retry_works(self):
+        candidate = self.build()
+        self.assertEqual(candidate["schema_version"], "1.1")
+        self.assertEqual(len(candidate["artifacts"]), 11)
+        self.assertEqual(self.publisher.read_verified(
+            candidate["artifacts"]["similar_majors.csv"]), CONTENTS["similar_majors.csv"])
+        # An ancestor's old candidate must still be finalizable after upgrading.
+        candidate["schema_version"] = "1.0"
+        candidate["artifacts"].pop("similar_majors.csv")
+        entry = finalize_search_release(self.publisher, candidate)
+        self.assertEqual(json.loads(self.publisher.read_verified(entry)), candidate)
+
+    def test_invalid_similar_majors_fails_before_release_publication(self):
+        self.artifacts["similar_majors.csv"] = self.publisher.publish_content(
+            "similar_majors.csv", b"invalid", run_id="source-run")
+        with self.assertRaisesRegex(ValueError, "header"):
             self.build()
         self.assertFalse((self.root / "releases").exists())
 
@@ -314,6 +336,11 @@ class SearchReleaseTest(TestCase):
                     entry["source"]["version_path"], f"runs/{result.run_id}/{name}")
 
     def test_real_export_wrappers_feed_release_without_shared_io_inputs(self):
+        self.enterContext(patch.object(
+            pipeline_assets, "frozen_similar_majors",
+            return_value=(CONTENTS["similar_majors.csv"], {
+                "rows_affected": 1, "blob_name": "snapshot.csv", "etag": "etag-1",
+            })))
         patches = {
             "ExportCourseData": ("get_file_contents", COURSES.decode()),
             "ExportMajorData": ("get_file_contents", MAJORS.decode()),

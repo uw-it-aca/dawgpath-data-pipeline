@@ -54,7 +54,7 @@ class TestDagsterDefinitions(DBTest):
     def test_dagster_asset_count(self):
         repo_def = defs.get_repository_def()
         assets = list(repo_def.asset_graph.get_all_asset_keys())
-        self.assertEqual(len(assets), 29)
+        self.assertEqual(len(assets), 30)
 
     def test_bottleneck_gateway_assets_join_stage_two_refresh(self):
         repo_def = defs.get_repository_def()
@@ -66,6 +66,7 @@ class TestDagsterDefinitions(DBTest):
         self.assertIn("export_gateway_courses_csv", keys)
         self.assertIn("pin_reference_data", keys)
         self.assertIn("export_reference_data", keys)
+        self.assertIn("export_similar_majors_csv", keys)
         self.assertIn("build_search_index_bundle", keys)
         self.assertIn("finalize_search_index_release", keys)
 
@@ -113,6 +114,7 @@ class TestDagsterDefinitions(DBTest):
         for excluded in ("fetch_registration_data", "fetch_transcript_data",
                          "fetch_regis_major_data", "fetch_sws_course_data",
                          "pin_reference_data", "export_reference_data",
+                         "export_similar_majors_csv",
                          "build_search_index_bundle",
                          "finalize_search_index_release"):
             self.assertNotIn(excluded, selected)
@@ -159,6 +161,7 @@ class TestDagsterDefinitions(DBTest):
         self.assertIn("export_course_data_json", selected)
         self.assertIn("pin_reference_data", selected)
         self.assertIn("export_reference_data", selected)
+        self.assertIn("export_similar_majors_csv", selected)
         self.assertIn("build_search_index_bundle", selected)
         self.assertIn("finalize_search_index_release", selected)
         self.assertNotIn("fetch_course_data", selected)

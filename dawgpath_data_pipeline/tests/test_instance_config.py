@@ -43,3 +43,21 @@ class TestInstanceConfig(TestCase):
                 "/app/project/azure-sql-hosts")
             self.assertEqual(daemon["command"],
                              ["/app/bin/dagster-daemon"])
+
+    def test_azure_blob_url_uses_shared_vault_secret(self):
+        for values_file in VALUES_FILES:
+            with self.subTest(values=values_file.name):
+                values = yaml.safe_load(values_file.read_text())
+                mapping = values["environmentVariablesSecrets"]["azureBlobStorageUrl"]
+                self.assertEqual(mapping["name"], "AZURE_BLOB_STORAGE_URL")
+                self.assertEqual(mapping["secretKey"], "blob-url")
+                secret = next(
+                    item for item in values["externalSecrets"]["secrets"]
+                    if item["name"] == mapping["secretName"])
+                self.assertEqual(
+                    secret["externalKey"], "dawgpath/pipeline/shared/secrets")
+                self.assertIn(
+                    {"name": "blob-url", "property": "blob-url"}, secret["data"])
+                self.assertNotIn(
+                    "AZURE_BLOB_STORAGE_URL",
+                    [item["name"] for item in values["environmentVariables"]])

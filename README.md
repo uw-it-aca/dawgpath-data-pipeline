@@ -144,8 +144,9 @@ to use the upload page. Configured GCS failures never fall back to local files.
 
 The existing mutable `latest/manifest.json` is still not a complete-release
 boundary and must not be used as such. Use the immutable release manifest
-described below for complete snapshots. Pathways' Azure similar-majors refresh
-is unchanged.
+described below for complete snapshots. Complete releases now freeze Azure
+similar-majors data in the pipeline; Pathways' legacy standalone Azure command
+remains available but must not be mixed with release-based imports.
 
 Before bootstrapping, correct the conflicting duplicates in the legacy COI
 file: investigation found 18 duplicated course IDs with different scores.
@@ -153,15 +154,33 @@ Uploads deliberately reject these rather than silently picking a winner.
 
 ## Immutable releases and shared search index
 
-Stage 2 and `reexport_published_artifacts` include two additional assets:
+Stage 2 and `reexport_published_artifacts` include:
 
-1. `build_search_index_bundle` waits for all exports, reads successful
+1. `export_similar_majors_csv` selects the newest Azure `.csv` whose last
+   modification is no later than the root run's creation time, validates its
+   six-column schema, STEM flags, credential IDs, pair uniqueness, finite
+   similarity scores in [-1, 1], and similarity groups, then freezes its bytes
+   and blob name/ETag/timestamp under
+   `reference-data/similar-majors/<root-run-id>.json`. Downloads use an ETag
+   condition, so a concurrent Azure overwrite fails rather than mixing versions.
+   Retries and descendant reexecutions reuse this committed snapshot without
+   contacting Azure. Configure **`AZURE_BLOB_STORAGE_URL`** on Dagster workers
+   with a container SAS URL granting list/read access, as used by Pathways'
+   legacy command. Test/prod values map Vault property `blob-url` at
+   `dawgpath/pipeline/shared/secrets` through an ExternalSecret and Kubernetes
+   Secret to this environment variable. Treat it as a secret; do not commit it.
+   No source, expired
+   credentials, invalid CSV, or a changed source fails the export explicitly.
+   The size limit is 10 MiB / 100000 data rows. A run with no frozen snapshot
+   and no eligible source must be replaced with a new root run; it cannot
+   select a source modified after its creation time.
+2. `build_search_index_bundle` waits for all exports, reads successful
    materialization metadata from its own run (or its reexecution ancestors),
    verifies the recorded sizes/SHA-256 hashes, and builds with the pinned
    `dawgpath-search` library. It never reads `latest/` or an unrelated run's
    shared IO-manager output. The exported COI and career bytes must match the
    root run's pinned reference snapshot.
-2. `finalize_search_index_release` verifies every immutable candidate object
+3. `finalize_search_index_release` verifies every immutable candidate object
    and writes `releases/<release-id>/manifest.json` last. This manifest is the
    completion marker. Failed builds/uploads/finalization leave no new complete
    release, although partial immutable objects may remain.
@@ -180,12 +199,13 @@ releases/<release-id>/
   bottleneck_courses.csv
   coi_scores.csv
   admit_major_mapping.csv
+  similar_majors.csv
   search-index.tar.gz
   manifest.json
 ```
 
-Manifest schema `1.0` contains the release ID, all ten objects' paths, sizes and
-SHA-256 hashes, original run-artifact provenance for the nine exports, the
+New manifest schema `1.1` contains the release ID, all eleven objects' paths, sizes and
+SHA-256 hashes, original run-artifact provenance for the ten exports, the
 root reference snapshot, and the library's complete index metadata (including
 contract/builder/Whoosh versions, source hashes and document counts). The bundle
 contains index files and `index-metadata.json` at its archive root; it excludes
@@ -195,6 +215,11 @@ release manifest. The builder validates the index before upload, and
 finalization confirms its source hashes match the frozen release objects.
 COI/flag IDs absent from the catalog have no indexed document, preserving
 Pathways behavior; this does not enforce referential completeness.
+The similar-majors export additionally records frozen Azure provenance in its
+source entry. It is not a search-index input and does not change the index
+contract. Already-published schema-1.0 releases remain unchanged, and an
+ancestor's schema-1.0 candidate can still be finalized on retry. New builds
+require all ten exports; they cannot reuse a lineage lacking similar majors.
 
 Objects use create-only GCS writes or atomic local hard links; existing objects
 are accepted only if their bytes match. Neither the bundle nor completion
@@ -215,7 +240,8 @@ therefore does not require earlier workers' local IO-manager files.
 The dependency is pinned by full Git commit in `setup.py`; install dependencies
 during the normal image build (requires GitHub access), not at worker startup.
 Rebuild the image to deploy these assets. PyPI migration, release promotion,
-consumer download/activation/rollback remain separate.
+consumer activation/rollback remain separate. Deploy this pipeline change and
+produce a schema-1.1 release before using Pathways' new database import command.
 
 ## Historical validation snapshot
 
