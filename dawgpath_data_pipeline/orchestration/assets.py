@@ -39,7 +39,6 @@ from dawgpath_data_pipeline.orchestration.tags import (
 from dawgpath_data_pipeline.utilities import parse_combined_term
 from dawgpath_data_pipeline.utilities.artifact_publisher import ArtifactPublisher
 from dawgpath_data_pipeline.utilities.reference_data import ReferenceDataStore
-from dawgpath_data_pipeline.utilities.similar_majors import frozen_similar_majors
 from dawgpath_data_pipeline.utilities.search_release import (
     EXPORT_FILES,
     build_search_release,
@@ -47,6 +46,7 @@ from dawgpath_data_pipeline.utilities.search_release import (
     finalize_search_release,
     lineage_metadata,
 )
+from dawgpath_data_pipeline.utilities.similar_majors import frozen_similar_majors
 
 # EDW rejects connections during its nightly restricted window (SQL 923),
 # which starts at 01:59 and has run as late as ~03:10.
