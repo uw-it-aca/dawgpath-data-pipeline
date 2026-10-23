@@ -113,8 +113,9 @@ reexport_published_artifacts_job = define_asset_job(
     name="reexport_published_artifacts",
     selection=AssetSelection.groups("published_artifacts"),
     description=(
-        "Re-exports the published JSON and pickle files from whatever is "
-        "already in the local tables, without re-fetching or rebuilding."
+        "Re-exports files from the existing tables, builds the shared search "
+        "index, and finalizes an immutable release without re-fetching "
+        "sources or rebuilding database analytics."
     ),
 )
 

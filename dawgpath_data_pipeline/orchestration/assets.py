@@ -19,6 +19,7 @@ import resource
 from dagster import (
     Backoff,
     Jitter,
+    MetadataValue,
     OpExecutionContext,
     Output,
     RetryPolicy,
@@ -38,6 +39,13 @@ from dawgpath_data_pipeline.orchestration.tags import (
 from dawgpath_data_pipeline.utilities import parse_combined_term
 from dawgpath_data_pipeline.utilities.artifact_publisher import ArtifactPublisher
 from dawgpath_data_pipeline.utilities.reference_data import ReferenceDataStore
+from dawgpath_data_pipeline.utilities.search_release import (
+    EXPORT_FILES,
+    build_search_release,
+    exported_artifacts,
+    finalize_search_release,
+    lineage_metadata,
+)
 
 # EDW rejects connections during its nightly restricted window (SQL 923),
 # which starts at 01:59 and has run as late as ~03:10.
@@ -379,8 +387,13 @@ def export_reference_data(context: OpExecutionContext):
             rows_affected=entry["rows_affected"],
         )
     return Output(artifacts, metadata={
-        kind + "_upload_version": entry["version"]
-        for kind, entry in references.items()
+        "artifacts": MetadataValue.json({
+            entry["filename"]: entry for entry in artifacts.values()
+        }),
+        **{
+            kind + "_upload_version": entry["version"]
+            for kind, entry in references.items()
+        },
     })
 
 
@@ -410,6 +423,7 @@ def export_course_data_json(
         meta,
         metadata={
             "job_name": "ExportCourseData",
+            "artifacts": MetadataValue.json({meta["filename"]: meta}),
             "version_path": meta["version_path"],
             "latest_path": meta["latest_path"],
             "rows_affected": meta["rows_affected"],
@@ -444,6 +458,7 @@ def export_curric_data_json(
         meta,
         metadata={
             "job_name": "ExportCurricData",
+            "artifacts": MetadataValue.json({meta["filename"]: meta}),
             "version_path": meta["version_path"],
             "latest_path": meta["latest_path"],
             "rows_affected": meta["rows_affected"],
@@ -480,6 +495,7 @@ def export_major_data_json(
         meta,
         metadata={
             "job_name": "ExportMajorData",
+            "artifacts": MetadataValue.json({meta["filename"]: meta}),
             "version_path": meta["version_path"],
             "latest_path": meta["latest_path"],
             "rows_affected": meta["rows_affected"],
@@ -512,6 +528,7 @@ def export_course_prereq_pickle(
         meta,
         metadata={
             "job_name": "ExportCoursePrereqData",
+            "artifacts": MetadataValue.json({meta["filename"]: meta}),
             "version_path": meta["version_path"],
             "latest_path": meta["latest_path"],
             "rows_affected": meta["rows_affected"],
@@ -544,6 +561,7 @@ def export_prereq_pickle(
         meta,
         metadata={
             "job_name": "ExportPrereqData",
+            "artifacts": MetadataValue.json({meta["filename"]: meta}),
             "version_path": meta["version_path"],
             "latest_path": meta["latest_path"],
             "rows_affected": meta["rows_affected"],
@@ -567,6 +585,7 @@ def _publish_flagged_courses_csv(context, job, filename):
         meta,
         metadata={
             "job_name": job.__class__.__name__,
+            "artifacts": MetadataValue.json({meta["filename"]: meta}),
             "version_path": meta["version_path"],
             "latest_path": meta["latest_path"],
             "rows_affected": meta["rows_affected"],
@@ -601,3 +620,53 @@ def export_gateway_courses_csv(
 ):
     return _publish_flagged_courses_csv(
         context, ExportGatewayCourses(), "gateway_courses.csv")
+
+
+@asset(
+    group_name="published_artifacts",
+    op_tags=TIER_1_K8S_TAGS,
+    deps=list(EXPORT_FILES),
+    description=(
+        "Builds and verifies a shared search index from this run lineage's "
+        "verified exports, then publishes an immutable release candidate."),
+)
+def build_search_index_bundle(context: OpExecutionContext):
+    artifacts = exported_artifacts(context)
+    root_run_id = context.dagster_run.root_run_id or context.run_id
+    snapshot = ReferenceDataStore().read_run(root_run_id)
+    candidate = build_search_release(
+        ArtifactPublisher(), context.run_id, artifacts, snapshot)
+    context.log.info(
+        "Published search release candidate %s; awaiting finalization.",
+        candidate["release_id"])
+    return Output(candidate, metadata={
+        "release_candidate": MetadataValue.json(candidate),
+        "release_id": candidate["release_id"],
+        "courses": candidate["search_index"]["counts"]["courses"],
+        "majors": candidate["search_index"]["counts"]["majors"],
+        "peak_rss_mib": _peak_rss_mib(),
+    })
+
+
+@asset(
+    group_name="published_artifacts",
+    op_tags=TIER_1_K8S_TAGS,
+    deps=[build_search_index_bundle],
+    description=(
+        "Verifies all immutable candidate objects and writes the complete "
+        "release manifest last. Does not promote or activate the release."),
+)
+def finalize_search_index_release(context: OpExecutionContext):
+    build_run_id, metadata = lineage_metadata(
+        context, ["build_search_index_bundle"])["build_search_index_bundle"]
+    candidate = metadata["release_candidate"].value
+    if candidate["release_id"] != build_run_id:
+        raise ValueError("Release candidate does not belong to its build run.")
+    manifest = finalize_search_release(ArtifactPublisher(), candidate)
+    context.log.info("Completed immutable release %s.", candidate["release_id"])
+    return Output(manifest, metadata={
+        "release_id": candidate["release_id"],
+        "version_path": manifest["version_path"],
+        "checksum_sha256": manifest["checksum_sha256"],
+        "bytes": manifest["size_bytes"],
+    })
