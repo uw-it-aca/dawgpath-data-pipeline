@@ -30,7 +30,7 @@ from dagster import (
     reconstructable,
 )
 from dagster._core.storage.defs_state.base import set_defs_state_storage
-from dawgpath_search import open_index
+from dawgpath_search import open_index, prepare_bundle
 from google.api_core.exceptions import PreconditionFailed
 
 from dawgpath_data_pipeline.orchestration import assets as pipeline_assets
@@ -148,13 +148,13 @@ class SearchReleaseTest(TestCase):
             self.assertNotIn("MAIN_WRITELOCK", archive.getnames())
             expected = {*candidate["search_index"]["files"], "index-metadata.json"}
             self.assertEqual(set(archive.getnames()), expected)
-            index_dir = self.root / "unpacked"
-            index_dir.mkdir()
             for member in archive.getmembers():
                 self.assertEqual(Path(member.name).name, member.name)
                 self.assertTrue(member.isfile())
-                (index_dir / member.name).write_bytes(
-                    archive.extractfile(member).read())
+        index_dir = self.root / "unpacked"
+        prepare_bundle(
+            content, index_dir, metadata=candidate["search_index"],
+            release_id="release-run")
         index = open_index(index_dir, release_id="release-run")
         index.close()
         manifest = finalize_search_release(self.publisher, candidate)
