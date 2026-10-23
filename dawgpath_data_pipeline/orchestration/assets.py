@@ -400,15 +400,15 @@ def export_reference_data(context: OpExecutionContext):
 @asset(
     group_name="published_artifacts",
     op_tags=TIER_1_K8S_TAGS,
+    deps=[
+        build_course_prereq_graphs,
+        build_concurrent_courses,
+        build_course_gpa_distro,
+        fetch_sws_course_data,
+    ],
     description="Exports lower-division course JSON payload for DawgPath app.",
 )
-def export_course_data_json(
-    context: OpExecutionContext,
-    build_course_prereq_graphs,
-    build_concurrent_courses,
-    build_course_gpa_distro,
-    fetch_sws_course_data,
-):
+def export_course_data_json(context: OpExecutionContext):
     publisher = ArtifactPublisher()
     job = ExportCourseData()
     data_str = job.get_file_contents()
@@ -437,13 +437,10 @@ def export_course_data_json(
 @asset(
     group_name="published_artifacts",
     op_tags=TIER_1_K8S_TAGS,
+    deps=[build_curric_prereq_lists, build_curric_prereq_graphs],
     description="Exports curriculum metadata and prereq graph JSON payload for DawgPath app.",
 )
-def export_curric_data_json(
-    context: OpExecutionContext,
-    build_curric_prereq_lists,
-    build_curric_prereq_graphs,
-):
+def export_curric_data_json(context: OpExecutionContext):
     publisher = ArtifactPublisher()
     job = ExportCurricData()
     data_str = job.get_file_contents()
@@ -472,15 +469,15 @@ def export_curric_data_json(
 @asset(
     group_name="published_artifacts",
     op_tags=TIER_1_K8S_TAGS,
+    deps=[
+        fetch_major_data,
+        fetch_sr_major_data,
+        build_common_course_major,
+        build_major_dec_grade_distro,
+    ],
     description="Exports major GPA distributions and common course JSON payload for DawgPath app.",
 )
-def export_major_data_json(
-    context: OpExecutionContext,
-    fetch_major_data,
-    fetch_sr_major_data,
-    build_common_course_major,
-    build_major_dec_grade_distro,
-):
+def export_major_data_json(context: OpExecutionContext):
     publisher = ArtifactPublisher()
     job = ExportMajorData()
     data_str = job.get_file_contents()
@@ -509,12 +506,10 @@ def export_major_data_json(
 @asset(
     group_name="published_artifacts",
     op_tags=TIER_1_K8S_TAGS,
+    deps=[fetch_course_data],
     description="Exports legacy course DataFrame pickle for Prereq Map.",
 )
-def export_course_prereq_pickle(
-    context: OpExecutionContext,
-    fetch_course_data,
-):
+def export_course_prereq_pickle(context: OpExecutionContext):
     publisher = ArtifactPublisher()
     job = ExportCoursePrereqData()
     pkl_bytes, row_count = job.get_pickle_bytes()
@@ -542,12 +537,10 @@ def export_course_prereq_pickle(
 @asset(
     group_name="published_artifacts",
     op_tags=TIER_1_K8S_TAGS,
+    deps=[fetch_prereq_data],
     description="Exports legacy prerequisite DataFrame pickle for Prereq Map.",
 )
-def export_prereq_pickle(
-    context: OpExecutionContext,
-    fetch_prereq_data,
-):
+def export_prereq_pickle(context: OpExecutionContext):
     publisher = ArtifactPublisher()
     job = ExportPrereqData()
     pkl_bytes, row_count = job.get_pickle_bytes()
@@ -599,12 +592,10 @@ def _publish_flagged_courses_csv(context, job, filename):
 @asset(
     group_name="published_artifacts",
     op_tags=TIER_1_K8S_TAGS,
+    deps=[fetch_bottleneck_gateway_courses],
     description="Exports bottleneck course CSV consumed by the Pathways import.",
 )
-def export_bottleneck_courses_csv(
-    context: OpExecutionContext,
-    fetch_bottleneck_gateway_courses,
-):
+def export_bottleneck_courses_csv(context: OpExecutionContext):
     return _publish_flagged_courses_csv(
         context, ExportBottleneckCourses(), "bottleneck_courses.csv")
 
@@ -612,12 +603,10 @@ def export_bottleneck_courses_csv(
 @asset(
     group_name="published_artifacts",
     op_tags=TIER_1_K8S_TAGS,
+    deps=[fetch_bottleneck_gateway_courses],
     description="Exports gateway course CSV consumed by the Pathways import.",
 )
-def export_gateway_courses_csv(
-    context: OpExecutionContext,
-    fetch_bottleneck_gateway_courses,
-):
+def export_gateway_courses_csv(context: OpExecutionContext):
     return _publish_flagged_courses_csv(
         context, ExportGatewayCourses(), "gateway_courses.csv")
 

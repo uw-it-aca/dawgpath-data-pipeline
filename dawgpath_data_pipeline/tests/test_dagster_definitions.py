@@ -163,6 +163,33 @@ class TestDagsterDefinitions(DBTest):
         self.assertIn("finalize_search_index_release", selected)
         self.assertNotIn("fetch_course_data", selected)
 
+    def test_export_dependencies_preserve_order_without_loading_outputs(self):
+        expected = {
+            "export_course_data_json": {
+                "build_course_prereq_graphs", "build_concurrent_courses",
+                "build_course_gpa_distro", "fetch_sws_course_data",
+            },
+            "export_curric_data_json": {
+                "build_curric_prereq_lists", "build_curric_prereq_graphs",
+            },
+            "export_major_data_json": {
+                "fetch_major_data", "fetch_sr_major_data",
+                "build_common_course_major", "build_major_dec_grade_distro",
+            },
+            "export_course_prereq_pickle": {"fetch_course_data"},
+            "export_prereq_pickle": {"fetch_prereq_data"},
+            "export_bottleneck_courses_csv": {"fetch_bottleneck_gateway_courses"},
+            "export_gateway_courses_csv": {"fetch_bottleneck_gateway_courses"},
+        }
+        graph = defs.get_repository_def().asset_graph
+        for name, parents in expected.items():
+            with self.subTest(asset=name):
+                node = graph.get(AssetKey(name))
+                self.assertEqual(
+                    {key.to_user_string() for key in node.parent_keys}, parents)
+                for input_def in node.assets_def.op.input_defs:
+                    self.assertTrue(input_def.dagster_type.is_nothing)
+
     def test_monthly_schedule_rolls_partitions_and_requests_each(self):
         name = history_quarter_partitions.name
         # schedule contexts require a persistent instance
