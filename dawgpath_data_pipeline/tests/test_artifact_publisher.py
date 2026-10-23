@@ -112,8 +112,7 @@ class TestArtifactPublisher(DBTest):
             result = materialize([pin_reference_data, export_reference_data])
             self.assertTrue(result.success)
             with build_op_context() as context:
-                out = export_course_prereq_pickle(
-                    context=context, fetch_course_data=None)
+                out = export_course_prereq_pickle(context=context)
             meta = out.value
             self.assertEqual(meta["filename"], "course_prereq_data.pkl")
             self.assertEqual(meta["rows_affected"], 1)

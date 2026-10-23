@@ -16,7 +16,6 @@ from dagster import (
     AssetMaterialization,
     AssetSelection,
     Definitions,
-    IOManager,
     MetadataValue,
     Output,
     ReexecutionOptions,
@@ -315,13 +314,6 @@ class SearchReleaseTest(TestCase):
                     entry["source"]["version_path"], f"runs/{result.run_id}/{name}")
 
     def test_real_export_wrappers_feed_release_without_shared_io_inputs(self):
-        class UnusedInputs(IOManager):
-            def load_input(self, context):
-                return None
-
-            def handle_output(self, context, obj):
-                pass
-
         patches = {
             "ExportCourseData": ("get_file_contents", COURSES.decode()),
             "ExportMajorData": ("get_file_contents", MAJORS.decode()),
@@ -339,7 +331,9 @@ class SearchReleaseTest(TestCase):
         result = materialize(
             load_assets_from_modules([pipeline_assets]),
             selection=AssetSelection.groups("published_artifacts"),
-            resources={"io_manager": UnusedInputs()},
+            resources={"io_manager": fs_io_manager.configured({
+                "base_dir": str(self.root / "empty-io"),
+            })},
         )
         self.assertTrue(result.success)
         manifest = json.loads(

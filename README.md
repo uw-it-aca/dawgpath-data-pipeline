@@ -207,6 +207,9 @@ candidate and is idempotent. Runs exported before the new structured artifact
 metadata was deployed must be re-exported before they can feed a search build.
 
 The partial weekly catalog job does not build or finalize complete releases.
+Export assets declare upstream table refreshes as ordering-only dependencies:
+they read database tables, not serialized fetch/build outputs. Re-exporting
+therefore does not require earlier workers' local IO-manager files.
 The dependency is pinned by full Git commit in `setup.py`; install dependencies
 during the normal image build (requires GitHub access), not at worker startup.
 Rebuild the image to deploy these assets. PyPI migration, release promotion,
