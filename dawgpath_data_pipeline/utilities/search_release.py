@@ -3,17 +3,14 @@
 
 """Verified run-lineage inputs and immutable, explicitly finalized releases."""
 
-import gzip
-import io
 import json
 import re
-import tarfile
 import tempfile
 from pathlib import Path
 
 from dagster import DagsterEventType
-from dawgpath_search import build_index, open_index
-from dawgpath_search.builder import INPUT_FILES, METADATA_FILE
+from dawgpath_search import build_index, create_bundle
+from dawgpath_search.builder import INPUT_FILES
 
 EXPORT_FILES = {
     "export_course_data_json": ("course_data.json",),
@@ -88,21 +85,6 @@ def exported_artifacts(context):
     return artifacts
 
 
-def _bundle(index_dir, metadata):
-    buffer = io.BytesIO()
-    with (
-        gzip.GzipFile(fileobj=buffer, mode="wb", mtime=0) as compressed,
-        tarfile.open(fileobj=compressed, mode="w") as archive,
-    ):
-        for name in sorted([*metadata["files"], METADATA_FILE]):
-            content = (index_dir / name).read_bytes()
-            entry = tarfile.TarInfo(name)
-            entry.size = len(content)
-            entry.mode = 0o644
-            archive.addfile(entry, io.BytesIO(content))
-    return buffer.getvalue()
-
-
 def build_search_release(publisher, release_id, artifacts, reference_snapshot):
     if not re.fullmatch(r"[A-Za-z0-9_-]+", release_id):
         raise ValueError("Invalid release ID.")
@@ -125,9 +107,7 @@ def build_search_release(publisher, release_id, artifacts, reference_snapshot):
             (inputs / name).write_bytes(contents[name])
         index_dir = root / "index"
         index_metadata = build_index(inputs, index_dir, release_id=release_id)
-        index = open_index(index_dir, release_id=release_id)
-        index.close()
-        bundle = _bundle(index_dir, index_metadata)
+        bundle = create_bundle(index_dir, release_id=release_id)
     entries = {}
     for name, content in contents.items():
         entries[name] = {

@@ -189,7 +189,9 @@ SHA-256 hashes, original run-artifact provenance for the nine exports, the
 root reference snapshot, and the library's complete index metadata (including
 contract/builder/Whoosh versions, source hashes and document counts). The bundle
 contains index files and `index-metadata.json` at its archive root; it excludes
-Whoosh's write lock. The builder validates the index before upload, and
+Whoosh's write lock. The shared `dawgpath-search` library owns archive creation
+and verified extraction; the pipeline owns run lineage, storage, and the full
+release manifest. The builder validates the index before upload, and
 finalization confirms its source hashes match the frozen release objects.
 COI/flag IDs absent from the catalog have no indexed document, preserving
 Pathways behavior; this does not enforce referential completeness.
@@ -213,7 +215,7 @@ therefore does not require earlier workers' local IO-manager files.
 The dependency is pinned by full Git commit in `setup.py`; install dependencies
 during the normal image build (requires GitHub access), not at worker startup.
 Rebuild the image to deploy these assets. PyPI migration, release promotion,
-consumer download/activation/rollback, and Pathways integration remain separate.
+consumer download/activation/rollback remain separate.
 
 ## Historical validation snapshot
 
