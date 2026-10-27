@@ -12,6 +12,8 @@ from dagster import DagsterEventType
 from dawgpath_search import build_index, create_bundle
 from dawgpath_search.builder import INPUT_FILES
 
+from dawgpath_data_pipeline.utilities.similar_majors import validate_similar_majors
+
 EXPORT_FILES = {
     "export_course_data_json": ("course_data.json",),
     "export_curric_data_json": ("curric_data.json",),
@@ -21,6 +23,7 @@ EXPORT_FILES = {
     "export_bottleneck_courses_csv": ("bottleneck_courses.csv",),
     "export_gateway_courses_csv": ("gateway_courses.csv",),
     "export_reference_data": ("coi_scores.csv", "admit_major_mapping.csv"),
+    "export_similar_majors_csv": ("similar_majors.csv",),
 }
 BUNDLE_FILE = "search-index.tar.gz"
 RELEASE_FILES = {name for names in EXPORT_FILES.values() for name in names}
@@ -89,7 +92,7 @@ def build_search_release(publisher, release_id, artifacts, reference_snapshot):
     if not re.fullmatch(r"[A-Za-z0-9_-]+", release_id):
         raise ValueError("Invalid release ID.")
     if set(artifacts) != RELEASE_FILES:
-        raise ValueError("A search release requires all nine export files.")
+        raise ValueError("A search release requires all ten export files.")
     for reference in reference_snapshot["references"].values():
         artifact = artifacts[reference["filename"]]
         if any(artifact[key] != reference[key]
@@ -98,6 +101,7 @@ def build_search_release(publisher, release_id, artifacts, reference_snapshot):
     contents = {
         name: publisher.read_verified(entry) for name, entry in artifacts.items()
     }
+    validate_similar_majors(contents["similar_majors.csv"])
     # No output is published until all source bytes and the built index verify.
     with tempfile.TemporaryDirectory(prefix="dawgpath-search-") as temporary:
         root = Path(temporary)
@@ -123,7 +127,7 @@ def build_search_release(publisher, release_id, artifacts, reference_snapshot):
         f"releases/{release_id}/{BUNDLE_FILE}", bundle,
         content_type="application/gzip")
     return {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "release_id": release_id,
         "artifacts": entries,
         "search_index": index_metadata,
@@ -136,8 +140,12 @@ def finalize_search_release(publisher, candidate):
     release_id = candidate["release_id"]
     if not re.fullmatch(r"[A-Za-z0-9_-]+", release_id):
         raise ValueError("Invalid release ID.")
-    if (candidate["schema_version"] != "1.0"
-            or set(candidate["artifacts"]) != RELEASE_FILES | {BUNDLE_FILE}
+    release_files = {
+        "1.0": RELEASE_FILES - {"similar_majors.csv"},
+        "1.1": RELEASE_FILES,
+    }.get(candidate["schema_version"])
+    if (release_files is None
+            or set(candidate["artifacts"]) != release_files | {BUNDLE_FILE}
             or candidate["search_index"]["release_id"] != release_id
             or set(candidate["search_index"]["inputs"]) != set(INPUT_FILES)):
         raise ValueError("Invalid release candidate.")

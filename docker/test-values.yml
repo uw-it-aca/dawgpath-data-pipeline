@@ -157,6 +157,11 @@ externalSecrets:
           property: azsql-user
         - name: azsql-password
           property: azsql-password
+    - name: test-pipeline.dawgpath.uw.edu-azure-blob-secrets
+      externalKey: dawgpath/pipeline/shared/secrets
+      data:
+        - name: blob-url
+          property: blob-url
     - name: test-pipeline.dawgpath.uw.edu-proxy-secrets
       externalKey: shared/proxies/uw_ssh_tunnel
       data:
@@ -212,6 +217,10 @@ environmentVariablesSecrets:
     name: AZSQL_PASSWORD
     secretName: test-pipeline.dawgpath.uw.edu-azsql-secrets
     secretKey: azsql-password
+  azureBlobStorageUrl:
+    name: AZURE_BLOB_STORAGE_URL
+    secretName: test-pipeline.dawgpath.uw.edu-azure-blob-secrets
+    secretKey: blob-url
   swsHost:
     name: RESTCLIENTS_SWS_HOST
     secretName: test-pipeline.dawgpath.uw.edu-secrets

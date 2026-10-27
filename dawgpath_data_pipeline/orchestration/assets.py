@@ -46,6 +46,7 @@ from dawgpath_data_pipeline.utilities.search_release import (
     finalize_search_release,
     lineage_metadata,
 )
+from dawgpath_data_pipeline.utilities.similar_majors import frozen_similar_majors
 
 # EDW rejects connections during its nightly restricted window (SQL 923),
 # which starts at 01:59 and has run as late as ~03:10.
@@ -394,6 +395,26 @@ def export_reference_data(context: OpExecutionContext):
             kind + "_upload_version": entry["version"]
             for kind, entry in references.items()
         },
+    })
+
+
+@asset(
+    group_name="published_artifacts",
+    op_tags=TIER_1_K8S_TAGS,
+    description="Freezes the Azure similar-majors CSV for this root export run.",
+)
+def export_similar_majors_csv(context: OpExecutionContext):
+    run_id = context.dagster_run.root_run_id or context.run_id
+    record = context.instance.get_run_record_by_id(run_id)
+    if record is None:
+        raise RuntimeError("Cannot freeze similar majors without a persisted run.")
+    content, source = frozen_similar_majors(run_id, record.create_timestamp)
+    entry = ArtifactPublisher().publish_content(
+        "similar_majors.csv", content, run_id=context.run_id,
+        rows_affected=source["rows_affected"])
+    entry["azure_source"] = source
+    return Output(None, metadata={
+        "artifacts": MetadataValue.json({"similar_majors.csv": entry}),
     })
 
 
