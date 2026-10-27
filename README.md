@@ -157,12 +157,23 @@ Uploads deliberately reject these rather than silently picking a winner.
 Stage 2 and `reexport_published_artifacts` include:
 
 1. `export_similar_majors_csv` selects the newest Azure `.csv` whose last
-   modification is no later than the root run's creation time, validates its
+   modification is no later than the root run's creation time, normalizes
+   STEM flags `0.0`/`1.0` to `0`/`1`, and reconciles each credential's flags
+   across both columns using **any true wins**, matching Pathways' STEM
+   importer. A credential is STEM if any occurrence flags it as STEM.
+   This affects the STEM/Non-STEM filter, not similarity scores or groups.
+   It validates the resulting
    six-column schema, STEM flags, credential IDs, pair uniqueness, finite
    similarity scores in [-1, 1], and similarity groups, then freezes its bytes
    and blob name/ETag/timestamp under
    `reference-data/similar-majors/<root-run-id>.json`. Downloads use an ETag
    condition, so a concurrent Azure overwrite fails rather than mixing versions.
+   The original downloaded CSV is retained alongside the normalized CSV;
+   snapshot metadata records both checksums/sizes, the normalization policy,
+   decimal flag conversion count, reconciled flag count, and conflicting
+   credential codes. Conflicts also emit a Dagster warning. Published CSVs
+   must still have canonical, consistent `0`/`1` flags; malformed flags,
+   duplicate pairs, invalid scores, and other schema errors are not repaired.
    Retries and descendant reexecutions reuse this committed snapshot without
    contacting Azure. Configure **`AZURE_BLOB_STORAGE_URL`** on Dagster workers
    with a container SAS URL granting list/read access, as used by Pathways'
