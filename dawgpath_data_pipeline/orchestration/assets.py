@@ -409,6 +409,12 @@ def export_similar_majors_csv(context: OpExecutionContext):
     if record is None:
         raise RuntimeError("Cannot freeze similar majors without a persisted run.")
     content, source = frozen_similar_majors(run_id, record.create_timestamp)
+    normalization = source.get("normalization", {})
+    if normalization.get("stem_conflicts_resolved"):
+        context.log.warning(
+            "Similar majors STEM conflicts resolved using any-true policy: %s",
+            ", ".join(normalization["stem_conflicts_resolved"]),
+        )
     entry = ArtifactPublisher().publish_content(
         "similar_majors.csv", content, run_id=context.run_id,
         rows_affected=source["rows_affected"])
