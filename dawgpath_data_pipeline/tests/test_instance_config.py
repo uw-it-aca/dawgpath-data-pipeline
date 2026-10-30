@@ -1,6 +1,7 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
+from configparser import ConfigParser
 from pathlib import Path
 from unittest import TestCase, skipUnless
 
@@ -16,6 +17,32 @@ SHARED_SECTIONS = ("run_queue", "concurrency", "run_monitoring")
 @skipUnless(all(path.exists() for path in VALUES_FILES),
             "deploy values files not present")
 class TestInstanceConfig(TestCase):
+
+    def test_uwca_tls_configuration_reaches_all_runtime_containers(self):
+        for values_file in VALUES_FILES:
+            with self.subTest(values=values_file.name):
+                values = yaml.safe_load(values_file.read_text())
+                environment = {item["name"]: item.get("value")
+                               for item in values["environmentVariables"]}
+                self.assertEqual(environment["RESTCLIENTS_CA_BUNDLE"],
+                                 "/etc/ssl/certs/ca-certificates.crt")
+                self.assertEqual(environment["RESTCLIENTS_SWS_VERIFY_HTTPS"], "True")
+                self.assertEqual(environment["RESTCLIENTS_SWS_DAO_CLASS"], "Live")
+                self.assertEqual(environment["OPENSSL_CONF"], "/ssl/openssl.cnf")
+                mount = values["podVolumes"]["openssl-config"]
+                self.assertEqual(mount["volume"]["configMap"]["name"], "openssl-conf")
+                self.assertEqual(mount["mount"]["mountPath"], "/ssl")
+                self.assertTrue(mount["mount"]["readOnly"])
+                self.assertNotIn("containers", mount)
+                config = values["configmaps"]["openssl-conf"]["openssl.cnf"]
+                self.assertTrue(config.startswith("openssl_conf = default_conf\n"))
+                parser = ConfigParser()
+                parser.read_string("[openssl]\n" + config)
+                self.assertEqual(parser["default_conf"]["ssl_conf"], "ssl_sect")
+                self.assertEqual(parser["ssl_sect"]["system_default"], "system_default_sect")
+                self.assertEqual(parser["system_default_sect"]["MinProtocol"], "TLSv1.2")
+                self.assertEqual(parser["system_default_sect"]["CipherString"],
+                                 "DEFAULT:@SECLEVEL=1")
 
     def test_deployed_configmaps_match_repo_dagster_yaml(self):
         repo = yaml.safe_load((REPO_ROOT / "dagster.yaml").read_text())

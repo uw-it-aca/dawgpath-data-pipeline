@@ -32,6 +32,7 @@ class AppSettings:
     RESTCLIENTS_SWS_KEY_FILE = ""
     RESTCLIENTS_SWS_HOST = ""
     RESTCLIENTS_SWS_VERIFY_HTTPS = False
+    RESTCLIENTS_CA_BUNDLE = "/etc/ssl/certs/ca-certificates.crt"
 
     def get(self, attr, default=None):
         # deployed environments inject config as env vars; local uses app.conf

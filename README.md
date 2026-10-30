@@ -15,6 +15,7 @@ This repository is currently in an in-progress refactor from manually run ETL sc
 - [Privacy & data release policy](docs/privacy-data-release.md): `MINIMUM_DATA_COUNT = 8` privacy threshold rules and enforcement.
 - [Operations and deployment notes](docs/operations.md): local operation, cluster fit, and suggested lockdown plan.
 - [EDW SSH tunnel reliability](docs/edw-ssh-tunnel.md): failure symptoms, reconnect fix, verification, and diagnosis.
+- [SWS TLS configuration](docs/sws-tls.md): shared UWCA OpenSSL compatibility, CA bundle path, and Python validation.
 - [Dagster UI WebSocket plan](docs/dagster-websocket-plan.md): deprioritized nginx `auth_request` approach for live log streaming behind SAML; Dagster's built-in HTTP-polling fallback already covers this.
 - [Known issues and immediate fixes](docs/known-issues.md): items to address before deployment or deeper refactoring.
 

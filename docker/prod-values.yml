@@ -126,6 +126,10 @@ environmentVariables:
     value: PROD
   - name: RESTCLIENTS_SWS_VERIFY_HTTPS
     value: "True"
+  - name: RESTCLIENTS_CA_BUNDLE
+    value: /etc/ssl/certs/ca-certificates.crt
+  - name: OPENSSL_CONF
+    value: /ssl/openssl.cnf
   - name: RESTCLIENTS_SWS_CERT_FILE
     value: /certs/pipeline.dawgpath.uw.edu-uwca.cert
   - name: RESTCLIENTS_SWS_KEY_FILE
@@ -251,6 +255,16 @@ environmentVariablesSecrets:
 
 # Durable Dagster run/event storage, replacing the image's local dagster.yaml.
 configmaps:
+  openssl-conf:
+    openssl.cnf: |
+      openssl_conf = default_conf
+      [default_conf]
+      ssl_conf = ssl_sect
+      [ssl_sect]
+      system_default = system_default_sect
+      [system_default_sect]
+      MinProtocol = TLSv1.2
+      CipherString = DEFAULT:@SECLEVEL=1
   dagster-instance:
     dagster.yaml: |
       telemetry:
@@ -283,6 +297,13 @@ configmaps:
         poll_interval_seconds: 120
 
 podVolumes:
+  openssl-config:
+    volume:
+      configMap:
+        name: openssl-conf
+    mount:
+      mountPath: /ssl
+      readOnly: true
   dagster-instance:
     volume:
       configMap:
