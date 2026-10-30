@@ -219,10 +219,10 @@ def fetch_transcript_data(context: OpExecutionContext):
     group_name="source_refreshes",
     op_tags=TIER_1_K8S_TAGS,
     retry_policy=UPSTREAM_RETRY_POLICY,
-    deps=[fetch_registration_data],
+    deps=[fetch_registration_data, fetch_course_data],
     description="Fetches SWS course descriptions and parsed prerequisite strings.",
 )
-def fetch_sws_course_data(fetch_course_data):
+def fetch_sws_course_data():
     res = FetchSWSCourseData().run()
     return Output(res, metadata=_res_meta(res))
 
