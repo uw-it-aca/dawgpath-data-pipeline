@@ -40,7 +40,6 @@ from dawgpath_data_pipeline.orchestration.assets import (
     finalize_data_release as finalize_data_release_asset,
 )
 from dawgpath_data_pipeline.utilities.artifact_publisher import ArtifactPublisher
-from dawgpath_data_pipeline.utilities.reference_data import ReferenceDataStore
 from dawgpath_data_pipeline.utilities.data_release import (
     EXPORT_FILES,
     build_data_release,
@@ -48,6 +47,7 @@ from dawgpath_data_pipeline.utilities.data_release import (
     finalize_data_release,
     lineage_metadata,
 )
+from dawgpath_data_pipeline.utilities.reference_data import ReferenceDataStore
 
 COI = b"course_id,score\nINFO 101,1.2\nINFO 201,0\nINFO 301,2\nINFO 401,5\n"
 CAREER = b"INFO-0-1-6,informatics\n"

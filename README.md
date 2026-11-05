@@ -37,7 +37,7 @@ The other registered jobs are narrower/manual actions:
 - `refresh_sws_course_descriptions` fetches missing SWS descriptions and can be
   run separately when those requests need to be controlled.
 - `reexport_published_artifacts` republishes artifact files from existing
-  tables, builds the shared search index, and finalizes an immutable release
+  tables and finalizes an immutable data release
   without fetching sources or rebuilding database analytics.
 - `sync_history_partitions` updates the quarter partitions used by stage 1.
 
@@ -153,7 +153,7 @@ Before bootstrapping, correct the conflicting duplicates in the legacy COI
 file: investigation found 18 duplicated course IDs with different scores.
 Uploads deliberately reject these rather than silently picking a winner.
 
-## Immutable releases and shared search index
+## Immutable data releases
 
 Stage 2 and `reexport_published_artifacts` include:
 
@@ -186,18 +186,19 @@ Stage 2 and `reexport_published_artifacts` include:
    The size limit is 10 MiB / 100000 data rows. A run with no frozen snapshot
    and no eligible source must be replaced with a new root run; it cannot
    select a source modified after its creation time.
-2. `build_search_index_bundle` waits for all exports, reads successful
+2. `prepare_data_release` waits for all exports, reads successful
    materialization metadata from its own run (or its reexecution ancestors),
-   verifies the recorded sizes/SHA-256 hashes, and builds with the pinned
-   `dawgpath-search` library. It never reads `latest/` or an unrelated run's
+  verifies the recorded sizes/SHA-256 hashes, validates the catalog and
+  similar-majors data, and publishes immutable copies of the ten exports.
+  It never reads `latest/` or an unrelated run's
    shared IO-manager output. The exported COI and career bytes must match the
    root run's pinned reference snapshot.
-3. `finalize_search_index_release` verifies every immutable candidate object
+3. `finalize_data_release` verifies every immutable candidate object
    and writes `releases/<release-id>/manifest.json` last. This manifest is the
    completion marker. Failed builds/uploads/finalization leave no new complete
    release, although partial immutable objects may remain.
 
-The release ID is the Dagster run ID that built the bundle. Releases are stored
+The release ID is the Dagster run ID that prepared the candidate. Releases are stored
 in the configured GCS bucket (or under `ARTIFACT_ROOT` locally):
 
 ```text
@@ -212,48 +213,43 @@ releases/<release-id>/
   coi_scores.csv
   admit_major_mapping.csv
   similar_majors.csv
-  search-index.tar.gz
   manifest.json
 ```
 
-New manifest schema `1.1` contains the release ID, all eleven objects' paths, sizes and
-SHA-256 hashes, original run-artifact provenance for the ten exports, the
-root reference snapshot, and the library's complete index metadata (including
-contract/builder/Whoosh versions, source hashes and document counts). The bundle
-contains index files and `index-metadata.json` at its archive root; it excludes
-Whoosh's write lock. The shared `dawgpath-search` library owns archive creation
-and verified extraction; the pipeline owns run lineage, storage, and the full
-release manifest. The builder validates the index before upload, and
-finalization confirms its source hashes match the frozen release objects.
-COI/flag IDs absent from the catalog have no indexed document, preserving
-Pathways behavior; this does not enforce referential completeness.
+New manifest schema `2.0` contains the release ID, exactly ten export objects'
+paths, sizes and SHA-256 hashes, original run-artifact provenance for every
+export, and the root reference snapshot. It contains no search metadata or
+index archive. All source bytes are verified before any release object is
+published; finalization verifies every immutable copy again and confirms that
+the reference hashes and sizes match the pinned snapshot.
 The similar-majors export additionally records frozen Azure provenance in its
-source entry. It is not a search-index input and does not change the index
-contract. Already-published schema-1.0 releases remain unchanged, and an
-ancestor's schema-1.0 candidate can still be finalized on retry. New builds
-require all ten exports; they cannot reuse a lineage lacking similar majors.
+source entry. Already-published schema `1.0` and `1.1` releases remain unchanged;
+consumers may read their data while ignoring their legacy index archive.
+The pipeline only prepares and finalizes schema `2.0` candidates. In-flight
+legacy candidates must be replaced by a new data-release run rather than
+finalized after this upgrade. New builds require all ten exports; they cannot
+reuse a lineage lacking similar majors.
 
 Objects use create-only GCS writes or atomic local hard links; existing objects
-are accepted only if their bytes match. Neither the bundle nor completion
-manifest updates `latest/`, promotes a release, or activates application data.
+are accepted only if their bytes match. Neither the immutable export copies nor
+completion manifest updates `latest/`, promotes a release, or activates application data.
 The legacy exporters still update their existing mutable latest copies.
 Workers need object create/read permissions under `releases/` and read access
 to ancestor runs' artifacts and reference snapshots. Retain those records for
-reexecution. If a bundle build/upload fails, reexecute the failed step and
+reexecution. If release preparation/upload fails, reexecute the failed step and
 downstream finalizer in a new Dagster run, which creates a fresh release ID.
 If only finalization fails, reexecuting just the finalizer reuses the ancestor's
 candidate and is idempotent. Runs exported before the new structured artifact
-metadata was deployed must be re-exported before they can feed a search build.
+metadata was deployed must be re-exported before they can feed a data release.
 
 The partial weekly catalog job does not build or finalize complete releases.
 Export assets declare upstream table refreshes as ordering-only dependencies:
 they read database tables, not serialized fetch/build outputs. Re-exporting
 therefore does not require earlier workers' local IO-manager files.
-The dependency is pinned by full Git commit in `setup.py`; install dependencies
-during the normal image build (requires GitHub access), not at worker startup.
-Rebuild the image to deploy these assets. PyPI migration, release promotion,
-consumer activation/rollback remain separate. Deploy this pipeline change and
-produce a schema-1.1 release before using Pathways' new database import command.
+Install dependencies during the normal image build, not at worker startup.
+Rebuild the image to deploy these assets. Release promotion and consumer
+activation/rollback remain separate. Consumers must support schema `2.0` and
+the exact export inventory above before importing a new data release.
 
 ## Historical validation snapshot
 

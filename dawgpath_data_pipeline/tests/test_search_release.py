@@ -1,10 +1,8 @@
 # Copyright 2026 UW-IT, University of Washington
 # SPDX-License-Identifier: Apache-2.0
 
-import io
 import json
 import os
-import tarfile
 import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
@@ -30,24 +28,24 @@ from dagster import (
     reconstructable,
 )
 from dagster._core.storage.defs_state.base import set_defs_state_storage
-from dawgpath_search import open_index, prepare_bundle
 from google.api_core.exceptions import PreconditionFailed
 
 from dawgpath_data_pipeline.orchestration import assets as pipeline_assets
 from dawgpath_data_pipeline.orchestration.assets import (
-    build_search_index_bundle,
     export_reference_data,
-    finalize_search_index_release,
     pin_reference_data,
+    prepare_data_release,
+)
+from dawgpath_data_pipeline.orchestration.assets import (
+    finalize_data_release as finalize_data_release_asset,
 )
 from dawgpath_data_pipeline.utilities.artifact_publisher import ArtifactPublisher
 from dawgpath_data_pipeline.utilities.reference_data import ReferenceDataStore
 from dawgpath_data_pipeline.utilities.search_release import (
-    BUNDLE_FILE,
     EXPORT_FILES,
-    build_search_release,
+    build_data_release,
     exported_artifacts,
-    finalize_search_release,
+    finalize_data_release,
     lineage_metadata,
 )
 
@@ -98,7 +96,7 @@ FIXTURE_ASSETS = [
 ]
 RELEASE_ASSETS = [
     *FIXTURE_ASSETS, pin_reference_data, export_reference_data,
-    build_search_index_bundle, finalize_search_index_release,
+    prepare_data_release, finalize_data_release_asset,
 ]
 
 
@@ -134,39 +132,34 @@ class SearchReleaseTest(TestCase):
         }
 
     def build(self):
-        return build_search_release(
+        return build_data_release(
             self.publisher, "release-run", self.artifacts, self.snapshot)
+
+    def test_data_release_has_exact_export_inventory_and_no_search_metadata(self):
+        candidate = self.build()
+        self.assertEqual(candidate["schema_version"], "2.0")
+        self.assertEqual(set(candidate["artifacts"]), set(CONTENTS))
+        self.assertNotIn("search_index", candidate)
 
     def test_build_verify_and_finalize_without_touching_legacy_latest(self):
         latest = (self.root / "latest/manifest.json").read_bytes()
         candidate = self.build()
         self.assertFalse(
             (self.root / "releases/release-run/manifest.json").exists())
-        self.assertEqual(set(candidate["artifacts"]), {*CONTENTS, BUNDLE_FILE})
+        self.assertEqual(set(candidate["artifacts"]), set(CONTENTS))
         self.assertEqual(candidate["reference_snapshot"], self.snapshot)
-        self.assertEqual(
-            candidate["search_index"]["counts"], {"courses": 1, "majors": 1})
-        content = self.publisher.read_verified(candidate["artifacts"][BUNDLE_FILE])
-        with tarfile.open(fileobj=io.BytesIO(content), mode="r:gz") as archive:
-            self.assertNotIn("MAIN_WRITELOCK", archive.getnames())
-            expected = {*candidate["search_index"]["files"], "index-metadata.json"}
-            self.assertEqual(set(archive.getnames()), expected)
-            for member in archive.getmembers():
-                self.assertEqual(Path(member.name).name, member.name)
-                self.assertTrue(member.isfile())
-        index_dir = self.root / "unpacked"
-        prepare_bundle(
-            content, index_dir, metadata=candidate["search_index"],
-            release_id="release-run")
-        index = open_index(index_dir, release_id="release-run")
-        index.close()
-        manifest = finalize_search_release(self.publisher, candidate)
+        for name, entry in candidate["artifacts"].items():
+            self.assertEqual(self.publisher.read_verified(entry), CONTENTS[name])
+            self.assertEqual(entry["source"], self.artifacts[name])
+        manifest = finalize_data_release(self.publisher, candidate)
         self.assertEqual(
             json.loads(self.publisher.read_verified(manifest)), candidate)
-        self.assertEqual(finalize_search_release(self.publisher, candidate), manifest)
+        self.assertEqual(finalize_data_release(self.publisher, candidate), manifest)
         self.assertEqual(
             (self.root / "latest/manifest.json").read_bytes(), latest)
-        self.assertFalse((self.root / "latest" / BUNDLE_FILE).exists())
+        self.assertEqual(
+            {path.name for path in (self.root / "releases/release-run").iterdir()},
+            {*CONTENTS, "manifest.json"})
 
     def test_missing_input_fails_without_release_objects(self):
         self.artifacts.pop("major_data.json")
@@ -174,17 +167,17 @@ class SearchReleaseTest(TestCase):
             self.build()
         self.assertFalse((self.root / "releases").exists())
 
-    def test_new_manifest_includes_similar_majors_and_legacy_finalizer_retry_works(self):
+    def test_new_manifest_includes_similar_majors_and_rejects_legacy_candidates(self):
         candidate = self.build()
-        self.assertEqual(candidate["schema_version"], "1.1")
-        self.assertEqual(len(candidate["artifacts"]), 11)
+        self.assertEqual(candidate["schema_version"], "2.0")
+        self.assertEqual(len(candidate["artifacts"]), 10)
         self.assertEqual(self.publisher.read_verified(
             candidate["artifacts"]["similar_majors.csv"]), CONTENTS["similar_majors.csv"])
-        # An ancestor's old candidate must still be finalizable after upgrading.
-        candidate["schema_version"] = "1.0"
-        candidate["artifacts"].pop("similar_majors.csv")
-        entry = finalize_search_release(self.publisher, candidate)
-        self.assertEqual(json.loads(self.publisher.read_verified(entry)), candidate)
+        for version in ("1.0", "1.1"):
+            with self.subTest(version=version):
+                candidate["schema_version"] = version
+                with self.assertRaisesRegex(ValueError, "candidate"):
+                    finalize_data_release(self.publisher, candidate)
 
     def test_invalid_similar_majors_fails_before_release_publication(self):
         self.artifacts["similar_majors.csv"] = self.publisher.publish_content(
@@ -212,11 +205,11 @@ class SearchReleaseTest(TestCase):
         with self.assertRaisesRegex(ValueError, "pinned"):
             self.build()
 
-    def test_bundle_failure_leaves_no_completion_marker(self):
+    def test_data_upload_failure_leaves_no_completion_marker(self):
         original = self.publisher.publish_immutable
 
         def publish(path, *args, **kwargs):
-            if path.endswith(BUNDLE_FILE):
+            if path.endswith("similar_majors.csv"):
                 raise OSError("upload failed")
             return original(path, *args, **kwargs)
 
@@ -236,42 +229,44 @@ class SearchReleaseTest(TestCase):
                 original = path.read_bytes()
                 path.write_bytes(b"corrupted")
                 with self.assertRaisesRegex(ValueError, "checksum"):
-                    finalize_search_release(self.publisher, candidate)
+                    finalize_data_release(self.publisher, candidate)
                 path.write_bytes(original)
                 self.assertFalse(
                     (self.root / "releases/release-run/manifest.json").exists())
 
-    def test_search_hashes_must_match_release(self):
+    def test_reference_hashes_must_match_release_at_finalization(self):
         candidate = self.build()
-        candidate["search_index"]["inputs"]["course_data.json"][
+        candidate["reference_snapshot"]["references"]["coi"][
             "checksum_sha256"] = "0" * 64
-        with self.assertRaisesRegex(ValueError, "source"):
-            finalize_search_release(self.publisher, candidate)
+        with self.assertRaisesRegex(ValueError, "pinned"):
+            finalize_data_release(self.publisher, candidate)
 
-    def test_missing_bundle_cannot_complete_release(self):
+    def test_missing_export_cannot_complete_release(self):
         candidate = self.build()
-        (self.root / candidate["artifacts"][BUNDLE_FILE]["version_path"]).unlink()
+        (self.root / candidate["artifacts"]["prereq_data.pkl"]["version_path"]).unlink()
         with self.assertRaises(FileNotFoundError):
-            finalize_search_release(self.publisher, candidate)
+            finalize_data_release(self.publisher, candidate)
         self.assertFalse(
             (self.root / "releases/release-run/manifest.json").exists())
 
     def test_incomplete_or_misrouted_candidate_is_rejected(self):
         original = self.build()
-        for change in ("files", "inputs", "path", "version"):
+        for change in ("files", "extra", "search_metadata", "path", "version"):
             candidate = json.loads(json.dumps(original))
             with self.subTest(change=change):
                 if change == "files":
                     candidate["artifacts"].pop("prereq_data.pkl")
-                elif change == "inputs":
-                    candidate["search_index"]["inputs"].pop("coi_scores.csv")
+                elif change == "extra":
+                    candidate["artifacts"]["extra.csv"] = {}
+                elif change == "search_metadata":
+                    candidate["search_index"] = {}
                 elif change == "path":
-                    candidate["artifacts"][BUNDLE_FILE][
-                        "version_path"] = "releases/other/search-index.tar.gz"
+                    candidate["artifacts"]["prereq_data.pkl"][
+                        "version_path"] = "releases/other/prereq_data.pkl"
                 else:
-                    candidate["schema_version"] = "2.0"
+                    candidate["schema_version"] = "3.0"
                 with self.assertRaises(ValueError):
-                    finalize_search_release(self.publisher, candidate)
+                    finalize_data_release(self.publisher, candidate)
                 self.assertFalse(
                     (self.root / "releases/release-run/manifest.json").exists())
 
@@ -331,9 +326,8 @@ class SearchReleaseTest(TestCase):
         manifest = json.loads(manifest_path.read_bytes())
         self.assertEqual(manifest["release_id"], result.run_id)
         for name, entry in manifest["artifacts"].items():
-            if name != BUNDLE_FILE:
-                self.assertEqual(
-                    entry["source"]["version_path"], f"runs/{result.run_id}/{name}")
+            self.assertEqual(
+                entry["source"]["version_path"], f"runs/{result.run_id}/{name}")
 
     def test_real_export_wrappers_feed_release_without_shared_io_inputs(self):
         self.enterContext(patch.object(
@@ -365,8 +359,8 @@ class SearchReleaseTest(TestCase):
         self.assertTrue(result.success)
         manifest = json.loads(
             (self.root / "releases" / result.run_id / "manifest.json").read_bytes())
-        self.assertEqual(manifest["search_index"]["counts"],
-                     {"courses": 1, "majors": 1})
+        self.assertEqual(manifest["schema_version"], "2.0")
+        self.assertEqual(set(manifest["artifacts"]), set(CONTENTS))
 
     def test_reexecution_inherits_only_own_ancestors_not_latest_run(self):
         with instance_for_test() as instance:
@@ -385,8 +379,8 @@ class SearchReleaseTest(TestCase):
                 job, instance=instance,
                 reexecution_options=ReexecutionOptions(
                     parent_run_id=parent_id,
-                    step_selection=["build_search_index_bundle",
-                                    "finalize_search_index_release"]),
+                    step_selection=["prepare_data_release",
+                                    "finalize_data_release"]),
             ) as child:
                 self.assertTrue(child.success)
                 manifest = json.loads(
@@ -398,14 +392,13 @@ class SearchReleaseTest(TestCase):
                 self.assertEqual(self.publisher.read_verified(
                     manifest["artifacts"]["coi_scores.csv"]), COI)
                 for name, entry in manifest["artifacts"].items():
-                    if name != BUNDLE_FILE:
-                        self.assertEqual(
-                            entry["source"]["version_path"], f"runs/{parent_id}/{name}")
+                    self.assertEqual(
+                        entry["source"]["version_path"], f"runs/{parent_id}/{name}")
             with execute_job(
                 job, instance=instance,
                 reexecution_options=ReexecutionOptions(
                     parent_run_id=child.run_id,
-                    step_selection=["finalize_search_index_release"]),
+                    step_selection=["finalize_data_release"]),
             ) as final_only:
                 self.assertTrue(final_only.success)
             with (
@@ -415,8 +408,8 @@ class SearchReleaseTest(TestCase):
                     reexecution_options=ReexecutionOptions(
                         parent_run_id=parent_id,
                         step_selection=["export_course_data_json",
-                                        "build_search_index_bundle",
-                                        "finalize_search_index_release"]),
+                                        "prepare_data_release",
+                                        "finalize_data_release"]),
                 ) as partial,
             ):
                 self.assertTrue(partial.success)

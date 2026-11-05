@@ -5,12 +5,8 @@
 
 import json
 import re
-import tempfile
-from pathlib import Path
 
 from dagster import DagsterEventType
-from dawgpath_search import build_index, create_bundle
-from dawgpath_search.builder import INPUT_FILES
 
 from dawgpath_data_pipeline.utilities.similar_majors import validate_similar_majors
 
@@ -25,7 +21,6 @@ EXPORT_FILES = {
     "export_reference_data": ("coi_scores.csv", "admit_major_mapping.csv"),
     "export_similar_majors_csv": ("similar_majors.csv",),
 }
-BUNDLE_FILE = "search-index.tar.gz"
 RELEASE_FILES = {name for names in EXPORT_FILES.values() for name in names}
 
 
@@ -88,11 +83,11 @@ def exported_artifacts(context):
     return artifacts
 
 
-def build_search_release(publisher, release_id, artifacts, reference_snapshot):
+def build_data_release(publisher, release_id, artifacts, reference_snapshot):
     if not re.fullmatch(r"[A-Za-z0-9_-]+", release_id):
         raise ValueError("Invalid release ID.")
     if set(artifacts) != RELEASE_FILES:
-        raise ValueError("A search release requires all ten export files.")
+        raise ValueError("A data release requires all ten export files.")
     for reference in reference_snapshot["references"].values():
         artifact = artifacts[reference["filename"]]
         if any(artifact[key] != reference[key]
@@ -102,16 +97,11 @@ def build_search_release(publisher, release_id, artifacts, reference_snapshot):
         name: publisher.read_verified(entry) for name, entry in artifacts.items()
     }
     validate_similar_majors(contents["similar_majors.csv"])
-    # No output is published until all source bytes and the built index verify.
-    with tempfile.TemporaryDirectory(prefix="dawgpath-search-") as temporary:
-        root = Path(temporary)
-        inputs = root / "inputs"
-        inputs.mkdir()
-        for name in INPUT_FILES:
-            (inputs / name).write_bytes(contents[name])
-        index_dir = root / "index"
-        index_metadata = build_index(inputs, index_dir, release_id=release_id)
-        bundle = create_bundle(index_dir, release_id=release_id)
+    for filename, catalog_type in (
+            ("course_data.json", list), ("major_data.json", dict)):
+        catalog = json.loads(contents[filename])
+        if not isinstance(catalog, catalog_type) or not catalog:
+            raise ValueError(f"Expected nonempty catalog: {filename}")
     entries = {}
     for name, content in contents.items():
         entries[name] = {
@@ -123,41 +113,32 @@ def build_search_release(publisher, release_id, artifacts, reference_snapshot):
                     "application/octet-stream")),
             "source": artifacts[name],
         }
-    entries[BUNDLE_FILE] = publisher.publish_immutable(
-        f"releases/{release_id}/{BUNDLE_FILE}", bundle,
-        content_type="application/gzip")
     return {
-        "schema_version": "1.1",
+        "schema_version": "2.0",
         "release_id": release_id,
         "artifacts": entries,
-        "search_index": index_metadata,
         "reference_snapshot": reference_snapshot,
     }
 
 
-def finalize_search_release(publisher, candidate):
+def finalize_data_release(publisher, candidate):
     """The immutable manifest is the only completion marker, never latest/."""
     release_id = candidate["release_id"]
     if not re.fullmatch(r"[A-Za-z0-9_-]+", release_id):
         raise ValueError("Invalid release ID.")
-    release_files = {
-        "1.0": RELEASE_FILES - {"similar_majors.csv"},
-        "1.1": RELEASE_FILES,
-    }.get(candidate["schema_version"])
-    if (release_files is None
-            or set(candidate["artifacts"]) != release_files | {BUNDLE_FILE}
-            or candidate["search_index"]["release_id"] != release_id
-            or set(candidate["search_index"]["inputs"]) != set(INPUT_FILES)):
+    if (candidate["schema_version"] != "2.0"
+            or set(candidate["artifacts"]) != RELEASE_FILES
+            or "search_index" in candidate):
         raise ValueError("Invalid release candidate.")
     for filename, entry in candidate["artifacts"].items():
         if entry["version_path"] != f"releases/{release_id}/{filename}":
             raise ValueError("Release artifact path mismatch.")
         publisher.read_verified(entry)
-    for filename, info in candidate["search_index"]["inputs"].items():
-        entry = candidate["artifacts"][filename]
-        if any(entry[key] != info[key]
+    for reference in candidate["reference_snapshot"]["references"].values():
+        entry = candidate["artifacts"][reference["filename"]]
+        if any(entry[key] != reference[key]
                for key in ("size_bytes", "checksum_sha256")):
-            raise ValueError("Search index source does not match release.")
+            raise ValueError("Export does not match pinned reference snapshot.")
     content = json.dumps(candidate, sort_keys=True, indent=2).encode() + b"\n"
     return publisher.publish_immutable(
         f"releases/{release_id}/manifest.json", content,

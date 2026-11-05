@@ -38,14 +38,16 @@ from dawgpath_data_pipeline.orchestration.tags import (
 )
 from dawgpath_data_pipeline.utilities import parse_combined_term
 from dawgpath_data_pipeline.utilities.artifact_publisher import ArtifactPublisher
-from dawgpath_data_pipeline.utilities.reference_data import ReferenceDataStore
-from dawgpath_data_pipeline.utilities.search_release import (
+from dawgpath_data_pipeline.utilities.data_release import (
     EXPORT_FILES,
-    build_search_release,
+    build_data_release,
     exported_artifacts,
-    finalize_search_release,
     lineage_metadata,
 )
+from dawgpath_data_pipeline.utilities.data_release import (
+    finalize_data_release as finalize_data_release_manifest,
+)
+from dawgpath_data_pipeline.utilities.reference_data import ReferenceDataStore
 from dawgpath_data_pipeline.utilities.similar_majors import frozen_similar_majors
 
 # EDW rejects connections during its nightly restricted window (SQL 923),
@@ -643,23 +645,22 @@ def export_gateway_courses_csv(context: OpExecutionContext):
     op_tags=TIER_1_K8S_TAGS,
     deps=list(EXPORT_FILES),
     description=(
-        "Builds and verifies a shared search index from this run lineage's "
-        "verified exports, then publishes an immutable release candidate."),
+        "Verifies this run lineage's exports and publishes an immutable "
+        "data release candidate."),
 )
-def build_search_index_bundle(context: OpExecutionContext):
+def prepare_data_release(context: OpExecutionContext):
     artifacts = exported_artifacts(context)
     root_run_id = context.dagster_run.root_run_id or context.run_id
     snapshot = ReferenceDataStore().read_run(root_run_id)
-    candidate = build_search_release(
+    candidate = build_data_release(
         ArtifactPublisher(), context.run_id, artifacts, snapshot)
     context.log.info(
-        "Published search release candidate %s; awaiting finalization.",
+        "Published data release candidate %s; awaiting finalization.",
         candidate["release_id"])
     return Output(candidate, metadata={
         "release_candidate": MetadataValue.json(candidate),
         "release_id": candidate["release_id"],
-        "courses": candidate["search_index"]["counts"]["courses"],
-        "majors": candidate["search_index"]["counts"]["majors"],
+        "artifact_count": len(candidate["artifacts"]),
         "peak_rss_mib": _peak_rss_mib(),
     })
 
@@ -667,18 +668,18 @@ def build_search_index_bundle(context: OpExecutionContext):
 @asset(
     group_name="published_artifacts",
     op_tags=TIER_1_K8S_TAGS,
-    deps=[build_search_index_bundle],
+    deps=[prepare_data_release],
     description=(
         "Verifies all immutable candidate objects and writes the complete "
         "release manifest last. Does not promote or activate the release."),
 )
-def finalize_search_index_release(context: OpExecutionContext):
+def finalize_data_release(context: OpExecutionContext):
     build_run_id, metadata = lineage_metadata(
-        context, ["build_search_index_bundle"])["build_search_index_bundle"]
+        context, ["prepare_data_release"])["prepare_data_release"]
     candidate = metadata["release_candidate"].value
     if candidate["release_id"] != build_run_id:
         raise ValueError("Release candidate does not belong to its build run.")
-    manifest = finalize_search_release(ArtifactPublisher(), candidate)
+    manifest = finalize_data_release_manifest(ArtifactPublisher(), candidate)
     context.log.info("Completed immutable release %s.", candidate["release_id"])
     return Output(manifest, metadata={
         "release_id": candidate["release_id"],
