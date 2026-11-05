@@ -107,6 +107,10 @@ jobs:
           push: false
           load: true
 
+      - name: Verify Data Release Contract and Dagster Definitions
+        run: |
+          python -m unittest dawgpath_data_pipeline.tests.test_data_release dawgpath_data_pipeline.tests.test_dagster_definitions
+
       - name: Run Pipeline Tests
         run: |
           python -m unittest discover -s dawgpath_data_pipeline/tests

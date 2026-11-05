@@ -67,8 +67,8 @@ class TestDagsterDefinitions(DBTest):
         self.assertIn("pin_reference_data", keys)
         self.assertIn("export_reference_data", keys)
         self.assertIn("export_similar_majors_csv", keys)
-        self.assertIn("build_search_index_bundle", keys)
-        self.assertIn("finalize_search_index_release", keys)
+        self.assertIn("prepare_data_release", keys)
+        self.assertIn("finalize_data_release", keys)
 
     def test_dagster_job_count(self):
         repo_def = defs.get_repository_def()
@@ -115,8 +115,8 @@ class TestDagsterDefinitions(DBTest):
                          "fetch_regis_major_data", "fetch_sws_course_data",
                          "pin_reference_data", "export_reference_data",
                          "export_similar_majors_csv",
-                         "build_search_index_bundle",
-                         "finalize_search_index_release"):
+                         "prepare_data_release",
+                         "finalize_data_release"):
             self.assertNotIn(excluded, selected)
 
     def test_upstream_assets_carry_retry_policy(self):
@@ -162,8 +162,8 @@ class TestDagsterDefinitions(DBTest):
         self.assertIn("pin_reference_data", selected)
         self.assertIn("export_reference_data", selected)
         self.assertIn("export_similar_majors_csv", selected)
-        self.assertIn("build_search_index_bundle", selected)
-        self.assertIn("finalize_search_index_release", selected)
+        self.assertIn("prepare_data_release", selected)
+        self.assertIn("finalize_data_release", selected)
         self.assertNotIn("fetch_course_data", selected)
 
     def test_export_dependencies_preserve_order_without_loading_outputs(self):

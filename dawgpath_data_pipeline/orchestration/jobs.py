@@ -113,8 +113,8 @@ reexport_published_artifacts_job = define_asset_job(
     name="reexport_published_artifacts",
     selection=AssetSelection.groups("published_artifacts"),
     description=(
-        "Re-exports files from the existing tables, builds the shared search "
-        "index, freezes similar majors from Azure, and finalizes an immutable "
+        "Re-exports files from the existing tables, freezes similar majors "
+        "from Azure, and finalizes an immutable data "
         "release without re-fetching EDW/SWS or rebuilding database analytics."
     ),
 )

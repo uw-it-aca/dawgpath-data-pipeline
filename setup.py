@@ -41,10 +41,6 @@ setup(
         "dagster-postgres>=0.22.0",
         "google-cloud-storage>=2.0.0",
         "azure-storage-blob~=12.25",
-        (
-            "dawgpath-search @ git+https://github.com/uw-it-aca/dawgpath-search.git"
-            "@46bdcb94b5252a61856b2e45a1f00da6c51a17f2"
-        ),
     ],
     license="Apache License, Version 2.0",
     description="",
